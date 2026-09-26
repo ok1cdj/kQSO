@@ -24,4 +24,9 @@ describe('positionality of number and locator (ch. 9.2)', () => {
     const second = classifyLine(['DL5ABC', 'JN79US'], PROFILES.aktivace)
     expect(second[1]!.cls).toEqual({ type: 'locator', value: 'JN79US' })
   })
+
+  it('a later non-locator call-shaped token is a new call (typo fix)', () => {
+    const r = classifyLine(['OK1ND', 'OK1NP'], PROFILES.aktivace)
+    expect(r[1]!.cls).toEqual({ type: 'call', value: 'OK1NP' })
+  })
 })

@@ -124,4 +124,25 @@ describe('piecewise accumulation across lines (ch. 11 phase 1)', () => {
     ;({ partial } = parseLine('PETR', sticky, partial, PROFILES.obecny))
     expect(partial).toEqual({ call: 'OK1ABC', grid: 'JN79US', name: 'PETR' })
   })
+
+  it('a call-shaped token on a later line fixes the call (OK1ND → OK1NP)', () => {
+    let partial = {}
+    ;({ partial } = parseLine('OK1ND 57', sticky, partial, PROFILES.aktivace))
+    ;({ partial } = parseLine('OK1NP', sticky, partial, PROFILES.aktivace))
+    expect(partial).toEqual({ call: 'OK1NP', reportRcvd: '57' })
+  })
+
+  it('the fix also works in Obecný — the new call is not taken for a name', () => {
+    let partial = {}
+    ;({ partial } = parseLine('OK1ND', sticky, partial, PROFILES.obecny))
+    ;({ partial } = parseLine('OK1NP PETR', sticky, partial, PROFILES.obecny))
+    expect(partial).toEqual({ call: 'OK1NP', name: 'PETR' })
+  })
+
+  it('a locator on a later line still stays a locator', () => {
+    let partial = {}
+    ;({ partial } = parseLine('OK1ND', sticky, partial, PROFILES.aktivace))
+    ;({ partial } = parseLine('79US', sticky, partial, PROFILES.aktivace))
+    expect(partial).toEqual({ call: 'OK1ND', grid: '79US' })
+  })
 })

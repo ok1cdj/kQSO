@@ -405,10 +405,11 @@ export class LoggingScreen implements Screen {
   }
 
   private effectiveCall(): string | undefined {
-    if (this.state.partial.call) return this.state.partial.call
-    const tokens = classifyLine(tokenize(this.line), PROFILES[this.meta.profile], false)
+    // A call typed on the current line wins — it replaces the accumulated one on Enter.
+    const partialCall = this.state.partial.call
+    const tokens = classifyLine(tokenize(this.line), PROFILES[this.meta.profile], partialCall !== undefined)
     for (const { cls } of tokens) if (cls.type === 'call') return cls.value
-    return undefined
+    return partialCall
   }
 }
 

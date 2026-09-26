@@ -28,6 +28,10 @@ export function isFullLocator(s: string): boolean {
   return /^[A-R]{2}\d{2}[A-X]{2}$/.test(s)
 }
 
+function isLocatorShaped(s: string): boolean {
+  return LOCATOR_FULL.test(s) || LOCATOR_SHORT.test(s)
+}
+
 /**
  * Classify a single raw token. The order of checks is the ch. 9 priority table;
  * the first match wins.
@@ -48,10 +52,11 @@ export function classifyToken(raw: string, ctx: TokenContext): TokenClass {
   const ref = matchReference(raw)
   if (ref) return { type: 'reference', value: ref }
 
-  // #5 callsign — only the FIRST call-shaped token is the call. Once a call has
-  // been seen, a later call-shaped token (JN79US, JO60UN) falls through to the
-  // locator rule below (ch. 9.2: locator recognized only after the callsign).
-  if (!ctx.callSeen && CALL.test(raw)) return { type: 'call', value: raw }
+  // #5 callsign. Once a call has been seen, a locator-shaped token (JN79US, 79US)
+  // falls through to the locator rule below (ch. 9.2: locator recognized only
+  // after the callsign). Any other call-shaped token is a new call that replaces
+  // the earlier one — the way to fix a mistyped call (OK1ND ↵ OK1NP ↵).
+  if (CALL.test(raw) && !(ctx.callSeen && isLocatorShaped(raw))) return { type: 'call', value: raw }
 
   // #6 explicit TX report override (T56)
   if (REPORT_SENT.test(raw)) return { type: 'reportSent', value: raw.slice(1) }
@@ -66,7 +71,7 @@ export function classifyToken(raw: string, ctx: TokenContext): TokenClass {
   }
 
   // #8 locator — only after the callsign (defeats JN79US, ch. 9.2)
-  if (ctx.callSeen && (LOCATOR_FULL.test(raw) || LOCATOR_SHORT.test(raw))) {
+  if (ctx.callSeen && isLocatorShaped(raw)) {
     return { type: 'locator', value: raw }
   }
 

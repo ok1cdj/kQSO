@@ -384,7 +384,7 @@ Po dokončené volačce zkontroluj shodu **call + pásmo + mód** v aktuálním 
 
 ### Dvoufázový Enter
 
-1. **Enter s obsahem** → řádek se rozparsuje a přiklopí k rozepsanému QSO, vstup se vyprázdní. Umožňuje doplňovat po částech: `OK1ABC ↵ JN79US ↵ PETR ↵ ↵`.
+1. **Enter s obsahem** → řádek se rozparsuje a přiklopí k rozepsanému QSO, vstup se vyprázdní. Umožňuje doplňovat po částech: `OK1ABC ↵ JN79US ↵ PETR ↵ ↵`. Další token ve tvaru volačky, který není locator, volačku **nahradí** — oprava překlepu: `OK1ND ↵ OK1NP ↵` (ostatní pole zůstanou).
 2. **Enter na prázdném řádku** → QSO se zapíše, hlavička skočí na nový čas.
 3. **Enter na prázdném, když není nic rozepsaného** → ignoruj. Jinak si zbrklým ťukáním nasypeš prázdná QSO.
 4. **Enter na řádku s příkazem** (`W`, `D`, kap. 9.5) → provede příkaz místo parsování.

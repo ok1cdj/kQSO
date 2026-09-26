@@ -67,6 +67,7 @@ const EN: readonly Section[] = [
     title: 'Fill piece by piece',
     rows: [
       { code: 'OK1ABC ⏎ JN79US ⏎ PETR ⏎ ⏎', text: 'Add parts over several Enters; an empty Enter saves. The header shows the call while a QSO is unfinished.' },
+      { code: 'OK1ND ⏎ OK1NP ⏎', text: 'A new callsign replaces the one already typed — the way to fix a typo. Report, locator… stay.' },
     ],
   },
   {
@@ -154,6 +155,7 @@ const CS: readonly Section[] = [
     title: 'Skládání po částech',
     rows: [
       { code: 'OK1ABC ⏎ JN79US ⏎ PETR ⏎ ⏎', text: 'Doplňuj po částech přes víc Enterů; prázdný Enter zapíše. Hlavička ukazuje volačku, dokud je QSO rozdělané.' },
+      { code: 'OK1ND ⏎ OK1NP ⏎', text: 'Nová volačka nahradí už napsanou — tak se opraví překlep. Report, locator… zůstanou.' },
     ],
   },
   {
