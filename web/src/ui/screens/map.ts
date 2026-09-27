@@ -32,6 +32,13 @@ interface World {
   readonly border: readonly Line[]
 }
 
+interface Box {
+  readonly x0: number
+  readonly y0: number
+  readonly x1: number
+  readonly y1: number
+}
+
 interface QsoPoint extends LatLon {
   readonly call: string
 }
@@ -69,7 +76,9 @@ function loadWorld(): World {
 }
 
 const ZOOM = 2
-const SQUARE_MIN_PX = 60 // show the 2°×1° squares once one is at least this wide
+const SQUARE_LINES_PX = 16 // square lines (2°×1°) from this width; the QSO labels carry the square
+const SQUARE_DIGITS_PX = 30 // digits in every square from this width
+const SQUARE_FULL_PX = 60 // full square labels (JO70) from this width
 const MAX_LABELS = 80
 
 export class MapScreen implements Screen {
@@ -206,36 +215,61 @@ export class MapScreen implements Screen {
     const vis = { west: nw.lon, east: se.lon, north: nw.lat, south: se.lat }
     const px = (lat: number, lon: number): { x: number; y: number } => project(lat, lon, view, w, h)
 
-    // Maidenhead grid: fields (20°×10°) always, squares (2°×1°) once they are big enough.
-    const squares = project(0, 2, view, w, h).x - project(0, 0, view, w, h).x >= SQUARE_MIN_PX
+    // Maidenhead grid. Fields (20°×10°): solid lines + big letters (JO). Squares
+    // (2°×1°) from SQUARE_LINES_PX wide: dotted lines, and the QSO labels carry the
+    // square (DJ8MS JO54); from SQUARE_DIGITS_PX small digits (70) in every square;
+    // from SQUARE_FULL_PX the square label is the full JO70.
+    const sqPx = px(0, 2).x - px(0, 0).x
+    const full = sqPx >= SQUARE_FULL_PX
+    const squares = sqPx >= SQUARE_LINES_PX
+    const allDigits = sqPx >= SQUARE_DIGITS_PX
+    const west = Math.max(-180, vis.west)
+    const east = Math.min(180, vis.east)
+    const south = Math.max(-90, vis.south)
+    const north = Math.min(90, vis.north)
+    const gridLines = (stepLon: number, stepLat: number): void => {
+      ctx.beginPath()
+      for (let lon = Math.ceil(west / stepLon) * stepLon; lon <= east; lon += stepLon) {
+        const x = Math.round(px(0, lon).x) + 0.5
+        ctx.moveTo(x, 0)
+        ctx.lineTo(x, h)
+      }
+      for (let lat = Math.ceil(south / stepLat) * stepLat; lat <= north; lat += stepLat) {
+        const y = Math.round(px(lat, 0).y) + 0.5
+        ctx.moveTo(0, y)
+        ctx.lineTo(w, y)
+      }
+      ctx.stroke()
+    }
     ctx.strokeStyle = ghost
     ctx.fillStyle = ghost
     ctx.lineWidth = 1
-    ctx.setLineDash([1, 3])
-    ctx.beginPath()
-    const stepLon = squares ? 2 : 20
-    const stepLat = squares ? 1 : 10
-    const lon0 = Math.max(-180, Math.floor(vis.west / stepLon) * stepLon)
-    const lat0 = Math.max(-90, Math.floor(vis.south / stepLat) * stepLat)
-    for (let lon = lon0; lon <= Math.min(180, vis.east); lon += stepLon) {
-      const x = Math.round(px(0, lon).x) + 0.5
-      ctx.moveTo(x, 0)
-      ctx.lineTo(x, h)
-    }
-    for (let lat = lat0; lat <= Math.min(90, vis.north); lat += stepLat) {
-      const y = Math.round(px(lat, 0).y) + 0.5
-      ctx.moveTo(0, y)
-      ctx.lineTo(w, y)
-    }
-    ctx.stroke()
-    ctx.setLineDash([])
-    ctx.font = `11px ${font}`
     ctx.textBaseline = 'top'
-    for (let lon = lon0; lon < Math.min(180, vis.east); lon += stepLon) {
-      for (let lat = lat0; lat < Math.min(90, vis.north); lat += stepLat) {
-        const label = squares ? squareName(lat, lon) : squareName(lat, lon).slice(0, 2)
-        const p = px(lat + stepLat, lon)
-        ctx.fillText(label, p.x + 3, p.y + 3)
+    if (squares) {
+      ctx.setLineDash([1, 3])
+      gridLines(2, 1)
+      ctx.setLineDash([])
+    }
+    if (allDigits) {
+      ctx.font = `${full ? 11 : 10}px ${font}`
+      for (let lon = Math.floor(west / 2) * 2; lon < east; lon += 2) {
+        for (let lat = Math.floor(south); lat < north; lat++) {
+          const name = squareName(lat, lon)
+          const p = px(lat + 1, lon)
+          // Without the full name, the field's top-left square carries the field letters.
+          if (!full && name[2] === '0' && name[3] === '9') continue
+          ctx.fillText(full ? name : name.slice(2), p.x + 3, p.y + 3)
+        }
+      }
+    }
+    gridLines(20, 10)
+    if (!full) {
+      ctx.font = `bold 13px ${font}`
+      for (let lon = Math.floor(west / 20) * 20; lon < east; lon += 20) {
+        for (let lat = Math.floor(south / 10) * 10; lat < north; lat += 10) {
+          const p = px(lat + 10, lon)
+          ctx.fillText(squareName(lat, lon).slice(0, 2), p.x + 3, p.y + 3)
+        }
       }
     }
 
@@ -279,7 +313,9 @@ export class MapScreen implements Screen {
       ctx.fillStyle = fg
       ctx.fill()
     }
-    if (this.labels) this.drawLabels(ctx, px, w, h, fg, bg, font)
+    // Small squares without their own digits: the QSO label carries the square (DJ8MS JO54).
+    const withSquare = squares && !allDigits
+    if (this.labels || withSquare) this.drawLabels(ctx, px, w, h, fg, bg, font, withSquare)
 
     // Own QTH: a ring with a cross.
     const own = gridCenter(this.meta.myGrid)
@@ -301,7 +337,8 @@ export class MapScreen implements Screen {
     }
   }
 
-  /** Call next to each dot where it fits: greedy, first come first placed, no overlaps. */
+  /** Label next to each dot where it fits (the call, with/or the square): greedy, first
+   *  come first placed, no overlaps. */
   private drawLabels(
     ctx: CanvasRenderingContext2D,
     px: (lat: number, lon: number) => { x: number; y: number },
@@ -310,12 +347,13 @@ export class MapScreen implements Screen {
     fg: string,
     bg: string,
     font: string,
+    withSquare: boolean,
   ): void {
     ctx.font = `bold 12px ${font}`
     ctx.textBaseline = 'middle'
     ctx.lineJoin = 'round'
     ctx.lineWidth = 3
-    const placed: { x0: number; y0: number; x1: number; y1: number }[] = []
+    const placed: Box[] = []
     // The dots themselves are obstacles too.
     for (const q of this.points) {
       const p = px(q.lat, q.lon)
@@ -330,12 +368,14 @@ export class MapScreen implements Screen {
     let count = 0
     for (const q of this.points) {
       if (count >= MAX_LABELS) break
-      const key = `${q.call}@${q.lat},${q.lon}`
+      const square = squareOf(q)
+      const text = withSquare ? (this.labels ? `${q.call} ${square}` : square) : q.call
+      const key = `${text}@${withSquare && !this.labels ? square : `${q.lat},${q.lon}`}`
       if (seen.has(key)) continue
       seen.add(key)
       const p = px(q.lat, q.lon)
       if (p.x < 0 || p.y < 0 || p.x > w || p.y > h) continue
-      const tw = ctx.measureText(q.call).width
+      const tw = ctx.measureText(text).width
       // Try right, left, above, below the dot.
       const spots = [
         { x: p.x + 7, y: p.y },
@@ -346,17 +386,21 @@ export class MapScreen implements Screen {
       for (const s of spots) {
         const box = { x0: s.x - 2, y0: s.y - 7, x1: s.x + tw + 2, y1: s.y + 7 }
         if (box.x0 < 0 || box.x1 > w || box.y0 < 0 || box.y1 > h) continue
-        if (placed.some((b) => box.x0 < b.x1 && box.x1 > b.x0 && box.y0 < b.y1 && box.y1 > b.y0)) continue
+        if (placed.some((b) => overlaps(box, b))) continue
         placed.push(box)
         ctx.strokeStyle = bg
-        ctx.strokeText(q.call, s.x, s.y)
+        ctx.strokeText(text, s.x, s.y)
         ctx.fillStyle = fg
-        ctx.fillText(q.call, s.x, s.y)
+        ctx.fillText(text, s.x, s.y)
         count++
         break
       }
     }
   }
+}
+
+function overlaps(a: Box, b: Box): boolean {
+  return a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0
 }
 
 /** Centres of the QSOs' locators (QSOs without a valid one are skipped). */
@@ -367,6 +411,11 @@ function qsoPoints(qsos: readonly Qso[]): QsoPoint[] {
     if (c) out.push({ ...c, call: q.call })
   }
   return out
+}
+
+/** 4-char locator of the square a point lies in. */
+function squareOf(p: LatLon): string {
+  return squareName(Math.floor(p.lat), Math.floor(p.lon / 2) * 2)
 }
 
 /** 4-char locator of the square whose south-west corner is (lat, lon). */
