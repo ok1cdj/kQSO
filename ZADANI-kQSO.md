@@ -479,7 +479,7 @@ Vždy zapisovat: `CALL`, `QSO_DATE`, `TIME_ON`, `BAND`, `MODE`, `RST_SENT`, `RST
 
 **Bodování (pravidla IARU R1 pro 50/70 MHz, 145 MHz a UHF/µW, GC 2023):** 1 bod za km. Vzdálenost mezi **středy lokátorů** sférickou geometrií s převodem **111,2 km na stupeň**, oříznutá na celé km **+ 1** (stejný čtverec = 1 bod). Každá stanice jednou na pásmo; duplicita boduje 0. Násobiče (WWL) se nepoužívají — celkové skóre je součet bodů. Ověřeno na vzorovém logu specifikace REG1TEST (JO65FR → IP62OA = 1302 atd.). Kód: `core/locator.ts`, `core/contest.ts`.
 
-**Kde je to vidět:** štítek `QRB` v parse preview, jakmile je znám lokátor protistanice (hlavička zůstává minimální). Seznam QSO: body u každého QSO (`DUPE` u opakování) a řádek za každé pásmo `QSO · body · WWL · ODX`. Ze seznamu QSO **Statistika**: za pásmo (a celkem) QSO, body a průměr bodů na QSO, pod tím top 10 spojení podle bodů (`screens/stats.ts`, `contestStats()`).
+**Kde je to vidět:** štítek `QRB` v parse preview, jakmile je znám lokátor protistanice (hlavička zůstává minimální). Seznam QSO: body u každého QSO (`DUPE` u opakování) a řádek za každé pásmo `QSO · body · WWL · ODX`. Ze seznamu QSO **Statistika**: za každé pásmo QSO, body, průměr bodů na QSO a top 10 spojení toho pásma podle bodů (pásma se nemíchají), u víc pásem ještě řádek celkem (`screens/stats.ts`, `contestStats()`).
 
 **Export EDI (REG1TEST;1, vydání 1.1)** — tlačítko EDI v seznamu logů, jen VKV log (`core/edi.ts`, obrazovka `ediexport.ts`):
 
@@ -497,7 +497,7 @@ Vždy zapisovat: `CALL`, `QSO_DATE`, `TIME_ON`, `BAND`, `MODE`, `RST_SENT`, `RST
 2. **Nový log** — formulář z kapitoly 8.
 3. **Logovací obrazovka** — kapitoly 4 a 10. Výchozí po otevření logu.
 4. **Seznam QSO** — tabulka, tap otevře editaci jednoho QSO (klasický formulář, ne parser).
-   - **Mapa** (VKV závod, Satelit; příznak profilu `map`) — tečka za každé QSO ve středu jeho lokátoru, mřížka velkých polí a čtverců, vlastní QTH. Obrysy zemí Natural Earth 1:110m (public domain) přibalené v bundlu (`web/src/db/world110.json`, skript `web/scripts/mapdata.py`), takže mapa funguje offline. Web Mercator na canvasu; tažení jen posune obraz a mapa se překreslí jednou po puštění (e-ink), zoom tlačítky − + ⤢. QSO bez lokátoru se jen spočítají.
+   - **Mapa** (VKV závod, Satelit; příznak profilu `map`) — tečka za každé QSO ve středu jeho lokátoru, mřížka velkých polí a čtverců, vlastní QTH. Pobřeží a hranice Natural Earth (public domain) — Evropa 1:10m, zbytek světa 1:50m — přibalené v bundlu (`web/src/db/world.json`, ~770 KB, gzip ~210 KB, skript `web/scripts/mapdata.py`), takže mapa funguje offline. Web Mercator na canvasu; tažení jen posune obraz a mapa se překreslí jednou po puštění (e-ink), zoom tlačítky − + ⤢. QSO bez lokátoru se jen spočítají.
    - **Statistika** (VKV závod) — kap. 14.1.
 5. **Nastavení** — display režim jako první položka, jazyk, stav perzistence úložiště.
 6. **⓪ About** — verze, licence, odkaz na repo, callsign autora.

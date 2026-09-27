@@ -67,7 +67,8 @@ export interface ContestStats {
 
 const TOP_N = 10
 
-/** Points, average per QSO and the top 10 QSOs — for a set of bands (one, or all for the total). */
+/** Points, average per QSO and the top 10 QSOs of a set of bands. The UI passes one band
+ *  at a time for the top list (bands never mix) and all bands for the total line. */
 export function contestStats(bands: readonly BandScore[]): ContestStats {
   const qsos = bands.reduce((n, b) => n + b.qsos, 0)
   const points = bands.reduce((n, b) => n + b.points, 0)

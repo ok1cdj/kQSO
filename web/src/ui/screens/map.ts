@@ -1,6 +1,7 @@
-// QSO map (VKV contest, Satellite): a dot per QSO at its locator, the Maidenhead grid
-// and the own QTH on Natural Earth country outlines (web/src/db/world110.json, built
-// by web/scripts/mapdata.py). Canvas, Web Mercator (core/mercator.ts). E-ink friendly:
+// QSO map (VKV contest, Satellite): a dot per QSO at its locator (with the call once
+// there is room), the Maidenhead grid and the own QTH over Natural Earth coastlines
+// and borders (web/src/db/world.json — 1:10m Europe, 1:50m elsewhere — built by
+// web/scripts/mapdata.py). Canvas, Web Mercator (core/mercator.ts). E-ink friendly:
 // a drag only shifts the canvas and the map is redrawn once on release; zoom by buttons.
 
 import { fitView, gridCenter, panView, project, readLogFile, unproject, zoomView } from '../../core/index'
@@ -9,50 +10,71 @@ import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
 import { el, button } from '../dom'
 import { t } from '../i18n'
-import worldText from '../../db/world110.json?raw'
+import worldText from '../../db/world.json?raw'
 
 export interface MapNav {
   back(): void
 }
 
-interface Ring {
-  readonly pts: readonly number[] // lon, lat, lon, lat…
+interface Line {
+  readonly pts: Float32Array // lon, lat, lon, lat…
   readonly west: number
   readonly east: number
   readonly south: number
   readonly north: number
 }
 
-let world: Ring[] | undefined
+interface World {
+  readonly coast: readonly Line[]
+  readonly border: readonly Line[]
+}
 
-/** Country rings with their bounding boxes, parsed on first use. */
-function rings(): Ring[] {
+interface QsoPoint extends LatLon {
+  readonly call: string
+}
+
+let world: World | undefined
+
+/** Decode the delta-encoded 0.01° lines (mapdata.py) with their bounding boxes, once. */
+function loadWorld(): World {
   if (world) return world
-  world = (JSON.parse(worldText) as number[][]).map((pts) => {
+  const raw = JSON.parse(worldText) as { coast: number[][]; border: number[][] }
+  const decode = (enc: number[]): Line => {
+    const pts = new Float32Array(enc.length)
+    let lon = 0
+    let lat = 0
     let west = 180
     let east = -180
     let south = 90
     let north = -90
-    for (let i = 0; i < pts.length; i += 2) {
-      west = Math.min(west, pts[i]!)
-      east = Math.max(east, pts[i]!)
-      south = Math.min(south, pts[i + 1]!)
-      north = Math.max(north, pts[i + 1]!)
+    for (let i = 0; i < enc.length; i += 2) {
+      lon += enc[i]!
+      lat += enc[i + 1]!
+      const x = lon / 100
+      const y = lat / 100
+      pts[i] = x
+      pts[i + 1] = y
+      west = Math.min(west, x)
+      east = Math.max(east, x)
+      south = Math.min(south, y)
+      north = Math.max(north, y)
     }
     return { pts, west, east, south, north }
-  })
+  }
+  world = { coast: raw.coast.map(decode), border: raw.border.map(decode) }
   return world
 }
 
 const ZOOM = 2
 const SQUARE_MIN_PX = 60 // show the 2°×1° squares once one is at least this wide
+const MAX_LABELS = 80
 
 export class MapScreen implements Screen {
   private readonly root = el('div', 'screen screen--map')
   private readonly wrap = el('div', 'map-wrap')
   private readonly canvas = el('canvas', 'map-canvas')
   private meta: LogMeta | undefined
-  private points: LatLon[] = []
+  private points: QsoPoint[] = []
   private view: MapView | undefined
   private resize: ResizeObserver | undefined
   private drag: { id: number; x: number; y: number; dx: number; dy: number } | undefined
@@ -184,6 +206,7 @@ export class MapScreen implements Screen {
     ctx.strokeStyle = ghost
     ctx.fillStyle = ghost
     ctx.lineWidth = 1
+    ctx.setLineDash([1, 3])
     ctx.beginPath()
     const stepLon = squares ? 2 : 20
     const stepLat = squares ? 1 : 10
@@ -200,6 +223,7 @@ export class MapScreen implements Screen {
       ctx.lineTo(w, y)
     }
     ctx.stroke()
+    ctx.setLineDash([])
     ctx.font = `11px ${font}`
     ctx.textBaseline = 'top'
     for (let lon = lon0; lon < Math.min(180, vis.east); lon += stepLon) {
@@ -210,28 +234,47 @@ export class MapScreen implements Screen {
       }
     }
 
-    // Country outlines.
-    ctx.strokeStyle = fg
-    ctx.lineWidth = 1
-    ctx.beginPath()
-    for (const r of rings()) {
-      if (r.east < vis.west || r.west > vis.east || r.north < vis.south || r.south > vis.north) continue
-      for (let i = 0; i < r.pts.length; i += 2) {
-        const p = px(r.pts[i + 1]!, r.pts[i]!)
-        if (i === 0) ctx.moveTo(p.x, p.y)
-        else ctx.lineTo(p.x, p.y)
+    // Coastlines solid, land borders thinner and dashed.
+    const strokeLines = (lines: readonly Line[]): void => {
+      ctx.beginPath()
+      for (const l of lines) {
+        if (l.east < vis.west || l.west > vis.east || l.north < vis.south || l.south > vis.north) continue
+        let last = px(l.pts[1]!, l.pts[0]!)
+        ctx.moveTo(last.x, last.y)
+        const n = l.pts.length
+        for (let i = 2; i < n; i += 2) {
+          const p = px(l.pts[i + 1]!, l.pts[i]!)
+          // Skip sub-pixel steps (except the last point) — cleaner lines, faster redraw.
+          if (i < n - 2 && Math.abs(p.x - last.x) < 0.8 && Math.abs(p.y - last.y) < 0.8) continue
+          ctx.lineTo(p.x, p.y)
+          last = p
+        }
       }
+      ctx.stroke()
     }
-    ctx.stroke()
+    const map = loadWorld()
+    ctx.strokeStyle = fg
+    ctx.lineJoin = 'round'
+    ctx.lineWidth = 1
+    ctx.setLineDash([4, 3])
+    strokeLines(map.border)
+    ctx.setLineDash([])
+    ctx.lineWidth = 1.6
+    strokeLines(map.coast)
 
-    // QSO dots.
-    ctx.fillStyle = fg
+    // QSO dots with a halo, so they stand out on the lines.
     for (const q of this.points) {
       const p = px(q.lat, q.lon)
       ctx.beginPath()
+      ctx.arc(p.x, p.y, 4.5, 0, 2 * Math.PI)
+      ctx.fillStyle = bg
+      ctx.fill()
+      ctx.beginPath()
       ctx.arc(p.x, p.y, 3.5, 0, 2 * Math.PI)
+      ctx.fillStyle = fg
       ctx.fill()
     }
+    this.drawLabels(ctx, px, w, h, fg, bg, font)
 
     // Own QTH: a ring with a cross.
     const own = gridCenter(this.meta.myGrid)
@@ -252,14 +295,71 @@ export class MapScreen implements Screen {
       ctx.stroke()
     }
   }
+
+  /** Call next to each dot where it fits: greedy, first come first placed, no overlaps. */
+  private drawLabels(
+    ctx: CanvasRenderingContext2D,
+    px: (lat: number, lon: number) => { x: number; y: number },
+    w: number,
+    h: number,
+    fg: string,
+    bg: string,
+    font: string,
+  ): void {
+    ctx.font = `bold 12px ${font}`
+    ctx.textBaseline = 'middle'
+    ctx.lineJoin = 'round'
+    ctx.lineWidth = 3
+    const placed: { x0: number; y0: number; x1: number; y1: number }[] = []
+    // The dots themselves are obstacles too.
+    for (const q of this.points) {
+      const p = px(q.lat, q.lon)
+      placed.push({ x0: p.x - 5, y0: p.y - 5, x1: p.x + 5, y1: p.y + 5 })
+    }
+    const own = this.meta ? gridCenter(this.meta.myGrid) : undefined
+    if (own) {
+      const p = px(own.lat, own.lon)
+      placed.push({ x0: p.x - 12, y0: p.y - 12, x1: p.x + 12, y1: p.y + 12 })
+    }
+    const seen = new Set<string>()
+    let count = 0
+    for (const q of this.points) {
+      if (count >= MAX_LABELS) break
+      const key = `${q.call}@${q.lat},${q.lon}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      const p = px(q.lat, q.lon)
+      if (p.x < 0 || p.y < 0 || p.x > w || p.y > h) continue
+      const tw = ctx.measureText(q.call).width
+      // Try right, left, above, below the dot.
+      const spots = [
+        { x: p.x + 7, y: p.y },
+        { x: p.x - 7 - tw, y: p.y },
+        { x: p.x - tw / 2, y: p.y - 13 },
+        { x: p.x - tw / 2, y: p.y + 13 },
+      ]
+      for (const s of spots) {
+        const box = { x0: s.x - 2, y0: s.y - 7, x1: s.x + tw + 2, y1: s.y + 7 }
+        if (box.x0 < 0 || box.x1 > w || box.y0 < 0 || box.y1 > h) continue
+        if (placed.some((b) => box.x0 < b.x1 && box.x1 > b.x0 && box.y0 < b.y1 && box.y1 > b.y0)) continue
+        placed.push(box)
+        ctx.strokeStyle = bg
+        ctx.strokeText(q.call, s.x, s.y)
+        ctx.fillStyle = fg
+        ctx.fillText(q.call, s.x, s.y)
+        count++
+        break
+      }
+    }
+  }
 }
 
 /** Centres of the QSOs' locators (QSOs without a valid one are skipped). */
-function qsoPoints(qsos: readonly Qso[]): LatLon[] {
-  const out: LatLon[] = []
+function qsoPoints(qsos: readonly Qso[]): QsoPoint[] {
+  const out: QsoPoint[] = []
   for (const q of qsos) {
     const c = q.grid ? gridCenter(q.grid) : undefined
-    if (c) out.push(c)
+    if (c) out.push({ ...c, call: q.call })
   }
   return out
 }

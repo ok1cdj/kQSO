@@ -1,5 +1,5 @@
-// VHF contest statistics: points and the average per QSO for each band (plus the
-// total for a multi-band log) and the top 10 QSOs by points. Plain text, no chart.
+// VHF contest statistics, per band: points, the average per QSO and the band's top 10
+// QSOs by points (bands are never mixed), plus the total for a multi-band log.
 
 import { contestStats, readLogFile, scoreLog } from '../../core/index'
 import type { ContestStats } from '../../core/index'
@@ -38,16 +38,22 @@ export class StatsScreen implements Screen {
       el('b', 'title', `${meta.name} · ${t('qsolist.stats')}`),
     )
 
-    const lines = bands.map((b) => el('div', 'qsosum', summary(b.band, contestStats([b]))))
-    const total = contestStats(bands)
-    if (bands.length > 1) lines.push(el('div', 'qsosum', summary(t('stats.total'), total)))
-
-    const top = el('ol', 'stats-top')
-    for (const r of total.top) {
-      top.append(el('li', 'stats-row', t('stats.row', { call: r.qso.call.padEnd(9), grid: (r.qso.grid ?? '').padEnd(6), points: String(r.points).padStart(4), band: r.qso.signal.band })))
+    // One block per band — its line and its own top 10 (bands never mix), then the total.
+    const blocks: HTMLElement[] = []
+    for (const b of bands) {
+      const st = contestStats([b])
+      blocks.push(el('div', 'qsosum', summary(b.band, st)))
+      if (st.top.length === 0) continue
+      const top = el('ol', 'stats-top')
+      for (const r of st.top) {
+        const row = { call: r.qso.call.padEnd(9), grid: (r.qso.grid ?? '').padEnd(6), points: String(r.points).padStart(4) }
+        top.append(el('li', 'stats-row', t('stats.row', row)))
+      }
+      blocks.push(top)
     }
-    const topBlock = total.top.length > 0 ? [el('div', 'qsosum', t('stats.top')), top] : [el('div', 'empty', t('qsolist.empty'))]
-    this.root.replaceChildren(bar, ...lines, ...topBlock)
+    if (bands.length > 1) blocks.push(el('div', 'qsosum', summary(t('stats.total'), contestStats(bands))))
+    if (bands.length === 0) blocks.push(el('div', 'empty', t('qsolist.empty')))
+    this.root.replaceChildren(bar, ...blocks)
   }
 }
 

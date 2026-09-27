@@ -66,8 +66,7 @@ const en = {
   'map.noGrid': 'Without a locator (not on the map): {n}',
   'stats.line': '{band} · {qsos} QSO · {points} pts · ⌀ {avg} pts/QSO',
   'stats.total': 'Total',
-  'stats.top': 'Top 10 QSOs',
-  'stats.row': '{call} {grid} {points} pts  {band}',
+  'stats.row': '{call} {grid} {points} pts',
   'loglist.edi': 'EDI',
 
   'qsoedit.title': 'Edit QSO',
@@ -217,8 +216,7 @@ const cs: Record<keyof typeof en, string> = {
   'map.noGrid': 'Bez lokátoru (nejsou na mapě): {n}',
   'stats.line': '{band} · {qsos} QSO · {points} b · ⌀ {avg} b/QSO',
   'stats.total': 'Celkem',
-  'stats.top': 'Top 10 spojení',
-  'stats.row': '{call} {grid} {points} b  {band}',
+  'stats.row': '{call} {grid} {points} b',
   'loglist.edi': 'EDI',
 
   'qsoedit.title': 'Úprava QSO',
