@@ -11,7 +11,7 @@ desktop.
 *Formerly kLog — renamed to avoid a clash with KLog by EA4K.*
 
 - **Live web:** <https://kqso.ok1cdj.com/> (web 1.3.0; the old `ok1cdj.github.io/kQSO/` redirects there)
-- **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.2)
+- **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.3)
 - Spec: [`ZADANI-kQSO.md`](ZADANI-kQSO.md) (Czech) · plan: [`PLAN-kQSO.md`](PLAN-kQSO.md)
 
 ## Features
@@ -136,7 +136,7 @@ export JAVA_HOME=/opt/android-studio/jbr
   build) → `web/dist` deployed to GitHub Pages, custom domain `kqso.ok1cdj.com`
   (DNS: `CNAME kqso → ok1cdj.github.io`). The build uses base `/`.
 - **APK:** bump `versionCode` / `versionName` in `app/build.gradle.kts`, then push a
-  `v*` tag (`git tag v1.2 && git push origin v1.2`) → `release.yml` builds the web,
+  `v*` tag (`git tag v1.3 && git push origin v1.3`) → `release.yml` builds the web,
   signs the release APK and attaches it to a GitHub Release as
   `kqso-<versionName>.apk`. It can also be run by hand (`workflow_dispatch`) —
   that only uploads the APK as a build artifact.
