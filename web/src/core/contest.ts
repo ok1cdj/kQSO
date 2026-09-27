@@ -57,3 +57,24 @@ export function scoreLog(qsos: readonly Qso[], myGrid: string): BandScore[] {
     return score
   })
 }
+
+export interface ContestStats {
+  readonly qsos: number // valid (non-dupe) QSOs
+  readonly points: number
+  readonly avg: number // points per valid QSO, 1 decimal; 0 for no QSO
+  readonly top: readonly ScoredQso[] // highest points first, dupes excluded
+}
+
+const TOP_N = 10
+
+/** Points, average per QSO and the top 10 QSOs — for a set of bands (one, or all for the total). */
+export function contestStats(bands: readonly BandScore[]): ContestStats {
+  const qsos = bands.reduce((n, b) => n + b.qsos, 0)
+  const points = bands.reduce((n, b) => n + b.points, 0)
+  const top = bands
+    .flatMap((b) => b.rows)
+    .filter((r) => !r.dupe && r.points > 0)
+    .sort((a, b) => b.points - a.points || a.index - b.index)
+    .slice(0, TOP_N)
+  return { qsos, points, avg: qsos === 0 ? 0 : Math.round((points / qsos) * 10) / 10, top }
+}

@@ -1,6 +1,6 @@
 // QSO list (ch. 15 #4): a table of the log's QSOs, tap a row to edit it. A VHF-contest
 // log also shows the points per QSO (DUPE for a repeat on the band) and a score line
-// per band on top.
+// per band on top. VKV and Satellite logs open the map, VKV also the statistics.
 
 import { PROFILES, readLogFile, scoreLog } from '../../core/index'
 import type { BandScore, Qso, ScoredQso } from '../../core/index'
@@ -12,6 +12,8 @@ import { t } from '../i18n'
 export interface QsoListNav {
   back(): void
   editQso(index: number): void
+  toMap(): void
+  toStats(): void
 }
 
 const pad2 = (n: number): string => (n < 10 ? '0' + n : String(n))
@@ -42,8 +44,11 @@ export class QsoListScreen implements Screen {
       button(`‹ ${t('common.back')}`, () => this.nav.back(), 'hdr-nav'),
       el('b', 'title', `${meta.name} · ${qsos.length} QSO`),
     )
+    const profile = PROFILES[meta.profile]
+    if (profile.map) bar.append(button(t('qsolist.map'), () => this.nav.toMap(), 'btn btn--small'))
+    if (profile.contest) bar.append(button(t('qsolist.stats'), () => this.nav.toStats(), 'btn btn--small'))
 
-    const bands = PROFILES[meta.profile].contest ? scoreLog(qsos, meta.myGrid) : []
+    const bands = profile.contest ? scoreLog(qsos, meta.myGrid) : []
     const scored = new Map<number, ScoredQso>()
     for (const b of bands) for (const r of b.rows) scored.set(r.index, r)
 

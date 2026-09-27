@@ -61,6 +61,7 @@ const EN: readonly Section[] = [
       { code: '59 001', text: 'Spaced report + serial works too. Your sent serial auto-increments (TX in the header).' },
       { text: 'Points: 1 per km between locator centres (IARU R1). The preview shows QRB as soon as the locator is typed. Each station counts once per band — a repeat, even in another mode, is a dupe with 0 points.' },
       { text: 'QSO list: points per QSO and a score line per band (QSO · points · WWL · ODX). Log list → EDI: the file for the contest manager, one per band; the ADIF keeps all bands.' },
+      { text: 'QSO list → Map: a dot per worked locator, the grid and your QTH; drag to move, − + to zoom, ⤢ to fit. QSO list → Statistics: points, average per QSO and the top 10 QSOs.' },
     ],
   },
   {
@@ -97,6 +98,7 @@ const EN: readonly Section[] = [
     rows: [
       { text: 'One log per pass: the satellite is picked when you create the log, and it sets the uplink/downlink bands and SAT_NAME. The header shows it.' },
       { code: '9A5Y 59 JN86', text: 'Exchange = report + locator. On linear birds you can switch ssb/cw; typed band tokens are ignored.' },
+      { text: 'QSO list → Map shows the worked locators; QSOs without a locator are counted above the map.' },
     ],
   },
   {
@@ -149,6 +151,7 @@ const CS: readonly Section[] = [
       { code: '59 001', text: 'Funguje i s mezerou. Tvé vyslané číslo se počítá samo (TX v hlavičce).' },
       { text: 'Body: 1 za km mezi středy lokátorů (IARU R1). Náhled ukáže QRB, jakmile napíšeš lokátor. Každá stanice se počítá jednou na pásmo — opakování, i jiným módem, je duplicita za 0 bodů.' },
       { text: 'Seznam QSO: body u každého QSO a řádek za pásmo (QSO · body · WWL · ODX). Seznam logů → EDI: soubor pro vyhodnocovatele, jeden za pásmo; ADIF drží všechna pásma.' },
+      { text: 'Seznam QSO → Mapa: tečka za každý lokátor, mřížka a tvoje QTH; tažením posuneš, − + zoom, ⤢ celé. Seznam QSO → Statistika: body, průměr na QSO a top 10 spojení.' },
     ],
   },
   {
@@ -185,6 +188,7 @@ const CS: readonly Section[] = [
     rows: [
       { text: 'Co přelet, to log: družici vybereš při zakládání logu a ta nastaví pásma uplink/downlink i SAT_NAME. Hlavička ji ukazuje.' },
       { code: '9A5Y 59 JN86', text: 'Předává se report + locator. Na lineárních družicích můžeš přepnout ssb/cw; napsané pásmo se ignoruje.' },
+      { text: 'Seznam QSO → Mapa ukáže udělané lokátory; QSO bez lokátoru jsou spočítané nad mapou.' },
     ],
   },
   {

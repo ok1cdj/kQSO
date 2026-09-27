@@ -66,13 +66,14 @@ export interface LogProfile {
   readonly bundledDb: BundledDbId | null // base callsign set for suggestions (calldb.ts); null = live layer only
   readonly wavelogPush: boolean // offer the manual Wavelog push (ch. 19.2); activations go elsewhere
   readonly contest: boolean // VHF contest: dupe = call + band (any mode), QRB points, EDI export
+  readonly map: boolean // QSO map of worked locators (VKV, Satellite)
 }
 
 export const PROFILES: Readonly<Record<ProfileId, LogProfile>> = Object.freeze({
-  vkv: Object.freeze({ id: 'vkv', serialAfterCall: true, parsesName: false, usesReferences: false, fixedBand: false, requiresGrid: true, bundledDb: 'vkv', wavelogPush: true, contest: true }),
-  aktivace: Object.freeze({ id: 'aktivace', serialAfterCall: false, parsesName: false, usesReferences: true, fixedBand: false, requiresGrid: false, bundledDb: 'awards', wavelogPush: false, contest: false }),
-  obecny: Object.freeze({ id: 'obecny', serialAfterCall: false, parsesName: true, usesReferences: false, fixedBand: false, requiresGrid: false, bundledDb: null, wavelogPush: true, contest: false }),
-  sat: Object.freeze({ id: 'sat', serialAfterCall: false, parsesName: false, usesReferences: false, fixedBand: true, requiresGrid: false, bundledDb: 'sat', wavelogPush: true, contest: false }),
+  vkv: Object.freeze({ id: 'vkv', serialAfterCall: true, parsesName: false, usesReferences: false, fixedBand: false, requiresGrid: true, bundledDb: 'vkv', wavelogPush: true, contest: true, map: true }),
+  aktivace: Object.freeze({ id: 'aktivace', serialAfterCall: false, parsesName: false, usesReferences: true, fixedBand: false, requiresGrid: false, bundledDb: 'awards', wavelogPush: false, contest: false, map: false }),
+  obecny: Object.freeze({ id: 'obecny', serialAfterCall: false, parsesName: true, usesReferences: false, fixedBand: false, requiresGrid: false, bundledDb: null, wavelogPush: true, contest: false, map: false }),
+  sat: Object.freeze({ id: 'sat', serialAfterCall: false, parsesName: false, usesReferences: false, fixedBand: true, requiresGrid: false, bundledDb: 'sat', wavelogPush: true, contest: false, map: true }),
 })
 
 /** Log-creation payload (ch. 8 header + ch. 9.3 sticky "my-*" source). Storage-agnostic. */

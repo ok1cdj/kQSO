@@ -11,6 +11,8 @@ import { QsoEditScreen } from './screens/qsoedit'
 import { SettingsScreen } from './screens/settings'
 import { HelpScreen } from './screens/help'
 import { EdiExportScreen } from './screens/ediexport'
+import { MapScreen } from './screens/map'
+import { StatsScreen } from './screens/stats'
 import { trackScreen } from './stats'
 
 export interface Screen {
@@ -93,6 +95,8 @@ export class App {
       new QsoListScreen(this.platform, logId, {
         back: () => this.showLogging(logId),
         editQso: (index) => this.showQsoEdit(logId, index, () => this.showQsoList(logId)),
+        toMap: () => this.show(new MapScreen(this.platform, logId, { back: () => this.showQsoList(logId) }), 'map'),
+        toStats: () => this.show(new StatsScreen(this.platform, logId, { back: () => this.showQsoList(logId) }), 'stats'),
       }),
       'qsolist',
     )

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { gridCenter, qrbKm, qsoPoints } from '../src/core/locator'
-import { scoreLog } from '../src/core/contest'
+import { contestStats, scoreLog } from '../src/core/contest'
 import { isDupe } from '../src/core/dupe'
 import type { Qso } from '../src/core/model'
 
@@ -99,5 +99,32 @@ describe('isDupe without a mode (VHF contest)', () => {
     expect(isDupe(log, 'OK1ABC', '2m')).toBe(true)
     expect(isDupe(log, 'OK1ABC', '2m', 'CW')).toBe(false)
     expect(isDupe(log, 'OK1ABC', '70cm')).toBe(false)
+  })
+})
+
+describe('contestStats', () => {
+  it('points, average per QSO and the top list, dupes excluded', () => {
+    const bands = scoreLog(
+      [q('OZ9SIG', '2m', 'SSB', 'JO65ER'), q('DL5BBF', '2m', 'SSB', 'JO42LT'), q('OZ9SIG', '2m', 'CW', 'JO65ER'), q('OY9JD', '2m', 'CW', 'IP62OA')],
+      'JO65FR',
+    )
+    const s = contestStats(bands)
+    expect(s).toMatchObject({ qsos: 3, points: 6 + 396 + 1302, avg: 568 })
+    expect(s.top.map((r) => r.qso.call)).toEqual(['OY9JD', 'DL5BBF', 'OZ9SIG'])
+  })
+
+  it('total over bands; ties keep log order; at most 10', () => {
+    const qsos = [q('DL1AAA', '2m', 'SSB', 'JO42LT'), q('DL1AAA', '70cm', 'SSB', 'JO42LT')]
+    for (let i = 0; i < 12; i++) qsos.push(q(`OZ${i}ABC`, '2m', 'SSB', 'JO65ER'))
+    const bands = scoreLog(qsos, 'JO65FR')
+    const s = contestStats(bands)
+    expect(s.qsos).toBe(14)
+    expect(s.top).toHaveLength(10)
+    expect(s.top.slice(0, 2).map((r) => r.qso.signal.band)).toEqual(['2m', '70cm'])
+    expect(contestStats(bands.filter((b) => b.band === '70cm'))).toMatchObject({ qsos: 1, points: 396, avg: 396 })
+  })
+
+  it('empty log', () => {
+    expect(contestStats([])).toEqual({ qsos: 0, points: 0, avg: 0, top: [] })
   })
 })

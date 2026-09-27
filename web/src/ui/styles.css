@@ -424,6 +424,35 @@ body {
   border-bottom: var(--border-w) solid var(--line);
 }
 
+/* QSO map: the canvas fills everything below the bar; a drag shifts it (touch-action
+   none so the browser doesn't scroll) and the map is redrawn on release. */
+.screen--map {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.map-wrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+.map-canvas {
+  display: block;
+  touch-action: none;
+}
+/* Contest statistics: top 10 QSOs. */
+.stats-top {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  margin: 0.3rem 0;
+  padding-left: 2.2rem;
+}
+.stats-top li {
+  padding: 0.15rem 0;
+  white-space: pre;
+}
+
 /* Tile picker (New Log): on-brand tiles instead of a native <select> — used for
    the profile and the satellite. */
 .tilegrid {
