@@ -580,6 +580,10 @@ body {
   padding: 0;
   list-style: none;
 }
+.recent-row--aligned {
+  white-space: pre;
+  overflow: hidden;
+}
 .recent-row {
   width: 100%;
   text-align: left;

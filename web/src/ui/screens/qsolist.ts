@@ -10,6 +10,7 @@ import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
 import { el, button } from '../dom'
 import { t } from '../i18n'
+import { alignColumns, allFit } from '../columns'
 
 export interface QsoListNav {
   back(): void
@@ -81,11 +82,8 @@ export class QsoListScreen implements Screen {
     }
     const cells = this.qsos.map((q, i) => rowCells(q, this.scored.get(i)))
     if (!this.platform.nativeVersion) {
-      this.fillRows(alignRows(cells), true)
-      const fits = Array.from(this.list.querySelectorAll<HTMLElement>('.qsorow-open')).every(
-        (b) => b.scrollWidth <= b.clientWidth,
-      )
-      if (fits) return
+      this.fillRows(alignColumns(cells, true), true)
+      if (allFit(this.list.querySelectorAll<HTMLElement>('.qsorow-open'))) return
     }
     this.fillRows(
       this.qsos.map((q, i) => formatRow(q) + pointsSuffix(this.scored.get(i))),
@@ -123,20 +121,6 @@ function rowCells(q: Qso, s: ScoredQso | undefined): string[] {
     q.satName ? `🛰${q.satName}` : '',
     s ? (s.dupe ? t('qsolist.dupe') : String(s.points)) : '',
   ]
-}
-
-/** Pad every column to its widest value in this log; columns empty in every row drop out. */
-function alignRows(rows: readonly string[][]): string[] {
-  const n = rows[0]?.length ?? 0
-  const widths = Array.from({ length: n }, (_, c) => Math.max(...rows.map((r) => r[c]!.length)))
-  const last = n - 1
-  return rows.map((r) =>
-    r
-      .map((cell, c) => (c === last ? cell.padStart(widths[c]!) : cell.padEnd(widths[c]!)))
-      .filter((_, c) => widths[c]! > 0)
-      .join('  ')
-      .trimEnd(),
-  )
 }
 
 function scoreLine(b: BandScore): string {

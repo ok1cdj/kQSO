@@ -32,6 +32,7 @@ import type { Screen } from '../app'
 import { el, button } from '../dom'
 import { BUNDLED_DB_SETTING, bundledSource } from '../bundled-db'
 import { t } from '../i18n'
+import { alignColumns, allFit } from '../columns'
 import { createKeyboard } from '../keyboard'
 import type { KeyAction } from '../keys'
 
@@ -64,6 +65,8 @@ export class LoggingScreen implements Screen {
   private readonly previewEl = el('div', 'preview')
   private readonly stripEl = el('div', 'strip')
   private readonly recentEl = el('ol', 'recent') // wide layout only (hidden in portrait by CSS)
+  private recentResize: ResizeObserver | undefined
+  private recentWidth = 0
   private readonly banner = el('div', 'banner')
   private readonly onKeydown = (e: KeyboardEvent): void => this.onHardwareKey(e)
   private readonly onWideChange = (): void => this.renderStrip()
@@ -91,6 +94,7 @@ export class LoggingScreen implements Screen {
   unmount(): void {
     window.removeEventListener('keydown', this.onKeydown)
     WIDE.removeEventListener('change', this.onWideChange)
+    this.recentResize?.disconnect()
     this.platform.keepAwake(false)
   }
 
@@ -117,6 +121,13 @@ export class LoggingScreen implements Screen {
     await this.offerRecovery()
     this.renderRecent()
     this.renderAll()
+    if (!this.platform.nativeVersion) {
+      // Re-check the alignment when the column width changes (rotation → wide layout).
+      this.recentResize = new ResizeObserver(() => {
+        if (this.recentEl.clientWidth !== this.recentWidth) this.renderRecent()
+      })
+      this.recentResize.observe(this.recentEl)
+    }
   }
 
   // --- input -----------------------------------------------------------------
@@ -366,16 +377,26 @@ export class LoggingScreen implements Screen {
   }
 
   /** Wide layout: the latest QSOs, newest at the bottom next to the input; tap to edit.
-   *  Only re-rendered when the log changes, not per keystroke (e-ink repaints). */
+   *  Only re-rendered when the log or the column width changes, not per keystroke
+   *  (e-ink repaints). On the web the columns are aligned when every row fits. */
   private renderRecent(): void {
+    this.recentWidth = this.recentEl.clientWidth
     const from = Math.max(0, this.qsos.length - RECENT_MAX)
-    this.recentEl.replaceChildren(
-      ...this.qsos.slice(from).map((q, i) => {
-        const li = el('li')
-        li.append(button(formatQso(q), () => this.nav.editQso(from + i), 'recent-row'))
-        return li
-      }),
-    )
+    const shown = this.qsos.slice(from)
+    const fill = (texts: readonly string[], cls: string): void => {
+      this.recentEl.replaceChildren(
+        ...texts.map((text, i) => {
+          const li = el('li')
+          li.append(button(text, () => this.nav.editQso(from + i), cls))
+          return li
+        }),
+      )
+    }
+    if (!this.platform.nativeVersion && shown.length > 0) {
+      fill(alignColumns(shown.map(recentCells)), 'recent-row recent-row--aligned')
+      if (allFit(this.recentEl.querySelectorAll<HTMLElement>('.recent-row'))) return
+    }
+    fill(shown.map(formatQso), 'recent-row')
   }
 
   private suggestButton(label: string, onTap: () => void, cls = 'suggest'): HTMLButtonElement {
@@ -435,6 +456,18 @@ function unknownChip(raw: string): HTMLElement {
   e.title = raw
   e.append(el('small', undefined, '?'))
   return e
+}
+
+/** formatQso() split into columns for the aligned recent-QSO rows. */
+function recentCells(q: Qso): string[] {
+  return [
+    hhmm(q.timeOn),
+    q.call,
+    `${q.report.sent}/${q.report.rcvd}`,
+    q.sentSerial || q.serial ? `#${q.sentSerial ?? '—'}/${q.serial ?? '—'}` : '',
+    q.grid ?? '',
+    q.theirRef?.value ?? '',
+  ]
 }
 
 function formatQso(q: Qso): string {
