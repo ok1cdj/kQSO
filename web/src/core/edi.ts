@@ -6,13 +6,69 @@ import type { EdiContest, LogMeta, Qso } from './model'
 import { scoreLog } from './contest'
 import type { BandScore } from './contest'
 
-/** Station fields of the EDI header — the same for every contest, kept in Settings. */
+/** Station fields of the EDI header that are the same on every band, kept in Settings. */
 export interface EdiStation {
   readonly name: string // RName
   readonly email: string // RHBBS (the IARU rules require an e-mail address here)
+}
+
+/** Per-band equipment of the EDI header — each band has its own, kept in Settings. */
+export interface EdiEquipment {
   readonly power: string // SPowe, watts
   readonly antenna: string // SAnte
+  readonly antennaHeight: string // SAntH, "above ground;above sea level" in m
   readonly tx: string // STXEq (optional)
+  readonly rx: string // SRXEq (optional)
+}
+
+/** What the EDI export remembers for the next contest (Settings key ediStation, JSON). */
+export interface EdiSettings {
+  readonly station: EdiStation
+  readonly bands: Readonly<Record<string, EdiEquipment>> // by our band key (2m, 70cm…)
+  readonly fallback?: EdiEquipment // a single set saved by kQSO ≤ 1.3 — prefills every band
+}
+
+export const EMPTY_EQUIPMENT: EdiEquipment = { power: '', antenna: '', antennaHeight: '', tx: '', rx: '' }
+
+const str = (v: unknown): string => (typeof v === 'string' ? v : '')
+
+function equipment(v: unknown): EdiEquipment {
+  const o = (v ?? {}) as Record<string, unknown>
+  return { power: str(o.power), antenna: str(o.antenna), antennaHeight: str(o.antennaHeight), tx: str(o.tx), rx: str(o.rx) }
+}
+
+/**
+ * Read the remembered EDI fields. Tolerant: bad JSON or missing fields give empty
+ * values. The old flat format ({name, email, power, antenna, tx}) becomes the station
+ * + a fallback equipment, so nothing typed before is lost.
+ */
+export function parseEdiSettings(text: string | null): EdiSettings {
+  let o: Record<string, unknown> = {}
+  try {
+    const v: unknown = JSON.parse(text ?? '{}')
+    if (v && typeof v === 'object') o = v as Record<string, unknown>
+  } catch {
+    // keep empty
+  }
+  const bands: Record<string, EdiEquipment> = {}
+  if (o.bands && typeof o.bands === 'object') {
+    for (const [band, eq] of Object.entries(o.bands as Record<string, unknown>)) bands[band] = equipment(eq)
+  }
+  const legacy = equipment(o)
+  const hasLegacy = Object.values(legacy).some((x) => x !== '')
+  const out: EdiSettings = { station: { name: str(o.name), email: str(o.email) }, bands }
+  return hasLegacy ? { ...out, fallback: legacy } : out
+}
+
+/** JSON for the setting. An old single set stays as the flat fields, so a band that
+ *  has never been exported still gets it prefilled. */
+export function serializeEdiSettings(s: EdiSettings): string {
+  return JSON.stringify({ name: s.station.name, email: s.station.email, bands: s.bands, ...(s.fallback ?? {}) })
+}
+
+/** Equipment to prefill for a band: its own, else the old single set, else empty. */
+export function equipmentFor(s: EdiSettings, band: string): EdiEquipment {
+  return s.bands[band] ?? s.fallback ?? EMPTY_EQUIPMENT
 }
 
 // PBand values from the REG1TEST band table, keyed by our band dictionary.
@@ -81,7 +137,14 @@ export function ediBands(qsos: readonly Qso[], myGrid: string): BandScore[] {
 }
 
 /** REG1TEST text for one band of a log. */
-export function writeEdi(meta: LogMeta, qsos: readonly Qso[], band: string, contest: EdiContest, station: EdiStation): string {
+export function writeEdi(
+  meta: LogMeta,
+  qsos: readonly Qso[],
+  band: string,
+  contest: EdiContest,
+  station: EdiStation,
+  eq: EdiEquipment,
+): string {
   const score = scoreLog(qsos, meta.myGrid).find((b) => b.band === band)
   const rows = score?.rows ?? []
   const dates = rows.map((r) => ymd(r.qso.timeOn)).sort()
@@ -110,11 +173,11 @@ export function writeEdi(meta: LogMeta, qsos: readonly Qso[], band: string, cont
     free('RHBBS', station.email),
     free('MOpe1', contest.operators.toUpperCase()),
     'MOpe2=',
-    free('STXEq', station.tx),
-    `SPowe=${station.power.replace(/\D/g, '')}`,
-    'SRXEq=',
-    free('SAnte', station.antenna),
-    'SAntH=',
+    free('STXEq', eq.tx),
+    `SPowe=${eq.power.replace(/\D/g, '')}`,
+    free('SRXEq', eq.rx),
+    free('SAnte', eq.antenna),
+    free('SAntH', eq.antennaHeight),
     `CQSOs=${score?.qsos ?? 0};1`,
     `CQSOP=${score?.points ?? 0}`,
     `CWWLs=${score?.wwls ?? 0};0;1`,

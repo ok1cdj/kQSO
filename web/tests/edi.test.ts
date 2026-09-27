@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { ediAscii, ediBand, ediBands, writeEdi } from '../src/core/edi'
-import type { EdiStation } from '../src/core/edi'
+import { ediAscii, ediBand, ediBands, equipmentFor, parseEdiSettings, serializeEdiSettings, writeEdi } from '../src/core/edi'
+import type { EdiEquipment, EdiStation } from '../src/core/edi'
 import type { EdiContest, LogMeta, Qso } from '../src/core/model'
 import { readLogFile, writeLogFile } from '../src/core/adif/logfile'
 
@@ -12,7 +12,9 @@ const meta: LogMeta = {
   defaultSignal: { band: '2m', mode: 'SSB' },
 }
 const contest: EdiContest = { contest: 'Provozní aktiv', section: 'so', operators: '' }
-const station: EdiStation = { name: 'Ondřej Koloničný', email: 'ok1cdj@example.org', power: '50 W', antenna: '9 el. Yagi', tx: '' }
+const station: EdiStation = { name: 'Ondřej Koloničný', email: 'ok1cdj@example.org' }
+const eq2m: EdiEquipment = { power: '50 W', antenna: '9 el. Yagi', antennaHeight: '', tx: '', rx: '' }
+const eq70: EdiEquipment = { power: '25', antenna: '21 el. Yagi', antennaHeight: '12;650', tx: 'IC-9700', rx: 'IC-9700 + LNA' }
 
 let n = 0
 function q(call: string, band: string, mode: string, grid: string, sentSerial: string, serial: string, rst = '59'): Qso {
@@ -38,7 +40,7 @@ const log: Qso[] = [
 
 describe('writeEdi', () => {
   it('golden file for the 2m band', () => {
-    expect(writeEdi(meta, log, '2m', contest, station).split('\r\n')).toEqual([
+    expect(writeEdi(meta, log, '2m', contest, station, eq2m).split('\r\n')).toEqual([
       '[REG1TEST;1]',
       'TName=Provozni aktiv',
       'TDate=20260905;20260905',
@@ -86,14 +88,18 @@ describe('writeEdi', () => {
   })
 
   it('one file per band: 70cm has its own records, mode code FM = 6', () => {
-    const edi = writeEdi(meta, log, '70cm', contest, station)
+    const edi = writeEdi(meta, log, '70cm', contest, station, eq70)
     expect(edi).toContain('PBand=432 MHz')
+    // Each band carries its own equipment.
+    for (const l of ['STXEq=IC-9700', 'SPowe=25', 'SRXEq=IC-9700 + LNA', 'SAnte=21 el. Yagi', 'SAntH=12;650']) {
+      expect(edi).toContain(l + '\r\n')
+    }
     expect(edi).toContain('[QSORecords;1]\r\n260905;1447;DL5BBF;6;59;003;59;023;;JO42LT;396;;N;;\r\n')
   })
 
   it('7-bit ASCII, CRLF only, every line ≤ 75 characters', () => {
-    const long = { ...station, antenna: 'Á'.repeat(200) }
-    const edi = writeEdi(meta, log, '2m', { ...contest, operators: 'ok1abc;ok1xyz' }, long)
+    const long = { ...eq2m, antenna: 'Á'.repeat(200) }
+    const edi = writeEdi(meta, log, '2m', { ...contest, operators: 'ok1abc;ok1xyz' }, station, long)
     expect(/^[\r\n\x20-\x7e]*$/.test(edi)).toBe(true)
     expect(edi.replace(/\r\n/g, '')).not.toMatch(/[\r\n]/)
     for (const line of edi.split('\r\n')) expect(line.length).toBeLessThanOrEqual(75)
@@ -122,5 +128,34 @@ describe('contest fields in the log header', () => {
     const withEdi: LogMeta = { ...meta, edi: { contest: 'Polní den', section: 'MO', operators: 'OK1ABC' } }
     expect(readLogFile(writeLogFile(withEdi, log)).meta.edi).toEqual(withEdi.edi)
     expect(readLogFile(writeLogFile(meta, log)).meta.edi).toBeUndefined()
+  })
+})
+
+describe('remembered EDI settings', () => {
+  it('per-band equipment round-trips; each band prefills its own', () => {
+    const saved = { station, bands: { '2m': eq2m, '70cm': eq70 } }
+    const back = parseEdiSettings(serializeEdiSettings(saved))
+    expect(back).toEqual(saved)
+    expect(equipmentFor(back, '2m')).toEqual(eq2m)
+    expect(equipmentFor(back, '70cm')).toEqual(eq70)
+    expect(equipmentFor(back, '23cm')).toEqual({ power: '', antenna: '', antennaHeight: '', tx: '', rx: '' })
+  })
+
+  it('the old single set (kQSO ≤ 1.3) prefills every band until the band has its own', () => {
+    const old = JSON.stringify({ name: 'Petr', email: 'p@example.org', power: '50', antenna: 'Yagi', tx: 'FT-817' })
+    const s = parseEdiSettings(old)
+    expect(s.station).toEqual({ name: 'Petr', email: 'p@example.org' })
+    expect(equipmentFor(s, '70cm')).toEqual({ power: '50', antenna: 'Yagi', antennaHeight: '', tx: 'FT-817', rx: '' })
+    const edited = parseEdiSettings(serializeEdiSettings({ ...s, bands: { '2m': eq2m } }))
+    expect(equipmentFor(edited, '2m')).toEqual(eq2m)
+    expect(equipmentFor(edited, '70cm').antenna).toBe('Yagi')
+  })
+
+  it('missing or broken JSON gives empty values', () => {
+    for (const text of [null, '', 'not json', '[]', '{"bands": 5}']) {
+      const s = parseEdiSettings(text)
+      expect(s.station).toEqual({ name: '', email: '' })
+      expect(s.bands).toEqual({})
+    }
   })
 })

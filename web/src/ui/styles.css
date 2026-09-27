@@ -447,6 +447,12 @@ body {
   display: block;
   touch-action: none;
 }
+/* EDI export: one block per band with its own equipment and export button. */
+.edi-band {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
 /* Contest statistics: top 10 QSOs. */
 .stats-top {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;

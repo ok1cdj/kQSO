@@ -1,10 +1,12 @@
 // EDI export for a VHF-contest log (REG1TEST, ch. 14): a short prefilled form, then
-// one button per band — the rules want one file per band. Contest fields (name,
-// section, operators) are stored in the log header; station fields (name, e-mail,
-// power, antenna, TX) in Settings, so they are typed once. The ADIF log stays whole.
+// one block per band — the rules want one file per band, and each band has its own
+// equipment (power, antenna, antenna height, TX, RX). Contest fields (name, section,
+// operators) are stored in the log header; the station (name, e-mail) and each band's
+// equipment in Settings, saved as they are typed, so the next contest is prefilled
+// band by band. The ADIF log stays whole.
 
-import { ediBand, ediBands, readLogFile, writeEdi, writeLogFile } from '../../core/index'
-import type { EdiContest, EdiStation, LogMeta, Qso } from '../../core/index'
+import { ediBand, ediBands, equipmentFor, parseEdiSettings, readLogFile, serializeEdiSettings, writeEdi, writeLogFile } from '../../core/index'
+import type { EdiContest, EdiEquipment, EdiSettings, EdiStation, LogMeta, Qso } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
 import { el, button, fieldError, fieldRow, tilePicker } from '../dom'
@@ -16,17 +18,16 @@ export interface EdiExportNav {
   back(): void
 }
 
-/** Settings key for the remembered station fields (JSON EdiStation). */
+/** Settings key for the remembered station + per-band equipment (JSON, core/edi.ts). */
 export const EDI_STATION_SETTING = 'ediStation'
 
 // IARU R1 sections for 144 MHz and up (SO/MO, low power, 6 hours).
 const SECTIONS = ['SO', 'SO-LP', 'MO', 'MO-LP', '6H'] as const
 
-const EMPTY_STATION: EdiStation = { name: '', email: '', power: '', antenna: '', tx: '' }
-
 export class EdiExportScreen implements Screen {
   private readonly root = el('form', 'screen screen--form')
   private meta!: LogMeta // kept current after the contest fields are saved
+  private saved!: EdiSettings // remembered station + per-band equipment, updated as typed
 
   constructor(
     private readonly platform: KQSOPlatform,
@@ -44,7 +45,7 @@ export class EdiExportScreen implements Screen {
   private async render(): Promise<void> {
     const { meta, qsos } = readLogFile(await this.platform.readLog(this.logId))
     this.meta = meta
-    const station = await this.station()
+    this.saved = parseEdiSettings(await this.platform.getSetting(EDI_STATION_SETTING))
     const prev = meta.edi
 
     const contest = fieldRow(t('edi.contest'), prev?.contest ?? meta.name)
@@ -60,53 +61,80 @@ export class EdiExportScreen implements Screen {
     }
     syncOps()
 
-    const name = fieldRow(t('edi.name'), station.name)
-    const email = fieldRow(t('edi.email'), station.email)
+    const name = fieldRow(t('edi.name'), this.saved.station.name)
+    const email = fieldRow(t('edi.email'), this.saved.station.email)
     const emailErr = fieldError(email, t('edi.required'))
-    const power = fieldRow(t('edi.power'), station.power)
-    const powerErr = fieldError(power, t('edi.powerInvalid'))
-    const antenna = fieldRow(t('edi.antenna'), station.antenna)
-    const antennaErr = fieldError(antenna, t('edi.required'))
-    const tx = fieldRow(t('edi.tx'), station.tx)
-    for (const f of [name, email, antenna, tx]) f.input.autocapitalize = 'off'
+    for (const f of [name, email]) f.input.autocapitalize = 'off'
     email.input.type = 'email'
-    power.input.inputMode = 'numeric'
+    const readStation = (): EdiStation => ({ name: name.input.value.trim(), email: email.input.value.trim() })
+    for (const f of [name, email]) f.input.addEventListener('change', () => void this.remember({ station: readStation() }))
 
-    // The IARU rules' minimum header: section, e-mail, power, antenna (+ call/locator/band, always set).
-    const collect = (): { contest: EdiContest; station: EdiStation } | null => {
+    const readContest = (): EdiContest | null => {
       const c: EdiContest = {
         contest: contest.input.value.trim(),
         section: section.value(),
         operators: section.value().startsWith('MO') ? operators.input.value.trim().toUpperCase() : '',
       }
-      const s: EdiStation = {
-        name: name.input.value.trim(),
-        email: email.input.value.trim(),
-        power: power.input.value.trim(),
-        antenna: antenna.input.value.trim(),
-        tx: tx.input.value.trim(),
-      }
-      const invalid =
-        !c.contest ? contestErr : !s.email ? emailErr : !/^\d+(\s*W)?$/i.test(s.power) ? powerErr : !s.antenna ? antennaErr : null
-      if (invalid) {
-        invalid.show()
+      if (!c.contest) {
+        contestErr.show()
         return null
       }
-      return { contest: c, station: s }
+      return c
     }
 
-    const status = el('p', 'form-status')
-    const bands = el('div', 'form-actions form-actions--stack')
+    const blocks: HTMLElement[] = []
     const scores = ediBands(qsos, meta.myGrid)
-    if (scores.length === 0) bands.append(el('p', 'empty', t('edi.noBands')))
+    if (scores.length === 0) blocks.push(el('p', 'empty', t('edi.noBands')))
     for (const b of scores) {
-      const label = t('edi.band', { band: ediBand(b.band)!, qsos: b.qsos, points: b.points })
-      bands.append(
-        button(label, () => {
-          const got = collect()
-          if (got) void this.export(qsos, b.band, got.contest, got.station, status)
-        }, 'btn btn--primary'),
+      const ediName = ediBand(b.band)!
+      const eq = equipmentFor(this.saved, b.band)
+      const power = fieldRow(t('edi.power'), eq.power)
+      const powerErr = fieldError(power, t('edi.powerInvalid'))
+      const antenna = fieldRow(t('edi.antenna'), eq.antenna)
+      const antennaErr = fieldError(antenna, t('edi.required'))
+      const height = fieldRow(t('edi.antennaHeight'), eq.antennaHeight, { placeholder: '10;650' })
+      const tx = fieldRow(t('edi.tx'), eq.tx)
+      const rx = fieldRow(t('edi.rx'), eq.rx)
+      for (const f of [antenna, tx, rx]) f.input.autocapitalize = 'off'
+      power.input.inputMode = 'numeric'
+      const readEq = (): EdiEquipment => ({
+        power: power.input.value.trim(),
+        antenna: antenna.input.value.trim(),
+        antennaHeight: height.input.value.trim(),
+        tx: tx.input.value.trim(),
+        rx: rx.input.value.trim(),
+      })
+      for (const f of [power, antenna, height, tx, rx]) {
+        f.input.addEventListener('change', () => void this.remember({ band: b.band, eq: readEq() }))
+      }
+
+      const status = el('p', 'form-status') // right under this band's button
+      // The IARU rules' minimum header: section, e-mail, power, antenna (+ call/locator/band, always set).
+      const exportBand = (): void => {
+        const c = readContest()
+        if (!c) return
+        const st = readStation()
+        const e = readEq()
+        const invalid = !st.email ? emailErr : !/^\d+(\s*W)?$/i.test(e.power) ? powerErr : !e.antenna ? antennaErr : null
+        if (invalid) {
+          invalid.show()
+          return
+        }
+        void this.export(qsos, b.band, c, st, e, status)
+      }
+
+      const block = el('div', 'edi-band')
+      block.append(
+        el('h2', 'form-section', t('edi.band', { band: ediName, qsos: b.qsos, points: b.points })),
+        power.row,
+        antenna.row,
+        height.row,
+        tx.row,
+        rx.row,
+        button(t('edi.exportBand', { band: ediName }), exportBand, 'btn btn--primary'),
+        status,
       )
+      blocks.push(block)
     }
 
     this.root.replaceChildren(
@@ -117,22 +145,19 @@ export class EdiExportScreen implements Screen {
       el('h2', 'form-section', t('edi.stationTitle')),
       name.row,
       email.row,
-      power.row,
-      antenna.row,
-      tx.row,
-      el('h2', 'form-section', t('edi.bands')),
-      bands,
-      status,
+      el('p', 'about', t('edi.bands')),
+      ...blocks,
       button(`‹ ${t('common.back')}`, () => this.nav.back(), 'btn'),
     )
   }
 
-  private async station(): Promise<EdiStation> {
-    try {
-      return { ...EMPTY_STATION, ...(JSON.parse((await this.platform.getSetting(EDI_STATION_SETTING)) ?? '{}') as Partial<EdiStation>) }
-    } catch {
-      return EMPTY_STATION
-    }
+  /** Save the station or one band's equipment right away, for the next contest. */
+  private async remember(change: { station: EdiStation } | { band: string; eq: EdiEquipment }): Promise<void> {
+    this.saved =
+      'station' in change
+        ? { ...this.saved, station: change.station }
+        : { ...this.saved, bands: { ...this.saved.bands, [change.band]: change.eq } }
+    await this.platform.setSetting(EDI_STATION_SETTING, serializeEdiSettings(this.saved))
   }
 
   private async export(
@@ -140,16 +165,18 @@ export class EdiExportScreen implements Screen {
     band: string,
     contest: EdiContest,
     station: EdiStation,
+    eq: EdiEquipment,
     status: HTMLElement,
   ): Promise<void> {
-    // Remember both parts first, so a second band (or a re-export) is prefilled.
-    await this.platform.setSetting(EDI_STATION_SETTING, JSON.stringify(station))
+    // Remember everything first, so a re-export or the next contest is prefilled.
+    await this.remember({ station })
+    await this.remember({ band, eq })
     if (JSON.stringify(this.meta.edi) !== JSON.stringify(contest)) {
       this.meta = { ...this.meta, edi: contest }
       await this.platform.rewriteLog(this.logId, writeLogFile(this.meta, qsos))
     }
     const file = `${this.logId}-${band}.edi`
-    await this.platform.exportText(writeEdi(this.meta, qsos, band, contest, station), file)
+    await this.platform.exportText(writeEdi(this.meta, qsos, band, contest, station, eq), file)
     trackEvent('export', { format: 'edi', band })
     status.textContent = t('edi.exported', { file })
   }
