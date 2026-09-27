@@ -360,6 +360,12 @@ body {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.82rem;
 }
+/* Web, wide enough: columns padded with spaces, kept on one line (qsolist.ts falls
+   back to the compact row when a line would not fit). */
+.qsorow-open--aligned {
+  white-space: pre;
+  overflow: hidden;
+}
 .empty {
   color: var(--muted);
   padding: 1rem 0.5rem;
