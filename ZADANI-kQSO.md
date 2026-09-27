@@ -497,7 +497,7 @@ Vždy zapisovat: `CALL`, `QSO_DATE`, `TIME_ON`, `BAND`, `MODE`, `RST_SENT`, `RST
 2. **Nový log** — formulář z kapitoly 8.
 3. **Logovací obrazovka** — kapitoly 4 a 10. Výchozí po otevření logu.
 4. **Seznam QSO** — tabulka, tap otevře editaci jednoho QSO (klasický formulář, ne parser).
-   - **Mapa** (VKV závod, Satelit; příznak profilu `map`) — tečka za každé QSO ve středu jeho lokátoru, mřížka velkých polí a čtverců, vlastní QTH. Pobřeží a hranice Natural Earth (public domain) — Evropa 1:10m, zbytek světa 1:50m — přibalené v bundlu (`web/src/db/world.json`, ~770 KB, gzip ~210 KB, skript `web/scripts/mapdata.py`), takže mapa funguje offline. Web Mercator na canvasu; tažení jen posune obraz a mapa se překreslí jednou po puštění (e-ink), zoom tlačítky − + ⤢. QSO bez lokátoru se jen spočítají.
+   - **Mapa** (VKV závod, Satelit; příznak profilu `map`) — tečka za každé QSO ve středu jeho lokátoru, mřížka velkých polí a čtverců, vlastní QTH. Pobřeží a hranice Natural Earth (public domain) — Evropa 1:10m, zbytek světa 1:50m — přibalené v bundlu (`web/src/db/world.json`, ~770 KB, gzip ~210 KB, skript `web/scripts/mapdata.py`), takže mapa funguje offline. Web Mercator na canvasu; tažení jen posune obraz a mapa se překreslí jednou po puštění (e-ink), zoom tlačítky − + ⤢. QSO bez lokátoru se jen spočítají. U teček značky stanic (kam se vejdou, bez překryvu); v Nastavení se dají vypnout (`mapLabels`, výchozí zapnuto).
    - **Statistika** (VKV závod) — kap. 14.1.
 5. **Nastavení** — display režim jako první položka, jazyk, stav perzistence úložiště.
 6. **⓪ About** — verze, licence, odkaz na repo, callsign autora.

@@ -12,6 +12,9 @@ import { el, button } from '../dom'
 import { t } from '../i18n'
 import worldText from '../../db/world.json?raw'
 
+/** Setting: calls next to the dots on the map ('0' = off; default on). */
+export const MAP_LABELS_SETTING = 'mapLabels'
+
 export interface MapNav {
   back(): void
 }
@@ -76,6 +79,7 @@ export class MapScreen implements Screen {
   private meta: LogMeta | undefined
   private points: QsoPoint[] = []
   private view: MapView | undefined
+  private labels = true
   private resize: ResizeObserver | undefined
   private drag: { id: number; x: number; y: number; dx: number; dy: number } | undefined
 
@@ -97,6 +101,7 @@ export class MapScreen implements Screen {
   private async load(): Promise<void> {
     const { meta, qsos } = readLogFile(await this.platform.readLog(this.logId))
     this.meta = meta
+    this.labels = (await this.platform.getSetting(MAP_LABELS_SETTING)) !== '0'
     this.points = qsoPoints(qsos)
     const noGrid = qsos.length - qsos.filter((q) => q.grid && gridCenter(q.grid)).length
 
@@ -274,7 +279,7 @@ export class MapScreen implements Screen {
       ctx.fillStyle = fg
       ctx.fill()
     }
-    this.drawLabels(ctx, px, w, h, fg, bg, font)
+    if (this.labels) this.drawLabels(ctx, px, w, h, fg, bg, font)
 
     // Own QTH: a ring with a cross.
     const own = gridCenter(this.meta.myGrid)

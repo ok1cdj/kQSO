@@ -15,6 +15,7 @@ import { connect } from '../wavelog'
 import { wavelogErrorText } from '../wavelog-text'
 import { t } from '../i18n'
 import { BUNDLED_DB_SETTING, BUNDLED_IDS, bundledInfo } from '../bundled-db'
+import { MAP_LABELS_SETTING } from './map'
 import { STATS_SETTING, setStatsEnabled } from '../stats'
 
 export interface SettingsNav {
@@ -60,6 +61,7 @@ export class SettingsScreen implements Screen {
       this.helpSetting(),
       await this.callDbSetting(),
       await this.wavelogSetting(),
+      await this.mapLabelsSetting(),
       this.storageSetting(persisted),
       ...(this.platform.nativeVersion ? [] : [await this.statsSetting()]),
       this.about(),
@@ -246,12 +248,26 @@ export class SettingsScreen implements Screen {
   /** Web only: anonymous usage statistics (stats.ts) on/off, default on. */
   private async statsSetting(): Promise<HTMLElement> {
     const wrap = el('div', 'setting')
+    const seg = await this.yesNo(STATS_SETTING, (on) => setStatsEnabled(on))
+    wrap.append(el('span', 'field-label', t('settings.stats')), seg, el('div', 'about', t('settings.statsHint')))
+    return wrap
+  }
+
+  /** QSO map: the calls next to the dots on/off, default on. */
+  private async mapLabelsSetting(): Promise<HTMLElement> {
+    const wrap = el('div', 'setting')
+    wrap.append(el('span', 'field-label', t('settings.mapLabels')), await this.yesNo(MAP_LABELS_SETTING))
+    return wrap
+  }
+
+  /** A Yes/No switch stored as '1'/'0' under `key`; missing = yes. */
+  private async yesNo(key: string, onChange?: (on: boolean) => void): Promise<HTMLElement> {
     const seg = el('div', 'segmented')
-    const on = (await this.platform.getSetting(STATS_SETTING)) !== '0'
+    const on = (await this.platform.getSetting(key)) !== '0'
     const mk = (value: '1' | '0', label: string): HTMLButtonElement => {
       const b = button(label, () => {
-        void this.platform.setSetting(STATS_SETTING, value)
-        setStatsEnabled(value === '1')
+        void this.platform.setSetting(key, value)
+        onChange?.(value === '1')
         for (const x of Array.from(seg.querySelectorAll<HTMLButtonElement>('button'))) {
           x.setAttribute('aria-pressed', String(x === b))
         }
@@ -260,8 +276,7 @@ export class SettingsScreen implements Screen {
       return b
     }
     seg.append(mk('1', t('common.yes')), mk('0', t('common.no')))
-    wrap.append(el('span', 'field-label', t('settings.stats')), seg, el('div', 'about', t('settings.statsHint')))
-    return wrap
+    return seg
   }
 
   private storageSetting(persisted: boolean): HTMLElement {

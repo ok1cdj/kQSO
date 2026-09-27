@@ -86,6 +86,7 @@ const en = {
 
   'settings.title': 'Settings',
   'settings.display': 'Display',
+  'settings.mapLabels': 'Station calls on the map',
   'settings.stats': 'Anonymous usage statistics',
   'settings.statsHint': 'Web only: which screens and features are used (Umami, no cookies). Never your log — no calls, locators or QSOs.',
   'settings.standard': 'Standard',
@@ -236,6 +237,7 @@ const cs: Record<keyof typeof en, string> = {
 
   'settings.title': 'Nastavení',
   'settings.display': 'Zobrazení',
+  'settings.mapLabels': 'Značky stanic na mapě',
   'settings.stats': 'Anonymní statistiky používání',
   'settings.statsHint': 'Jen web: které obrazovky a funkce se používají (Umami, bez cookies). Nikdy tvůj log — žádné značky, lokátory ani QSO.',
   'settings.standard': 'Standardní',
