@@ -27,7 +27,7 @@ APK pro Kompakt. Nepřidává funkce, přidává integraci:
 - `keepAwake` přes `FLAG_KEEP_SCREEN_ON` (v prohlížeči závisí na tom, jestli Wake Lock povolí)
 - export přes SAF a sdílení přes `ACTION_SEND`
 - logy jako skutečné soubory v app storage, dosažitelné přes ADB
-- distribuce přes GitHub Releases, F-Droid a Obtainium jako zbytek rodiny
+- distribuce přes GitHub Releases (F-Droid a Obtainium se nedělají)
 - ikona a chování normální appky
 - e-ink režim nastavený natvrdo
 
