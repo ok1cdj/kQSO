@@ -10,7 +10,7 @@ desktop.
 
 *Formerly kLog — renamed to avoid a clash with KLog by EA4K.*
 
-- **Live web:** <https://kqso.ok1cdj.com/> (web 1.2.0; the old `ok1cdj.github.io/kQSO/` redirects there)
+- **Live web:** <https://kqso.ok1cdj.com/> (web 1.3.0; the old `ok1cdj.github.io/kQSO/` redirects there)
 - **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.2)
 - Spec: [`ZADANI-kQSO.md`](ZADANI-kQSO.md) (Czech) · plan: [`PLAN-kQSO.md`](PLAN-kQSO.md)
 
@@ -34,6 +34,10 @@ desktop.
 - **VHF contest scoring:** 1 point per km between locator centres (111.2 km/°,
   truncated + 1), each station once per band. QRB shows in the preview; the QSO
   list has points per QSO and a score line per band (QSO · points · WWL · ODX).
+- **QSO map** (VHF contest, satellite): a dot per worked locator with the call, the
+  Maidenhead grid and your QTH over bundled Natural Earth coastlines and borders
+  (1:10m Europe, 1:50m world) — works offline; calls can be switched off.
+- **Contest statistics:** per band points, average per QSO and the band's top 10.
 - **Export:** ADIF per log (all bands); VHF contest also **EDI (REG1TEST), one file
   per band** — contest name/section asked at export, station fields remembered.
 - **Wavelog push:** General, Satellite and VHF-contest logs can be sent to your own
