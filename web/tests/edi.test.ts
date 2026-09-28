@@ -111,6 +111,8 @@ describe('EDI helpers', () => {
   it('band labels from the REG1TEST table; HF has none', () => {
     expect(ediBand('2m')).toBe('144 MHz')
     expect(ediBand('23cm')).toBe('1,3 GHz')
+    expect(ediBand('1.25cm')).toBe('24 GHz')
+    expect(ediBand('4mm')).toBe('76 GHz')
     expect(ediBand('40m')).toBeUndefined()
   })
   it('ediBands lists only EDI bands present in the log', () => {

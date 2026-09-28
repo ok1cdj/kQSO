@@ -66,4 +66,9 @@ describe('writeQso against reference output (ch. 14)', () => {
     const qso: Qso = { ...BASE, call: 'OK2XYZ', signal: { band: '2m', mode: 'SSB', bandRx: '70cm' } }
     expect(writeQso(qso)).toContain('<BAND:2>2m <BAND_RX:4>70cm <MODE:3>SSB')
   })
+
+  it('24 GHz is written under its ADIF name 1.25cm', () => {
+    const qso: Qso = { ...BASE, call: 'OK2XYZ', signal: { band: '1.25cm', mode: 'CW' } }
+    expect(writeQso(qso)).toContain('<BAND:6>1.25cm <MODE:2>CW')
+  })
 })

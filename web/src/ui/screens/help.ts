@@ -35,7 +35,7 @@ const EN: readonly Section[] = [
     title: 'Band & mode',
     rows: [
       { code: '40m ssb', text: 'Sets band and mode. They stick until changed and show in the header.' },
-      { text: 'Bands: 160m…23cm, plus 13cm and 3cm (QO-100). Modes: cw ssb fm.' },
+      { text: 'Bands: 160m…70cm, microwaves 23cm 13cm 9cm 6cm 3cm 1.25cm 6mm 4mm — also typed as 1G 2G 3G 5G 10G 24G 47G 76G. Modes: cw ssb fm.' },
     ],
   },
   {
@@ -125,7 +125,7 @@ const CS: readonly Section[] = [
     title: 'Pásmo a mód',
     rows: [
       { code: '40m ssb', text: 'Nastaví pásmo a mód. Drží se, dokud je nezměníš, a jsou vidět v hlavičce.' },
-      { text: 'Pásma: 160m…23cm, k tomu 13cm a 3cm (QO-100). Módy: cw ssb fm.' },
+      { text: 'Pásma: 160m…70cm, mikrovlny 23cm 13cm 9cm 6cm 3cm 1.25cm 6mm 4mm — jdou napsat i jako 1G 2G 3G 5G 10G 24G 47G 76G. Módy: cw ssb fm.' },
     ],
   },
   {

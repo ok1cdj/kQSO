@@ -18,9 +18,26 @@ export const BANDS: readonly string[] = [
   '2m',
   '70cm',
   '23cm',
-  '13cm', // QO-100 uplink (2.4 GHz)
-  '3cm', // QO-100 downlink (10 GHz)
+  '13cm', // also the QO-100 uplink (2.4 GHz)
+  '9cm',
+  '6cm',
+  '3cm', // also the QO-100 downlink (10 GHz)
+  '1.25cm', // ADIF name for 24 GHz; typed as 24G (no dot on the keyboard)
+  '6mm',
+  '4mm',
 ]
+
+/** Microwave bands can also be typed in GHz (24G → 1.25cm); the canonical ADIF name is stored. */
+const BAND_ALIASES: Readonly<Record<string, string>> = {
+  '1g': '23cm',
+  '2g': '13cm',
+  '3g': '9cm',
+  '5g': '6cm',
+  '10g': '3cm',
+  '24g': '1.25cm',
+  '47g': '6mm',
+  '76g': '4mm',
+}
 
 /** Modes recognized as sticky tokens (ch. 9 #2), canonical uppercase form. */
 export const MODES: readonly string[] = ['CW', 'SSB', 'FM']
@@ -30,11 +47,11 @@ const MODE_SET = new Set(MODES)
 
 /**
  * Return the canonical band key for a raw token, or null if it is not a band.
- * Case-insensitive; canonical form is lowercase (e.g. `20M` → `20m`).
+ * Case-insensitive; canonical form is lowercase (e.g. `20M` → `20m`, `24G` → `1.25cm`).
  */
 export function matchBand(raw: string): string | null {
   const canon = raw.toLowerCase()
-  return BAND_SET.has(canon) ? canon : null
+  return BAND_SET.has(canon) ? canon : (BAND_ALIASES[canon] ?? null)
 }
 
 /**

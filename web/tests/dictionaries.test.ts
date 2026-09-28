@@ -6,13 +6,22 @@ describe('band dictionary (ch. 9 #1)', () => {
     for (const b of BANDS) {
       expect(matchBand(b)).toBe(b)
     }
-    expect(BANDS.length).toBe(17) // incl. 13cm/3cm for QO-100
+    expect(BANDS.length).toBe(22) // incl. microwaves 23cm…4mm
   })
 
   it('is case-insensitive and canonicalizes to lowercase', () => {
     expect(matchBand('20M')).toBe('20m')
     expect(matchBand('40M')).toBe('40m')
     expect(matchBand('70CM')).toBe('70cm')
+    expect(matchBand('1.25CM')).toBe('1.25cm')
+  })
+
+  it('accepts GHz aliases for microwaves, canonicalized to the ADIF name', () => {
+    expect(matchBand('24G')).toBe('1.25cm')
+    expect(matchBand('10g')).toBe('3cm')
+    expect(matchBand('1G')).toBe('23cm')
+    expect(matchBand('76G')).toBe('4mm')
+    expect(matchBand('4G')).toBeNull()
   })
 
   it('rejects non-members', () => {

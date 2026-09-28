@@ -79,7 +79,12 @@ const PBAND: Readonly<Record<string, string>> = {
   '70cm': '432 MHz',
   '23cm': '1,3 GHz',
   '13cm': '2,3 GHz',
+  '9cm': '3,4 GHz',
+  '6cm': '5,7 GHz',
   '3cm': '10 GHz',
+  '1.25cm': '24 GHz',
+  '6mm': '47 GHz',
+  '4mm': '76 GHz',
 }
 
 /** The EDI band label for a band key, or undefined when the band is not an EDI band. */

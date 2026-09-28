@@ -15,6 +15,11 @@ describe('band vs callsign collisions (ch. 9.2)', () => {
   it('2M is a band, not a callsign', () => {
     expect(classifyToken('2M', ctx())).toEqual({ type: 'band', value: '2m' })
   })
+
+  it('10G/24G are bands, not callsigns', () => {
+    expect(classifyToken('10G', ctx())).toEqual({ type: 'band', value: '3cm' })
+    expect(classifyToken('24G', ctx())).toEqual({ type: 'band', value: '1.25cm' })
+  })
 })
 
 describe('locator vs callsign collision (ch. 9.2)', () => {
