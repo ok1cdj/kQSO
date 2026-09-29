@@ -50,6 +50,17 @@ describe('parse → ADIF → parse roundtrip', () => {
     expect(roundtrip(qso)).toEqual(qso)
   })
 
+  it('TOTA', () => {
+    const qso: Qso = {
+      ...BASE,
+      call: 'OK2XYZ',
+      signal: { band: '2m', mode: 'FM' },
+      theirRef: { kind: 'TOTA', value: 'OKR-0427' },
+      myRef: { kind: 'TOTA', value: 'OKR-1001' },
+    }
+    expect(roundtrip(qso)).toEqual(qso)
+  })
+
   it('Obecný with grid + name', () => {
     const qso: Qso = {
       ...BASE,

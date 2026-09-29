@@ -6,8 +6,22 @@ describe('reference detection', () => {
     expect(matchReference('OK/ZC/001')).toEqual({ kind: 'SOTA', value: 'OK/ZC-001' })
   })
 
-  it('POTA — two parts, last 4 digits', () => {
-    expect(matchReference('OK/0001')).toEqual({ kind: 'POTA', value: 'OK-0001' })
+  it('POTA — two parts, 2-letter ISO prefix', () => {
+    expect(matchReference('CZ/0001')).toEqual({ kind: 'POTA', value: 'CZ-0001' })
+  })
+
+  it('POTA — 5-digit US parks', () => {
+    expect(matchReference('US/10000')).toEqual({ kind: 'POTA', value: 'US-10000' })
+  })
+
+  it('TOTA — prefix of 3+ chars ending with R', () => {
+    expect(matchReference('OKR/1001')).toEqual({ kind: 'TOTA', value: 'OKR-1001' })
+    expect(matchReference('GBR/0012')).toEqual({ kind: 'TOTA', value: 'GBR-0012' })
+    expect(matchReference('9MR/0001')).toEqual({ kind: 'TOTA', value: '9MR-0001' })
+  })
+
+  it('a 2-letter prefix ending with R stays POTA (FR, HR)', () => {
+    expect(matchReference('FR/0123')).toEqual({ kind: 'POTA', value: 'FR-0123' })
   })
 
   it('WWFF — prefix ends with FF', () => {
@@ -40,14 +54,17 @@ describe('reference vs portable callsign ', () => {
 describe('parseReferenceInput — lenient form input (slash OR dash)', () => {
   it('accepts the parser slash convention', () => {
     expect(parseReferenceInput('OK/ZC/001')).toEqual({ kind: 'SOTA', value: 'OK/ZC-001' })
-    expect(parseReferenceInput('OK/0001')).toEqual({ kind: 'POTA', value: 'OK-0001' })
+    expect(parseReferenceInput('CZ/0001')).toEqual({ kind: 'POTA', value: 'CZ-0001' })
     expect(parseReferenceInput('OKFF/0001')).toEqual({ kind: 'WWFF', value: 'OKFF-0001' })
+    expect(parseReferenceInput('OKR/1001')).toEqual({ kind: 'TOTA', value: 'OKR-1001' })
   })
 
   it('accepts the already-canonical dash form', () => {
     expect(parseReferenceInput('OK/ZC-001')).toEqual({ kind: 'SOTA', value: 'OK/ZC-001' })
-    expect(parseReferenceInput('OK-0001')).toEqual({ kind: 'POTA', value: 'OK-0001' })
+    expect(parseReferenceInput('CZ-0001')).toEqual({ kind: 'POTA', value: 'CZ-0001' })
+    expect(parseReferenceInput('US-10000')).toEqual({ kind: 'POTA', value: 'US-10000' })
     expect(parseReferenceInput('OKFF-0001')).toEqual({ kind: 'WWFF', value: 'OKFF-0001' })
+    expect(parseReferenceInput('OKR-1001')).toEqual({ kind: 'TOTA', value: 'OKR-1001' })
   })
 
   it('lowercases input is normalized to upper', () => {
@@ -70,7 +87,7 @@ describe('reference edge shapes', () => {
     expect(matchReference('RS/44')).toBeNull()
   })
 
-  it('rejects a five-digit last part', () => {
-    expect(matchReference('OK/00001')).toBeNull()
+  it('rejects a six-digit last part', () => {
+    expect(matchReference('US/000001')).toBeNull()
   })
 })

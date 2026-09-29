@@ -41,13 +41,14 @@ export function refToFields(ref: AwardReference, mine: boolean): Array<[string, 
     case 'POTA':
       return [[mine ? F.MY_POTA_REF : F.POTA_REF, ref.value]]
     case 'WWFF':
+    case 'TOTA': // rozhledny.eu wants MY_SIG=TOTA + MY_SIG_INFO=OKR-1001
       return mine
         ? [
-            [F.MY_SIG, 'WWFF'],
+            [F.MY_SIG, ref.kind],
             [F.MY_SIG_INFO, ref.value],
           ]
         : [
-            [F.SIG, 'WWFF'],
+            [F.SIG, ref.kind],
             [F.SIG_INFO, ref.value],
           ]
   }
@@ -63,8 +64,9 @@ export function fieldsToRef(fields: Record<string, string>, mine: boolean): Awar
 
   const sig = fields[mine ? F.MY_SIG : F.SIG]
   const sigInfo = fields[mine ? F.MY_SIG_INFO : F.SIG_INFO]
-  if (sig !== undefined && sig.toUpperCase() === 'WWFF' && sigInfo !== undefined) {
-    return { kind: 'WWFF', value: sigInfo }
+  const sigKind = sig?.toUpperCase()
+  if ((sigKind === 'WWFF' || sigKind === 'TOTA') && sigInfo !== undefined) {
+    return { kind: sigKind, value: sigInfo }
   }
   return undefined
 }

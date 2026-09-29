@@ -57,6 +57,18 @@ describe('writeQso against reference output', () => {
     )
   })
 
+  it('Aktivace TOTA — SIG=TOTA/SIG_INFO + MY_SIG=TOTA/MY_SIG_INFO (rozhledny.eu)', () => {
+    const qso: Qso = {
+      ...BASE,
+      call: 'OK2XYZ',
+      theirRef: { kind: 'TOTA', value: 'OKR-0427' },
+      myRef: { kind: 'TOTA', value: 'OKR-1001' },
+    }
+    expect(writeQso(qso)).toBe(
+      `${HEAD} <SIG:4>TOTA <SIG_INFO:8>OKR-0427 <MY_SIG:4>TOTA <MY_SIG_INFO:8>OKR-1001 <EOR>`,
+    )
+  })
+
   it('Obecný — GRIDSQUARE + NAME', () => {
     const qso: Qso = { ...BASE, call: 'OK2XYZ', grid: 'JO60UN', name: 'PETR' }
     expect(writeQso(qso)).toBe(`${HEAD} <GRIDSQUARE:6>JO60UN <NAME:4>PETR <EOR>`)
