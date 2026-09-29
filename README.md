@@ -12,6 +12,7 @@ desktop.
 
 - **Live web:** <https://kqso.ok1cdj.com/> (web 1.4.0; the old `ok1cdj.github.io/kQSO/` redirects there)
 - **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.4)
+- **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/ok1cdj)
 
@@ -163,10 +164,12 @@ export JAVA_HOME=/opt/android-studio/jbr
 - **Web:** push to `main` → GitHub Actions (`deploy.yml`: `npm ci`, typecheck, test,
   build) → `web/dist` deployed to GitHub Pages, custom domain `kqso.ok1cdj.com`
   (DNS: `CNAME kqso → ok1cdj.github.io`). The build uses base `/`.
-- **APK:** bump `versionCode` / `versionName` in `app/build.gradle.kts`, then push a
-  `v*` tag (`git tag v1.4 && git push origin v1.4`) → `release.yml` builds the web,
+- **APK:** bump `versionCode` / `versionName` in `app/build.gradle.kts`, rename
+  `## [Unreleased]` in [`CHANGELOG.md`](CHANGELOG.md) to `## [1.5] – date`, then push a
+  `v*` tag (`git tag v1.5 && git push origin v1.5`) → `release.yml` builds the web,
   signs the release APK and attaches it to a GitHub Release as
-  `kqso-<versionName>.apk`. It can also be run by hand (`workflow_dispatch`) —
+  `kqso-<versionName>.apk`, with that CHANGELOG section as the release notes (the
+  release fails if the section is missing). It can also be run by hand (`workflow_dispatch`) —
   that only uploads the APK as a build artifact.
 
 Signing needs **repository secrets** (Settings → Secrets and variables → Actions),

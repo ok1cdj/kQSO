@@ -89,9 +89,19 @@ jobs:
           name: ${{ steps.apk.outputs.name }}
           path: ${{ steps.apk.outputs.name }}
 
+      - name: Release notes from CHANGELOG.md
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          # The "## [1.4] – date" section for tag v1.4, up to the next "## [" heading.
+          VER="${GITHUB_REF_NAME#v}"
+          awk -v v="$VER" '/^## \[/ { on = index($0, "## [" v "]") == 1; next } /^\[.*\]: / { on = 0 } on' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then echo "::error::CHANGELOG.md has no section for $VER"; exit 1; fi
+          cat release-notes.md
+
       - name: Attach to GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ steps.apk.outputs.name }}
+          body_path: release-notes.md
           generate_release_notes: true
