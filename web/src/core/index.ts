@@ -1,4 +1,4 @@
-// Public API surface of the kQSO core. Pure logic, zero DOM (ch. 2).
+// Public API surface of the kQSO core. Pure logic, zero DOM.
 
 export type {
   Signal,

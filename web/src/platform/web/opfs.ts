@@ -1,7 +1,6 @@
 // Web KQSOPlatform: OPFS-backed, all file I/O delegated to the worker (the only
 // place SyncAccessHandle works). Parsing (readLogFile) stays here on the main
-// thread so the worker is pure I/O. Export/share/keepAwake are minimal here and
-// get hardened in F1.6 (persist(), iOS add-to-home, etc.).
+// thread so the worker is pure I/O. Export/share/keepAwake are minimal here.
 
 import type { LogMeta } from '../../core/model'
 import { readLogFile, writeLogHeader } from '../../core/index'
@@ -76,7 +75,7 @@ export class WebPlatform implements KQSOPlatform {
 
   async createLog(meta: LogMeta): Promise<string> {
     // Creating a log is also a user gesture — request persistence here too so the
-    // grant can happen at the earliest storage write (ch. 13).
+    // grant can happen at the earliest storage write.
     this.requestPersist()
     const id = this.newId(meta.name)
     await this.call<void>({ op: 'createHeader', logId: id, content: writeLogHeader(meta) })
@@ -85,7 +84,7 @@ export class WebPlatform implements KQSOPlatform {
 
   async appendQso(logId: string, adifRecord: string): Promise<void> {
     // Request persistent storage on the first QSO save, still within the user
-    // gesture that triggered it (ch. 13). Synchronous call before any await.
+    // gesture that triggered it. Synchronous call before any await.
     this.requestPersist()
     const text = adifRecord.endsWith('\n') ? adifRecord : adifRecord + '\n'
     await this.call<void>({ op: 'append', logId, text })

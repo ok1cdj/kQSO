@@ -6,7 +6,7 @@ import org.json.JSONArray
 import java.io.File
 
 /**
- * window.KQSONative — the storage/host bridge (ch. 12). Pure file I/O keyed by log
+ * window.KQSONative — the storage/host bridge. Pure file I/O keyed by log
  * id, mirroring the OPFS worker protocol; the web NativePlatform wraps these
  * synchronous methods into the async KQSOPlatform. Logs are real .adi files in
  * app storage (reachable via ADB), so there is no WebKit-style eviction.
@@ -24,7 +24,7 @@ class KQSOBridge(private val activity: MainActivity) {
     private fun journal(id: String) = File(logsDir, "$id.journal")
 
     @JavascriptInterface
-    fun displayMode(): String = "eink" // e-ink hardcoded in the shell (ch. 1)
+    fun displayMode(): String = "eink" // e-ink hardcoded in the shell
 
     @JavascriptInterface
     fun appVersion(): String = BuildConfig.VERSION_NAME // APK version, shown in About

@@ -1,4 +1,4 @@
-/* Layout (ch. 4) + component styling. All colours/borders/rounding/shadows/
+/* Layout + component styling. All colours/borders/rounding/shadows/
    transitions come from the theme tokens (src/theme/tokens.css); this file never
    hardcodes a colour or branches on the display mode. */
 
@@ -6,7 +6,7 @@
   box-sizing: border-box;
 }
 
-/* Required by ch. 4: no double-tap zoom, no tap highlight, no selection, no bounce. */
+/* Fast entry: no double-tap zoom, no tap highlight, no selection, no bounce. */
 html {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -34,7 +34,7 @@ body {
   overflow: hidden;
 }
 
-/* The logging screen owns the portrait band layout (ch. 4). */
+/* The logging screen owns the portrait band layout. */
 .screen--log {
   height: 100%;
   min-height: 0; /* allow the grid (keyboard) to shrink to fit, never overflow */
@@ -126,7 +126,7 @@ body {
   margin-left: 1px;
   background: var(--fg);
 }
-/* DUPE (ch. 10): invert the whole line. */
+/* DUPE: invert the whole line. */
 .inputline--dupe {
   background: var(--fg);
   color: var(--bg);
@@ -198,7 +198,7 @@ body {
   background: var(--fg);
   color: var(--bg);
 }
-/* Prefilled locator/name suggestion — the single grey (ch. 3, 10). */
+/* Prefilled locator/name suggestion — the single grey. */
 .suggest--ghost {
   color: var(--ghost);
   border-color: var(--ghost);
@@ -235,7 +235,7 @@ body {
   display: none;
 }
 
-/* --- keyboard (ch. 5) ----------------------------------------------------- */
+/* --- keyboard ----------------------------------------------------- */
 
 .keyboard {
   display: grid;
@@ -248,7 +248,7 @@ body {
   width: 100%;
   height: 100%;
   min-height: 0; /* fit the available space, never push the layout past the viewport */
-  max-width: 400px; /* otherwise huge keys on an iPad (ch. 4) */
+  max-width: 400px; /* otherwise huge keys on an iPad */
   margin-inline: auto;
 }
 .key {
@@ -553,7 +553,7 @@ body {
   color: var(--muted);
 }
 
-/* iOS add-to-home hint (F1.6) — fixed bar at the bottom. */
+/* iOS add-to-home hint — fixed bar at the bottom. */
 .install-hint {
   position: fixed;
   left: 0;
@@ -603,7 +603,7 @@ body {
   cursor: pointer;
 }
 
-/* --- landscape / wide (ch. 4): log area left, keyboard right -------------- */
+/* --- landscape / wide: log area left, keyboard right -------------- */
 
 @media (min-aspect-ratio: 1/1) {
   .screen--log {

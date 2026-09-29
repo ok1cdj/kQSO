@@ -1,4 +1,4 @@
-// Wavelog push (ZADANI ch. 19.2) — the pure part: URL normalization, error mapping
+// Wavelog push — the pure part: URL normalization, error mapping
 // and the per-log push status. The network call lives in ui/wavelog.ts. API v2:
 // POST <base>/qso {import_type:"adif", station_profile_id, adif}, Bearer wl2_ token.
 // Explicit, user-configured and manually triggered — never automatic.
@@ -93,7 +93,7 @@ export function readPushStatus(json: string | null): PushStatus | null {
   }
 }
 
-/** App-wide Wavelog settings keys (not per log, ch. 19.2). */
+/** App-wide Wavelog settings keys (not per log). */
 export const WAVELOG_SETTINGS = {
   url: 'wavelogUrl',
   token: 'wavelogToken',

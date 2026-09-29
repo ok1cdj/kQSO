@@ -1,4 +1,4 @@
-// Callsign database (ZADANI-kQSO-databaze). Powers strip suggestions and locator
+// Callsign database. Powers strip suggestions and locator
 // prefill. NOT derived from the logs — logs are "log, export, delete", so the
 // database is its own persistent entity in two layers that never merge into one
 // table:

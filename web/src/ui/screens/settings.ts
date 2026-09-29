@@ -1,7 +1,7 @@
-// Settings (ch. 15 #5). Display mode is the first item (ch. 3). Also: a link to the
+// Settings. Display mode is the first item. Also: a link to the
 // "How to log" help, the callsign database (bundled sets, own layer, export/import),
 // the active storage backend, and About. Language follows
-// navigator.language with no in-app switch (ch. 2).
+// navigator.language with no in-app switch.
 
 import { LiveDb, WAVELOG_SETTINGS, apiBase, dbDate, userHeader } from '../../core/index'
 import type { WavelogStation } from '../../core/index'
@@ -85,7 +85,7 @@ export class SettingsScreen implements Screen {
   }
 
   private async pick(mode: DisplayMode, seg: HTMLElement): Promise<void> {
-    await setDisplayMode(this.platform, mode) // instant, no reload (ch. 3)
+    await setDisplayMode(this.platform, mode) // instant, no reload
     for (const b of Array.from(seg.querySelectorAll<HTMLButtonElement>('button'))) {
       b.setAttribute('aria-pressed', String(b.dataset.mode === mode))
     }
@@ -156,7 +156,7 @@ export class SettingsScreen implements Screen {
   }
 
   /**
-   * Wavelog push (ch. 19.2): URL + v2 token → "Connect" checks the token and lists
+   * Wavelog push: URL + v2 token → "Connect" checks the token and lists
    * the station profiles; picking one saves it. The token is never shown back.
    */
   private async wavelogSetting(): Promise<HTMLElement> {
@@ -295,7 +295,7 @@ export class SettingsScreen implements Screen {
       el('div', undefined, t('settings.aboutName')),
       el('div', undefined, t('settings.versionWeb', { v: `${__APP_VERSION__} · ${buildStamp(__BUILD_TIME__)}` })),
     )
-    // APK version only when running inside the native shell (ch. 2.2).
+    // APK version only when running inside the native shell.
     if (this.platform.nativeVersion) {
       wrap.append(el('div', undefined, t('settings.versionApp', { v: this.platform.nativeVersion })))
     }

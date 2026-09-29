@@ -1,5 +1,5 @@
-// Edit / delete a single QSO (ch. 15 #4). Classic form, not the parser. Saving and
-// deleting rewrite the whole file via rewriteLog() — never append (ch. 13).
+// Edit / delete a single QSO. Classic form, not the parser. Saving and
+// deleting rewrite the whole file via rewriteLog() — never append.
 
 import { BANDS, MODES, PROFILES, matchBand, matchMode, parseReferenceInput, readLogFile, writeLogFile } from '../../core/index'
 import type { Qso, Signal } from '../../core/index'

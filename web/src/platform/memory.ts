@@ -12,7 +12,7 @@ interface Entry {
 }
 
 export class MemoryPlatform implements KQSOPlatform {
-  // displayMode omitted → undefined (web/memory does not force a mode, ch. 3)
+  // displayMode omitted → undefined (web/memory does not force a mode)
   private readonly logs = new Map<string, Entry>()
   private readonly settings = new Map<string, string>()
   private callDb = ''

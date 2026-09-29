@@ -1,4 +1,4 @@
-// The one place the app asks for storage. Detection order (ch. 12): native bridge
+// The one place the app asks for storage. Detection order: native bridge
 // → OPFS web shim → in-memory fallback. Everything else imports KQSOPlatform from
 // here and never knows the difference.
 

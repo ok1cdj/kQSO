@@ -1,6 +1,6 @@
-// Log list (ch. 15 #1): name + QSO count, tap to open, per-row export/delete, and a
+// Log list: name + QSO count, tap to open, per-row export/delete, and a
 // "Nový log" button. The app's home screen. General/Satellite/VKV logs also get a
-// manual Wavelog push once it's configured in Settings (ch. 19.2), with the last
+// manual Wavelog push once it's configured in Settings, with the last
 // push result under the name.
 
 import { PROFILES, WAVELOG_SETTINGS, WavelogError, apiBase, pushStatusKey, readPushStatus } from '../../core/index'
@@ -72,11 +72,11 @@ export class LogListScreen implements Screen {
     }, 'btn btn--small')
     const del = button(t('loglist.delete'), () => void this.remove(log), 'btn btn--small')
     li.append(open, exp)
-    // VHF contest: EDI (REG1TEST) per band for the contest manager (ch. 14).
+    // VHF contest: EDI (REG1TEST) per band for the contest manager.
     if (PROFILES[log.profile].contest && log.qsoCount > 0) {
       li.append(button(t('loglist.edi'), () => this.nav.exportEdi(log.id), 'btn btn--small'))
     }
-    // Activations go by mail / program upload, never to Wavelog (ch. 19.2).
+    // Activations go by mail / program upload, never to Wavelog.
     if (wl && PROFILES[log.profile].wavelogPush && log.qsoCount > 0) {
       const push = button(t('wl.push'), () => void this.push(log, wl, push, status), 'btn btn--small')
       li.append(push)

@@ -1,4 +1,4 @@
-// Tiny i18n layer (spec ch. 2): English + Czech, chosen by navigator.language, no
+// Tiny i18n layer: English + Czech, chosen by navigator.language, no
 // in-app switch. `t(key, params)` looks up the current language and interpolates
 // {name}-style placeholders. Technical tokens (CALL, RST, QSO, TX…) are not
 // translated. Keys are typed; the Czech table must cover every English key.

@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config'
 import pkg from './package.json'
 
 // Served at the root of its own domain (kqso.ok1cdj.com, GitHub Pages custom domain);
-// the APK serves the same build at its asset-host root too. The SW cache key is the app version (ch. 13 / F1.6): a new
+// the APK serves the same build at its asset-host root too. The SW cache key is the app version: a new
 // deploy = a new cache name = old caches purged, so clients never hang on a stale build.
 const builtAt = Date.now()
 

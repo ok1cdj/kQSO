@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { BANDS, MODES, matchBand, matchMode } from '../src/core/dictionaries'
 
-describe('band dictionary (ch. 9 #1)', () => {
+describe('band dictionary', () => {
   it('recognizes every band as its canonical lowercase form', () => {
     for (const b of BANDS) {
       expect(matchBand(b)).toBe(b)
@@ -31,7 +31,7 @@ describe('band dictionary (ch. 9 #1)', () => {
   })
 })
 
-describe('mode dictionary (ch. 9 #2)', () => {
+describe('mode dictionary', () => {
   it('recognizes every mode as its canonical uppercase form', () => {
     for (const m of MODES) {
       expect(matchMode(m)).toBe(m)

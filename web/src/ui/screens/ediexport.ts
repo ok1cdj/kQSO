@@ -1,4 +1,4 @@
-// EDI export for a VHF-contest log (REG1TEST, ch. 14): a short prefilled form, then
+// EDI export for a VHF-contest log (REG1TEST): a short prefilled form, then
 // one block per band — the rules want one file per band, and each band has its own
 // equipment (power, antenna, antenna height, TX, RX). Contest fields (name, section,
 // operators) are stored in the log header; the station (name, e-mail) and each band's

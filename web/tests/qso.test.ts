@@ -14,7 +14,7 @@ const meta: LogMeta = {
 
 const T = new Date('2026-09-22T14:32:00Z')
 
-describe('default report by mode (ch. 8)', () => {
+describe('default report by mode', () => {
   it('599 on CW, 59 on everything else', () => {
     expect(defaultReport('CW')).toBe('599')
     for (const mode of ['SSB', 'FM', 'AM', 'FT8']) expect(defaultReport(mode)).toBe('59')

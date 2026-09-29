@@ -12,7 +12,7 @@ const meta: LogMeta = {
 
 const T = new Date('2026-09-22T14:32:00Z')
 
-describe('two-phase Enter (ch. 11)', () => {
+describe('two-phase Enter', () => {
   it('call-only commit fills defaults', () => {
     let s = initialState(meta)
     s = reduce(s, { type: 'firstKeystroke', at: T }, meta).state
@@ -70,7 +70,7 @@ describe('two-phase Enter (ch. 11)', () => {
   })
 })
 
-describe('timestamp behavior (ch. 11)', () => {
+describe('timestamp behavior', () => {
   it('is stamped at the first keystroke and not overwritten by later keystrokes', () => {
     const T2 = new Date('2026-09-22T14:40:00Z')
     let s = initialState(meta)

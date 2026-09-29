@@ -1,4 +1,4 @@
-// User-facing text for Wavelog push errors and status (ch. 19.2).
+// User-facing text for Wavelog push errors and status.
 
 import { WavelogError } from '../core/index'
 import type { PushStatus, WavelogErrorKind } from '../core/index'

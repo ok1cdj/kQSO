@@ -1,4 +1,4 @@
-// Display-mode resolution and switching (ch. 3). The ONLY module that knows the
+// Display-mode resolution and switching. The ONLY module that knows the
 // mode names — everything else reads CSS tokens. Kept out of components so the
 // "no isEink in components" rule holds.
 
@@ -12,7 +12,7 @@ function isMode(v: string | null | undefined): v is DisplayMode {
   return v === 'eink' || v === 'standard'
 }
 
-/** Apply a mode instantly by flipping the root attribute — no reload (ch. 3). */
+/** Apply a mode instantly by flipping the root attribute — no reload. */
 export function applyDisplayMode(mode: DisplayMode): void {
   document.documentElement.dataset.display = mode
 }
@@ -22,7 +22,7 @@ export function currentDisplayMode(): DisplayMode {
 }
 
 /**
- * Resolve the initial mode by priority (ch. 3):
+ * Resolve the initial mode by priority:
  *   1. saved user choice, 2. host-forced (APK → eink), 3. default standard.
  * (The @media (update: slow) hint is intentionally not trusted — WebView on the
  * Kompakt reports "fast" — so it is omitted.)

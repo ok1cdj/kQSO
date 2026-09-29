@@ -1,4 +1,4 @@
-// QSO list (ch. 15 #4): a table of the log's QSOs, tap a row to edit it. A VHF-contest
+// QSO list: a table of the log's QSOs, tap a row to edit it. A VHF-contest
 // log also shows the points per QSO (DUPE for a repeat on the band) and a score line
 // per band on top. VKV and Satellite logs open the map, VKV also the statistics.
 // On the web (tablets, phones) the rows are aligned in columns when they fit the

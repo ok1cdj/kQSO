@@ -1,4 +1,4 @@
-// Throwaway debug harness for F1.1/F1.2 (spec ch. 5). Wires the pure core AND the
+// Throwaway debug harness. Wires the pure core AND the
 // storage platform to a plain text input. NOT the real logging screen — no
 // on-screen keyboard, no theming. Demonstrates: parser preview, two-phase Enter,
 // OPFS persistence, crash-journal recovery, export.
@@ -174,7 +174,7 @@ async function handleEnter(): Promise<void> {
     countEl.textContent = String(Number(countEl.textContent) + 1)
     await refreshLogList()
   } else if (state.hasStarted && state.partial.call) {
-    // Mirror the in-progress QSO to the crash journal after each phase-1 Enter (ch. 13).
+    // Mirror the in-progress QSO to the crash journal after each phase-1 Enter.
     await platform.writeJournal(
       currentLogId,
       JSON.stringify(state.partial, (_k, v) => (v instanceof Date ? v.toISOString() : v)),

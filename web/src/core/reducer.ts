@@ -1,4 +1,4 @@
-// Two-phase Enter state machine (ch. 11). Core exposes the reducer; the UI owns
+// Two-phase Enter state machine. Core exposes the reducer; the UI owns
 // the raw input string and keystroke/DOM handling and dispatches these events.
 
 import type { ClassifiedToken, CoreState, LogMeta, Qso } from './model'
@@ -9,15 +9,15 @@ import { buildQso } from './qso'
 import { hasContent, matchCommand } from './command'
 
 export type CoreEvent =
-  | { readonly type: 'firstKeystroke'; readonly at: Date } // stamp start-of-QSO time (ch. 11)
+  | { readonly type: 'firstKeystroke'; readonly at: Date } // stamp start-of-QSO time
   | { readonly type: 'enter'; readonly line: string } // an Enter press with the current line
 
 export interface ReduceResult {
   readonly state: CoreState
-  readonly committed?: Qso // present only when this Enter committed a QSO (ch. 11 phase 2)
-  readonly preview: ClassifiedToken[] // parse preview of the line just processed (ch. 10)
-  readonly clearInput: boolean // UI hint: empty the input line (ch. 11 phase 1)
-  // A line command (ch. 9.5) the UI must act on. 'deleteLastBlocked' = D typed while a
+  readonly committed?: Qso // present only when this Enter committed a QSO (phase 2)
+  readonly preview: ClassifiedToken[] // parse preview of the line just processed
+  readonly clearInput: boolean // UI hint: empty the input line (phase 1)
+  // A line command the UI must act on. 'deleteLastBlocked' = D typed while a
   // QSO is unfinished — refused so D never silently mixes with typed data.
   readonly command?: 'wipe' | 'deleteLast' | 'deleteLastBlocked'
 }
@@ -30,12 +30,12 @@ export function reduce(state: CoreState, ev: CoreEvent, meta: LogMeta): ReduceRe
   const profile = PROFILES[meta.profile]
 
   if (ev.type === 'firstKeystroke') {
-    // Stamp the QSO start time once, at the first keystroke after a commit (ch. 11).
+    // Stamp the QSO start time once, at the first keystroke after a commit.
     const partial = state.partial.timeOn ? state.partial : { ...state.partial, timeOn: ev.at }
     return { state: { ...state, partial, hasStarted: true }, preview: [], clearInput: false }
   }
 
-  // Line commands (ch. 9.5) — checked before parsing, so a lone W is never a name.
+  // Line commands — checked before parsing, so a lone W is never a name.
   const cmd = matchCommand(ev.line)
   if (cmd) {
     const empty: CoreState = { sticky: state.sticky, partial: {}, hasStarted: false }
@@ -59,7 +59,7 @@ export function reduce(state: CoreState, ev: CoreEvent, meta: LogMeta): ReduceRe
 
   // Empty line.
   if (state.hasStarted) {
-    // Phase 2: try to commit. Requires a callsign (ch. 11) — plus a locator in VKV.
+    // Phase 2: try to commit. Requires a callsign — plus a locator in VKV.
     const committed = buildQso(state.partial, state.sticky, meta)
     if (committed) {
       return {
@@ -71,6 +71,6 @@ export function reduce(state: CoreState, ev: CoreEvent, meta: LogMeta): ReduceRe
     }
   }
 
-  // Phase 3: empty line with nothing committable → ignore (ch. 11 rule 3).
+  // Phase 3: empty line with nothing committable → ignore.
   return { state, preview: [], clearInput: false }
 }

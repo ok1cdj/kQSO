@@ -1,6 +1,6 @@
 // Anonymous usage statistics for the WEB build only (Umami on stats.ok1cdj.com).
 // Sent with a plain fetch to Umami's collect API — no third-party script in the
-// bundle (ch. 2: no runtime deps / CDN). Never in the APK, never in dev, never
+// bundle (no runtime deps / CDN). Never in the APK, never in dev, never
 // offline-queued; only screen names and a few action names, NEVER log content
 // (no calls, locators, QSOs). Switchable in Settings.
 

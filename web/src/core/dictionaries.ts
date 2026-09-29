@@ -1,7 +1,7 @@
-// Closed dictionaries for band and mode (ch. 9 #1–2). Being closed sets is what
-// lets `20M`/`2M` win as bands over the callsign regex (ch. 9.2).
+// Closed dictionaries for band and mode. Being closed sets is what
+// lets `20M`/`2M` win as bands over the callsign regex.
 
-/** Amateur bands recognized as sticky tokens (ch. 9 #1), canonical lowercase form. */
+/** Amateur bands recognized as sticky tokens, canonical lowercase form. */
 export const BANDS: readonly string[] = [
   '160m',
   '80m',
@@ -39,7 +39,7 @@ const BAND_ALIASES: Readonly<Record<string, string>> = {
   '76g': '4mm',
 }
 
-/** Modes recognized as sticky tokens (ch. 9 #2), canonical uppercase form. */
+/** Modes recognized as sticky tokens, canonical uppercase form. */
 export const MODES: readonly string[] = ['CW', 'SSB', 'FM']
 
 const BAND_SET = new Set(BANDS)

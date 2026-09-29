@@ -1,4 +1,4 @@
-// Service worker (ch. 13 / F1.6). Offline-first: caches the app shell + assets so
+// Service worker. Offline-first: caches the app shell + assets so
 // the whole thing works in airplane mode after the first load. The cache name is
 // the app version (injected at build time), so a new deploy purges the old cache
 // and clients never hang on a stale build.
@@ -34,7 +34,7 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(req.url)
   // Only handle our own origin — never intercept cross-origin (e.g. a future
-  // Wavelog push, ch. 19.2).
+  // Wavelog push).
   if (url.origin !== self.location.origin) return
 
   event.respondWith(

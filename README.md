@@ -1,3 +1,5 @@
+<img src="web/public/kqso-icon-512.png" width="96" align="right" alt="kQSO icon" />
+
 # kQSO
 
 A ham radio logger with a single, smart input line. One line recognizes what you
@@ -10,6 +12,8 @@ desktop.
 
 - **Live web:** <https://kqso.ok1cdj.com/> (web 1.3.0; the old `ok1cdj.github.io/kQSO/` redirects there)
 - **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.3)
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/ok1cdj)
 
 ## Screenshots
 

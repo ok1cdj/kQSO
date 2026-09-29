@@ -5,7 +5,7 @@ import type { StickyState } from '../src/core/model'
 
 const sticky: StickyState = { band: '40m', mode: 'SSB' }
 
-describe('ch. 9.4 worked examples (full-line reduction)', () => {
+describe('worked examples (full-line reduction)', () => {
   it('OK1ABC → just a callsign', () => {
     const r = parseLine('OK1ABC', sticky, {}, PROFILES.aktivace)
     expect(r.partial).toEqual({ call: 'OK1ABC' })
@@ -43,7 +43,7 @@ describe('ch. 9.4 worked examples (full-line reduction)', () => {
   })
 })
 
-describe('VKV contest exchange (ch. 9 #7)', () => {
+describe('VKV contest exchange', () => {
   it('a bare number is the serial — including > 99 (123 is serial 123, not 12+3)', () => {
     for (const [line, serial] of [
       ['OK1ABC 001', '001'],
@@ -116,7 +116,7 @@ describe('Satellite profile (F3): report + locator, band tokens ignored', () => 
   })
 })
 
-describe('piecewise accumulation across lines (ch. 11 phase 1)', () => {
+describe('piecewise accumulation across lines (phase 1)', () => {
   it('OK1ABC, then JN79US, then PETR accumulate into one partial', () => {
     let partial = {}
     ;({ partial } = parseLine('OK1ABC', sticky, partial, PROFILES.obecny))

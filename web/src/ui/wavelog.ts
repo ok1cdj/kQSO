@@ -1,4 +1,4 @@
-// Wavelog API v2 client (ZADANI ch. 19.2) — the only network code in the app, and
+// Wavelog API v2 client — the only network code in the app, and
 // only ever run on an explicit tap. CORS is handled by Wavelog v2 itself
 // (Access-Control-Allow-Origin: *), for the PWA and the APK WebView alike.
 

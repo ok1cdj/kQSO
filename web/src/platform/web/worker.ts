@@ -1,6 +1,6 @@
 // OPFS worker: the ONLY place that touches the filesystem. Each op opens a
 // FileSystemSyncAccessHandle, does its work, and closes it — appends write at the
-// current end of file (ch. 13: append, never rewrite). Pure I/O; parsing stays on
+// current end of file (append, never rewrite). Pure I/O; parsing stays on
 // the main thread.
 
 /// <reference lib="webworker" />

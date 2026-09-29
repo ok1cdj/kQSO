@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { KEY_ROWS, KEYS } from '../src/ui/keys'
 
-describe('keyboard layout (ch. 5)', () => {
+describe('keyboard layout', () => {
   it('is a 6×7 grid of 40 keys', () => {
     expect(KEY_ROWS).toHaveLength(7)
     expect(KEYS).toHaveLength(40)

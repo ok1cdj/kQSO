@@ -1,9 +1,9 @@
-// Assemble a committed Qso from the accumulator + sticky + log header (ch. 11 commit).
+// Assemble a committed Qso from the accumulator + sticky + log header.
 
 import type { LogMeta, PartialQso, Qso, Signal, StickyState } from './model'
 import { PROFILES, defaultReport } from './model'
 
-/** Apply an HHMM manual time override (ch. 11) onto a base UTC instant. */
+/** Apply an HHMM manual time override onto a base UTC instant. */
 function applyTimeOverride(base: Date, hhmm: string): Date {
   const h = Number(hhmm.slice(0, 2))
   const m = Number(hhmm.slice(2, 4))
@@ -13,12 +13,12 @@ function applyTimeOverride(base: Date, hhmm: string): Date {
 }
 
 /**
- * Build a committable Qso, or null when there is no callsign (ch. 11: commit
+ * Build a committable Qso, or null when there is no callsign (commit
  * requires only the callsign). Reports default from the log header; time,
  * signal and my-* come from the accumulator/sticky/meta.
  *
  * Precondition: `partial.timeOn` is set — the reducer stamps it at the first
- * keystroke (ch. 11). Without it there is nothing to commit.
+ * keystroke. Without it there is nothing to commit.
  */
 export function buildQso(partial: PartialQso, sticky: StickyState, meta: LogMeta): Qso | null {
   if (!partial.call || !partial.timeOn) return null

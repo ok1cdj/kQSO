@@ -23,7 +23,7 @@ const qso: Qso = {
   myRef: { kind: 'SOTA', value: 'OK/ZC-001' },
 }
 
-describe('log-file codec (meta in ADIF header, ch. 13)', () => {
+describe('log-file codec (meta in ADIF header)', () => {
   it('roundtrips meta + QSOs', () => {
     const parsed = readLogFile(writeLogFile(meta, [qso]))
     expect(parsed.meta).toEqual(meta)

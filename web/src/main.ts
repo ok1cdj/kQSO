@@ -1,5 +1,5 @@
-// App entry: resolve display mode (ch. 3), mount the App, register the service
-// worker (F1.6), and nudge iOS users to add to home screen.
+// App entry: resolve display mode, mount the App, register the service
+// worker, and nudge iOS users to add to home screen.
 
 import './theme/tokens.css'
 import './ui/styles.css'

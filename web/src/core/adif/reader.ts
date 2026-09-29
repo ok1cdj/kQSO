@@ -1,6 +1,6 @@
 // ADIF reader: text → Qso[]. Scans on UTF-8 bytes because `<name:LEN>` lengths
 // are byte counts. Reverses the writer's field mapping via the shared fields.ts,
-// which is what makes parse → ADIF → parse roundtrip (ch. 13, 17).
+// which is what makes parse → ADIF → parse roundtrip.
 
 import type { Qso, Signal } from '../model'
 import { utf8Encode, utf8Decode } from './bytes'

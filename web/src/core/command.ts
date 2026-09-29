@@ -1,4 +1,4 @@
-// Line commands (ch. 9.5): a single letter alone on the line, confirmed with Enter.
+// Line commands: a single letter alone on the line, confirmed with Enter.
 // Band/mode are bare words too, but they are values mixed into a line; a command is
 // an action, so it only counts when it is the WHOLE line (OK1ABC W stays a token).
 // A lone letter has no digit, so it can never be a callsign.

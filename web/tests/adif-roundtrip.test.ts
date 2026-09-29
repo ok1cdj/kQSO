@@ -16,7 +16,7 @@ function roundtrip(qso: Qso): Qso {
   return qsos[0]!
 }
 
-describe('parse → ADIF → parse roundtrip (ch. 13, 17)', () => {
+describe('parse → ADIF → parse roundtrip', () => {
   it('SOTA', () => {
     const qso: Qso = {
       ...BASE,
@@ -88,7 +88,7 @@ describe('parse → ADIF → parse roundtrip (ch. 13, 17)', () => {
     expect(roundtrip(qso)).toEqual(qso)
   })
 
-  it('satellite-shaped Qso with BAND_RX (ch. 19.1)', () => {
+  it('satellite-shaped Qso with BAND_RX', () => {
     const qso: Qso = {
       ...BASE,
       call: 'OK2XYZ',

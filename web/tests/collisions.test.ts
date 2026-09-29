@@ -7,7 +7,7 @@ function ctx(over: Partial<TokenContext> = {}): TokenContext {
   return { isFirstToken: true, callSeen: false, profile: PROFILES.aktivace, ...over }
 }
 
-describe('band vs callsign collisions (ch. 9.2)', () => {
+describe('band vs callsign collisions', () => {
   it('20M is a band, not a callsign', () => {
     expect(classifyToken('20M', ctx())).toEqual({ type: 'band', value: '20m' })
   })
@@ -22,7 +22,7 @@ describe('band vs callsign collisions (ch. 9.2)', () => {
   })
 })
 
-describe('locator vs callsign collision (ch. 9.2)', () => {
+describe('locator vs callsign collision', () => {
   it('JN79US is a locator only after a call', () => {
     expect(classifyToken('JN79US', ctx({ isFirstToken: false, callSeen: true }))).toEqual({
       type: 'locator',

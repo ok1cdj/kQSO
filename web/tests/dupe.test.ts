@@ -15,7 +15,7 @@ function qso(call: string, band: string, mode: string): Qso {
 
 const log = [qso('OK1ABC', '40m', 'SSB'), qso('DL5ABC', '20m', 'CW')]
 
-describe('DUPE check (ch. 10)', () => {
+describe('DUPE check', () => {
   it('matches on call + band + mode', () => {
     expect(isDupe(log, 'OK1ABC', '40m', 'SSB')).toBe(true)
   })

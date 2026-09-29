@@ -1,6 +1,6 @@
 // Minimal pure UTF-8 helpers. ADIF field lengths are BYTE counts, so the writer
 // and reader must agree on UTF-8 byte boundaries even for non-ASCII NAME/QTH.
-// Implemented by hand to keep core dependency-free and DOM-free (ch. 2).
+// Implemented by hand to keep core dependency-free and DOM-free.
 
 export function utf8Encode(s: string): number[] {
   const out: number[] = []

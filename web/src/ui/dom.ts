@@ -1,4 +1,4 @@
-// Tiny DOM helpers shared by the screens. No framework (ch. 2: no runtime deps).
+// Tiny DOM helpers shared by the screens. No framework (no runtime deps).
 
 export function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -18,7 +18,7 @@ export function button(label: string, onClick: () => void, cls = 'btn'): HTMLBut
   return b
 }
 
-/** A labelled text input row for the classic forms (ch. 15). System keyboard is fine here. */
+/** A labelled text input row for the classic forms. System keyboard is fine here. */
 export function fieldRow(
   label: string,
   value: string,
@@ -86,7 +86,7 @@ export interface Tile {
 
 /**
  * On-brand tile picker: a grid of tappable tiles instead of a native <select> — one
- * tap, no full-screen OS dialog. Used for the profile and satellite (ch. 8) and the EDI section.
+ * tap, no full-screen OS dialog. Used for the profile and satellite and the EDI section.
  * `value()` returns the selected tile's value; `onChange` fires on each pick.
  */
 export function tilePicker(

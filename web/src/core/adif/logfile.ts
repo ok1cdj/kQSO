@@ -1,5 +1,5 @@
 // A kQSO log file is one ADIF document whose HEADER carries the log metadata via
-// application-defined APP_KQSO_* fields (ch. 13: the .adi is the single source of
+// application-defined APP_KQSO_* fields (the .adi is the single source of
 // truth). QSO records follow. Uploaders ignore APP_ header fields, so the same
 // file is also the export.
 
@@ -105,7 +105,7 @@ export interface ParsedLogFile {
   readonly count: number
 }
 
-/** Parse a whole log file back into its meta and QSOs (ch. 13 "otevření logu"). */
+/** Parse a whole log file back into its meta and QSOs. */
 export function readLogFile(text: string): ParsedLogFile {
   const { header, qsos } = readAdif(text)
   return { meta: metaFromHeader(header), qsos, count: qsos.length }

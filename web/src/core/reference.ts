@@ -1,4 +1,4 @@
-// Award-reference detection (ch. 9.1). Recognition is by SHAPE, not by profile.
+// Award-reference detection. Recognition is by SHAPE, not by profile.
 // The user has no dash on the keyboard, so references are typed with slashes and
 // the last slash is normalized to a dash.
 
@@ -7,7 +7,7 @@ import type { AwardReference, ReferenceKind } from './model'
 /**
  * The discriminator against a portable callsign: a reference's last `/`-part is
  * purely numeric and 3–4 characters long. Callsign suffixes are letters (`/P`)
- * or a single digit (`/5`) (ch. 9.1 table).
+ * or a single digit (`/5`).
  */
 const REF_LAST_PART = /^\d{3,4}$/
 
@@ -15,7 +15,7 @@ const REF_LAST_PART = /^\d{3,4}$/
  * Classify a token as an award reference, or return null if it is not one
  * (in particular, if it is a portable callsign).
  *
- * Kind is decided by shape (ch. 9.1: "WWFF má sufix FF v prefixové části,
+ * Kind is decided by shape ("WWFF má sufix FF v prefixové části,
  * SOTA tři části, POTA dvě"):
  *   OK/ZC/001  → SOTA (three parts)   → "OK/ZC-001"
  *   OK/0001    → POTA (two parts)     → "OK-0001"
@@ -40,11 +40,11 @@ export function matchReference(raw: string): AwardReference | null {
   } else if (parts.length === 2) {
     kind = 'POTA'
   } else {
-    // Exotic shapes (GMA/HEMA) are out of scope (ch. 18).
+    // Exotic shapes (GMA/HEMA) are out of scope.
     return null
   }
 
-  // Normalize: replace only the LAST slash with a dash (ch. 9.1).
+  // Normalize: replace only the LAST slash with a dash.
   const value = parts.slice(0, -1).join('/') + '-' + last
   return { kind, value }
 }

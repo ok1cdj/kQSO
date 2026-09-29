@@ -12,7 +12,7 @@ const meta: LogMeta = {
   defaultSignal: { band: '40m', mode: 'SSB' },
 }
 
-describe('sticky state across lines (ch. 9.3)', () => {
+describe('sticky state across lines', () => {
   it('band/mode set on one line are inherited by a later bare-callsign line', () => {
     const s0 = initialSticky(meta)
 
@@ -25,11 +25,11 @@ describe('sticky state across lines (ch. 9.3)', () => {
     expect(l2.partial.call).toBe('OK1ABC')
   })
 
-  it('seeds band/mode from the log default signal (ch. 8)', () => {
+  it('seeds band/mode from the log default signal', () => {
     expect(initialSticky(meta)).toMatchObject({ band: '40m', mode: 'SSB' })
   })
 
-  it('leaves the RX variant untouched when band changes (ch. 19.1)', () => {
+  it('leaves the RX variant untouched when band changes', () => {
     const s: typeof meta.defaultSignal = { band: '40m', mode: 'SSB', bandRx: '2m', modeRx: 'FM' }
     const seeded = initialSticky({ ...meta, defaultSignal: s })
     expect(seeded).toEqual({ band: '40m', mode: 'SSB', bandRx: '2m', modeRx: 'FM' })

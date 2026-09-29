@@ -1,4 +1,4 @@
-// Logging screen (ch. 4, 5, 10, 11). Real input line without <input>; two-phase
+// Logging screen. Real input line without <input>; two-phase
 // Enter; DUPE warning; strip suggestions + locator prefill from the callsign
 // database (bundled set + live layer, calldb.ts); crash-journal mirror. One specific log, passed in by the App.
 
@@ -82,7 +82,7 @@ export class LoggingScreen implements Screen {
     this.meta = DEFAULT_META
     this.state = initialState(DEFAULT_META)
     const kb = createKeyboard((a) => this.onKey(a))
-    // Portrait band order (ch. 4): header · input · preview · strip · keyboard.
+    // Portrait band order: header · input · preview · strip · keyboard.
     const screen = el('div', 'screen screen--log')
     screen.append(this.hdr, this.banner, this.inputEl, this.previewEl, this.stripEl, this.recentEl, kb)
     root.replaceChildren(screen)
@@ -117,7 +117,7 @@ export class LoggingScreen implements Screen {
       this.satLabel = sat.label
       this.state = { ...this.state, sticky: applySatellite(this.state.sticky, sat, 'SSB') }
     }
-    this.platform.keepAwake(true) // ch. 16
+    this.platform.keepAwake(true)
     await this.offerRecovery()
     this.renderRecent()
     this.renderAll()
@@ -202,7 +202,7 @@ export class LoggingScreen implements Screen {
     this.renderAll()
   }
 
-  // --- line commands (ch. 9.5) ----------------------------------------------
+  // --- line commands ----------------------------------------------
 
   private async runCommand(cmd: 'wipe' | 'deleteLast' | 'deleteLastBlocked', hadContent: boolean): Promise<void> {
     if (cmd === 'deleteLastBlocked') {
@@ -224,13 +224,13 @@ export class LoggingScreen implements Screen {
     // Deleting a SAVED QSO is the one destructive command → confirm, showing which.
     if (!confirm(t('logging.deleteLastConfirm', { qso: formatQso(last) }))) return
     this.qsos.pop()
-    // Same path as the QSO edit screen: rewrite the whole file (ch. 13, rare).
+    // Same path as the QSO edit screen: rewrite the whole file (rare).
     await this.platform.rewriteLog(this.logId, writeLogFile(this.meta, this.qsos))
     this.renderRecent()
     this.notice = t('logging.deletedLast', { qso: formatQso(last) })
   }
 
-  // --- crash-journal recovery (ch. 13) --------------------------------------
+  // --- crash-journal recovery --------------------------------------
 
   private async offerRecovery(): Promise<void> {
     const text = (await this.platform.readJournal(this.logId)).trim()
@@ -296,7 +296,7 @@ export class LoggingScreen implements Screen {
 
   private renderLine(): void {
     this.inputEl.replaceChildren(document.createTextNode(this.line), el('span', 'cursor'))
-    // DUPE (ch. 10): invert the input line. Satellite dupe keys on call + SAT_NAME
+    // DUPE: invert the input line. Satellite dupe keys on call + SAT_NAME
     // (a station can be re-worked on another bird); VHF contest call + band; otherwise call + band + mode.
     const call = this.effectiveCall()
     const s = this.state.sticky
@@ -348,7 +348,7 @@ export class LoggingScreen implements Screen {
       return
     }
     const frag = this.line.trim()
-    // ≥2 chars → callsign suggestions from history (ch. 10).
+    // ≥2 chars → callsign suggestions from history.
     if (frag.length >= 2) {
       const hits = this.db.search(frag, 3)
       if (hits.length > 0) {
@@ -362,14 +362,14 @@ export class LoggingScreen implements Screen {
         return
       }
     }
-    // Completed call with a known locator → prefill chip (ch. 10).
+    // Completed call with a known locator → prefill chip.
     const call = this.state.partial.call
     const loc = call ? this.db.lookup(call)?.loc : undefined
     if (loc && this.state.partial.grid === undefined) {
       this.stripEl.replaceChildren(this.suggestButton(`+ ${loc}`, () => this.fillGrid(loc), 'suggest suggest--ghost'))
       return
     }
-    // Default: last written QSO (ch. 10). The wide layout already lists it in the
+    // Default: last written QSO. The wide layout already lists it in the
     // recent-QSO column, so the strip stays empty there.
     const last = this.qsos.length > 0 ? this.qsos[this.qsos.length - 1] : undefined
     if (WIDE.matches) this.stripEl.replaceChildren()
@@ -444,7 +444,7 @@ const DEFAULT_META: LogMeta = {
 }
 
 // A parse-preview chip showing a QSO field that will be saved. `missing` renders it
-// as an empty placeholder so the operator sees what is not yet filled (ch. 10).
+// as an empty placeholder so the operator sees what is not yet filled.
 function fieldChip(label: string, value: string, missing = false): HTMLElement {
   const e = el('span', missing ? 'tok tok--missing' : 'tok', value)
   e.append(el('small', undefined, label))

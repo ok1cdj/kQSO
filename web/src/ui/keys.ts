@@ -1,4 +1,4 @@
-// The 6×7, 40-key on-screen keyboard layout (ch. 5). Alphabetical, NOT QWERTY:
+// The 6×7, 40-key on-screen keyboard layout. Alphabetical, NOT QWERTY:
 // on a 6-column grid muscle memory doesn't help, and the alphabet is faster to
 // scan. Only slash as a special char; no long-press. Pure data — DOM-free so it
 // can be unit-tested under the core tsconfig.

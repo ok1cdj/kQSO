@@ -1,4 +1,4 @@
-// Service worker registration (F1.6). Only in production builds — in dev there is
+// Service worker registration. Only in production builds — in dev there is
 // no /sw.js and the SW would fight HMR.
 
 export function registerServiceWorker(): void {

@@ -1,4 +1,4 @@
-// DUPE detection (ch. 10): a QSO with the same call + band + mode already exists
+// DUPE detection: a QSO with the same call + band + mode already exists
 // in the CURRENT log. VHF contest: call + band only (IARU R1: each station once per
 // band) — pass no mode. Pure; the UI decides how to warn (invert the input line).
 

@@ -1,5 +1,5 @@
 // ADIF field-name constants and the single reference↔field mapping shared by the
-// writer and the reader, so the two cannot drift and roundtrip is guaranteed (ch. 14).
+// writer and the reader, so the two cannot drift and roundtrip is guaranteed.
 
 import type { AwardReference, ReferenceKind } from '../model'
 
@@ -33,7 +33,7 @@ export const F = {
   ADIF_VER: 'ADIF_VER',
 } as const
 
-/** Encode an award reference into its ADIF fields (ch. 14). `mine` selects the MY_* variant. */
+/** Encode an award reference into its ADIF fields. `mine` selects the MY_* variant. */
 export function refToFields(ref: AwardReference, mine: boolean): Array<[string, string]> {
   switch (ref.kind) {
     case 'SOTA':

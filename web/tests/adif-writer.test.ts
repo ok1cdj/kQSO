@@ -24,7 +24,7 @@ describe('writeField / writeHeader', () => {
   })
 })
 
-describe('writeQso against reference output (ch. 14)', () => {
+describe('writeQso against reference output', () => {
   it('Aktivace SOTA — SOTA_REF + MY_SOTA_REF', () => {
     const qso: Qso = {
       ...BASE,
@@ -62,7 +62,7 @@ describe('writeQso against reference output (ch. 14)', () => {
     expect(writeQso(qso)).toBe(`${HEAD} <GRIDSQUARE:6>JO60UN <NAME:4>PETR <EOR>`)
   })
 
-  it('satellite BAND_RX slot emits after BAND (ch. 19.1)', () => {
+  it('satellite BAND_RX slot emits after BAND', () => {
     const qso: Qso = { ...BASE, call: 'OK2XYZ', signal: { band: '2m', mode: 'SSB', bandRx: '70cm' } }
     expect(writeQso(qso)).toContain('<BAND:2>2m <BAND_RX:4>70cm <MODE:3>SSB')
   })

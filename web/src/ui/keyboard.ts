@@ -1,4 +1,4 @@
-// On-screen keyboard (ch. 5). Renders the fixed 6×7 grid. Uses pointerdown +
+// On-screen keyboard. Renders the fixed 6×7 grid. Uses pointerdown +
 // preventDefault so a tap neither focuses the button (no system keyboard) nor
 // selects text, and reacts immediately.
 

@@ -1,5 +1,5 @@
-// Split an input line into tokens (ch. 9 opener: "rozdělí na tokeny po mezerách").
-// Uppercased because the on-screen keyboard is uppercase-only (ch. 5) and the
+// Split an input line into tokens at whitespace.
+// Uppercased because the on-screen keyboard is uppercase-only and the
 // grammar regexes assume uppercase.
 
 export function tokenize(line: string): string[] {

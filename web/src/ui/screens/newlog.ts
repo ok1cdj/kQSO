@@ -1,4 +1,4 @@
-// New log form (ch. 8, 15 #2). Classic inputs (system keyboard is fine here).
+// New log form. Classic inputs (system keyboard is fine here).
 // Band/mode are dropdowns (no typing). Reference accepts slash or dash. Operator
 // call + locator prefill from the last remembered values (saved on create); each
 // log still keeps its own meta in the .adi.
@@ -37,7 +37,7 @@ const BAND_OPTIONS = BANDS.map((b) => [b, b] as const)
 const MODE_OPTIONS = MODES.map((m) => [m, m] as const)
 
 
-// The four log profiles (ch. 8). Aktivace carries a sub-line naming its schemes.
+// The four log profiles. Aktivace carries a sub-line naming its schemes.
 const PROFILE_TILES = (): readonly Tile[] => [
   { value: 'aktivace', title: t('newlog.profileAktivace'), sub: t('newlog.profileAktivaceSub') },
   { value: 'obecny', title: t('newlog.profileObecny') },
@@ -69,7 +69,7 @@ export class NewLogScreen implements Screen {
 
   private async render(): Promise<void> {
     const prev = await this.lastMeta()
-    // Operator identity: last remembered call/locator win over the last log's (ch. 8).
+    // Operator identity: last remembered call/locator win over the last log's.
     const rememberedCall = (await this.platform.getSetting('myCall')) ?? prev.myCall
     const rememberedGrid = (await this.platform.getSetting('myGrid')) ?? prev.myGrid
     // Satellite profile seeds its signal from the last-used bird (band/mode come
@@ -165,7 +165,7 @@ export class NewLogScreen implements Screen {
     this.nav.created(id)
   }
 
-  /** Prefill source for profile/report/band/mode: the most recent log's meta, or fallbacks (ch. 8). */
+  /** Prefill source for profile/report/band/mode: the most recent log's meta, or fallbacks. */
   private async lastMeta(): Promise<LogMeta> {
     const logs = await this.platform.listLogs()
     const last = logs[logs.length - 1]

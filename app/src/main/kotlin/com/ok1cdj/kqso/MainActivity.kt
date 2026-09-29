@@ -23,7 +23,7 @@ import androidx.webkit.WebViewAssetLoader
 import java.io.File
 
 /**
- * kQSO Android shell (ch. 1, phase 2). A single WebView that runs the bundled web
+ * kQSO Android shell. A single WebView that runs the bundled web
  * app. Storage/export/share/keep-awake go through KQSOBridge (window.KQSONative);
  * the web layer is otherwise identical to the browser build.
  */

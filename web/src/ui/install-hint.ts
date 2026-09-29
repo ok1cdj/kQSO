@@ -1,4 +1,4 @@
-// iOS add-to-home hint (ch. 13). Safari can't prompt programmatically, and only a
+// iOS add-to-home hint. Safari can't prompt programmatically, and only a
 // home-screen app escapes WebKit's 7-day data eviction — so we say it in words.
 // Shown once per load, dismissible.
 

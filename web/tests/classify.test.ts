@@ -8,7 +8,7 @@ function ctx(over: Partial<TokenContext> = {}): TokenContext {
   return { isFirstToken: true, callSeen: false, profile: PROFILES.obecny, ...over }
 }
 
-describe('each ch. 9 rule in isolation', () => {
+describe('each classification rule in isolation', () => {
   it('#1 band', () => {
     expect(classifyToken('40M', ctx())).toEqual({ type: 'band', value: '40m' })
   })

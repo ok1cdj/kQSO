@@ -1,5 +1,5 @@
 // Parse one input line: tokenize → classify → fold into (sticky, partial).
-// Pure: returns new objects, mutates nothing (ch. 9).
+// Pure: returns new objects, mutates nothing.
 
 import type { ClassifiedToken, LogProfile, PartialQso, StickyState } from './model'
 import { tokenize } from './tokenize'
@@ -7,9 +7,9 @@ import { classifyLine } from './classify'
 import { applyBand, applyMode } from './sticky'
 
 export interface ParseResult {
-  readonly tokens: ClassifiedToken[] // for the parse preview (ch. 10)
+  readonly tokens: ClassifiedToken[] // for the parse preview
   readonly partial: PartialQso // accumulator after applying this line
-  readonly sticky: StickyState // sticky after applying band/mode from this line (ch. 9.3)
+  readonly sticky: StickyState // sticky after applying band/mode from this line
 }
 
 /**
@@ -24,7 +24,7 @@ export function parseLine(
   profile: LogProfile,
 ): ParseResult {
   // Seed callSeen from the accumulator so a locator/name typed on a later line
-  // is not mistaken for a callsign (ch. 9.2, ch. 11 piecewise entry).
+  // is not mistaken for a callsign (piecewise entry).
   const tokens = classifyLine(tokenize(line), profile, partial.call !== undefined)
 
   let nextSticky = sticky
@@ -52,7 +52,7 @@ export function parseLine(
         next.reportSent = cls.value
         break
       case 'number': {
-        // ch. 9 #7. VKV contest exchange is report + serial, in one token (59001)
+        // VKV contest exchange is report + serial, in one token (59001)
         // or two (59 001), and the serial can stand alone (001 → report defaults).
         // Disambiguation: contest serials are zero-padded (001), RST reports never
         // are (59/599). The report width is the mode's RST width.

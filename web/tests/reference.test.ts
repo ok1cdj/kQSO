@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { matchReference, parseReferenceInput } from '../src/core/reference'
 
-describe('reference detection (ch. 9.1)', () => {
+describe('reference detection', () => {
   it('SOTA — three parts, last 3 digits', () => {
     expect(matchReference('OK/ZC/001')).toEqual({ kind: 'SOTA', value: 'OK/ZC-001' })
   })
@@ -19,7 +19,7 @@ describe('reference detection (ch. 9.1)', () => {
   })
 })
 
-describe('reference vs portable callsign (ch. 9.1 table)', () => {
+describe('reference vs portable callsign ', () => {
   it('rejects letter suffix /P', () => {
     expect(matchReference('OK1ABC/P')).toBeNull()
   })
@@ -66,7 +66,7 @@ describe('reference edge shapes', () => {
     expect(matchReference('GFF/0123')).toEqual({ kind: 'WWFF', value: 'GFF-0123' })
   })
 
-  it('rejects a two-digit last part (satellite-shaped, ch. 19.1)', () => {
+  it('rejects a two-digit last part (satellite-shaped)', () => {
     expect(matchReference('RS/44')).toBeNull()
   })
 

@@ -1,4 +1,4 @@
-// Android WebView bridge (ch. 12, phase 2). The shell injects `window.KQSONative`
+// Android WebView bridge. The shell injects `window.KQSONative`
 // via addJavascriptInterface — a SYNCHRONOUS object (methods return strings, not
 // Promises). NativePlatform wraps it into the async KQSOPlatform the app expects.
 // In phase 1 (browser) KQSONative is absent and this stays dormant.

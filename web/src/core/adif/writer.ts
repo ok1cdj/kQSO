@@ -1,4 +1,4 @@
-// ADIF writer: a Qso becomes one record `<field:len>value … <eor>` (ch. 13, 14).
+// ADIF writer: a Qso becomes one record `<field:len>value … <eor>`.
 // Fields are emitted in a fixed deterministic order so exact-string tests hold.
 
 import type { Qso } from '../model'
@@ -14,7 +14,7 @@ function pad2(n: number): string {
   return n < 10 ? '0' + n : String(n)
 }
 
-/** YYYYMMDD in UTC (ch. 11 "ukládá se v UTC"). */
+/** YYYYMMDD in UTC — QSOs are stored in UTC. */
 function qsoDate(d: Date): string {
   return `${d.getUTCFullYear()}${pad2(d.getUTCMonth() + 1)}${pad2(d.getUTCDate())}`
 }
@@ -60,7 +60,7 @@ export function writeQso(qso: Qso): string {
   return parts.join(' ') + ' <EOR>'
 }
 
-/** A minimal ADIF header so external uploaders accept the file (ch. 14). */
+/** A minimal ADIF header so external uploaders accept the file. */
 export function writeHeader(): string {
   return `${writeField(F.ADIF_VER, '3.1.4')} ${writeField(F.PROGRAMID, 'kQSO')} <EOH>`
 }

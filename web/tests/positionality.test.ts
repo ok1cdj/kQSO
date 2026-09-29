@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { classifyLine } from '../src/core/classify'
 import { PROFILES } from '../src/core/model'
 
-describe('positionality of number and locator (ch. 9.2)', () => {
+describe('positionality of number and locator', () => {
   it('a number after the call is a received report/serial; before the call it is not a number', () => {
     const after = classifyLine(['OK1ABC', '001'], PROFILES.aktivace)
     expect(after[1]!.cls).toEqual({ type: 'number', value: '001' })
@@ -17,7 +17,7 @@ describe('positionality of number and locator (ch. 9.2)', () => {
     const after = classifyLine(['DL5ABC', 'JO60UN'], PROFILES.aktivace)
     expect(after[1]!.cls).toEqual({ type: 'locator', value: 'JO60UN' })
 
-    // JN79US as the first token matches the callsign regex (ch. 9.2).
+    // JN79US as the first token matches the callsign regex.
     const first = classifyLine(['JN79US', 'DL5ABC'], PROFILES.aktivace)
     expect(first[0]!.cls).toEqual({ type: 'call', value: 'JN79US' })
     // ...and once a call was seen, the second locator-shaped token is a locator.
