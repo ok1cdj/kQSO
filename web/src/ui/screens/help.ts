@@ -36,6 +36,7 @@ const EN: readonly Section[] = [
     rows: [
       { code: '40m ssb', text: 'Sets band and mode. They stick until changed and show in the header.' },
       { text: 'Bands: 160m…70cm, microwaves 23cm 13cm 9cm 6cm 3cm 1.25cm 6mm 4mm — also typed as 1G 2G 3G 5G 10G 24G 47G 76G. Modes: cw ssb fm.' },
+      { code: '24G cw', text: 'Microwaves also in GHz: 24G = 1.25cm, the ADIF name, which needs a dot the keyboard lacks. 10G = 3cm, 76G = 4mm.' },
     ],
   },
   {
@@ -126,6 +127,7 @@ const CS: readonly Section[] = [
     rows: [
       { code: '40m ssb', text: 'Nastaví pásmo a mód. Drží se, dokud je nezměníš, a jsou vidět v hlavičce.' },
       { text: 'Pásma: 160m…70cm, mikrovlny 23cm 13cm 9cm 6cm 3cm 1.25cm 6mm 4mm — jdou napsat i jako 1G 2G 3G 5G 10G 24G 47G 76G. Módy: cw ssb fm.' },
+      { code: '24G cw', text: 'Mikrovlny i v GHz: 24G = 1.25cm, název podle ADIF, který potřebuje tečku, a ta na klávesnici není. 10G = 3cm, 76G = 4mm.' },
     ],
   },
   {

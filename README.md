@@ -8,16 +8,38 @@ Android APK (the same web app in a WebView shell).
 Target devices (all first-class): **Mudita Kompakt** (480×800 e-ink), iPad/tablet,
 desktop.
 
-*Formerly kLog — renamed to avoid a clash with KLog by EA4K.*
-
 - **Live web:** <https://kqso.ok1cdj.com/> (web 1.3.0; the old `ok1cdj.github.io/kQSO/` redirects there)
 - **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.3)
-- Spec: [`ZADANI-kQSO.md`](ZADANI-kQSO.md) (Czech) · plan: [`PLAN-kQSO.md`](PLAN-kQSO.md)
+
+## Screenshots
+
+<p>
+  <img src="docs/screenshots/kompakt-logging.png" width="240" alt="Mudita Kompakt (e-ink): logging a satellite pass">
+  <img src="docs/screenshots/kompakt-logs.png" width="240" alt="Mudita Kompakt: log list with the Wavelog push result">
+  <img src="docs/screenshots/android-satellite.png" width="180" alt="Android phone, dark mode: RS-44 pass, callsign suggestions and the parse preview">
+</p>
+
+Mudita Kompakt (e-ink, APK) · Android phone (dark mode, suggestions + parse preview)
+
+<img src="docs/screenshots/ipad-logging.png" width="800" alt="iPad: VHF contest logging, keyboard beside the recent QSOs">
+
+iPad, VHF contest: logging with the keyboard beside the recent QSOs
+
+<img src="docs/screenshots/ipad-qsolist.png" width="800" alt="iPad: VHF contest QSO list with points per QSO and the band score line">
+
+QSO list: points per QSO, score line per band (QSO · points · WWL · ODX)
+
+<img src="docs/screenshots/ipad-map.png" width="800" alt="iPad: QSO map with worked locators, the Maidenhead grid and your QTH">
+
+QSO map: worked stations over the Maidenhead grid, your QTH as the crosshair
 
 ## Features
 
 - **One input line, own 6×7 alphabetical keyboard** (no system keyboard; a hardware
   keyboard works too). A parse preview under the line shows what will be saved.
+- **Bands** 160m…70cm and microwaves up to 76 GHz: 23cm 13cm 9cm 6cm 3cm 1.25cm
+  6mm 4mm (ADIF names; EDI `PBand` 1,3…76 GHz). Microwaves can be typed in GHz —
+  `1G 2G 3G 5G 10G 24G 47G 76G` — handy for `24G`, since the keyboard has no dot.
 - **Log profiles**, chosen when a log is created:
   - **Activation** (SOTA / POTA / WWFF) — your reference is set when the log is
     created; the worked station's reference is logged for S2S.
@@ -65,6 +87,7 @@ empty line to save it. Only the callsign is required.
 
 ```
 40m ssb                    band + mode (sticky until changed)
+24G cw                     microwaves in GHz (→ 1.25cm), also 10G, 76G…
 OK1ABC                     callsign → saves with defaults
 OK2XYZ OK/ZC/001           worked station + SOTA reference (→ OK/ZC-001)
 DL5ABC 55 JO60UN           received report + locator

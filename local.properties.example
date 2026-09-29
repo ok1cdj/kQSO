@@ -3,7 +3,7 @@ sdk.dir=/home/YOU/Android/Sdk
 
 # Release signing (optional locally; CI writes these from repository secrets).
 # Without them, assembleRelease produces an unsigned APK.
-# signing.storeFile=keystore/klog.jks
+# signing.storeFile=keystore/kqso.jks
 # signing.storePassword=CHANGEME
-# signing.keyAlias=klog
+# signing.keyAlias=kqso
 # signing.keyPassword=CHANGEME
