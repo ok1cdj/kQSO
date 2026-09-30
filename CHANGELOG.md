@@ -4,6 +4,8 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 
 ## [Unreleased]
 
+## [1.5] – 2026-09-30
+
 ### Added
 - **TOTA lookout towers** (rozhledny.eu): `OKR/1001` is recognized as a tower and written as `MY_SIG=TOTA` + `MY_SIG_INFO=OKR-1001`; tower-to-tower QSOs also get `SIG`/`SIG_INFO`.
 - **GMA-only summits** (gma.rocks): a summit with a GMA association (`OL/LI/001`, `OM0/…`, `OE0/…`, `DA/…`) is written as `MY_SIG=GMA` + `MY_SIG_INFO=OL/LI-001` instead of a SOTA reference. SOTA summits (`OK/LI/001`) stay SOTA; GMA accepts them too.
@@ -60,7 +62,8 @@ First release as **kQSO** (earlier builds were test versions only).
 - **Android APK** (WebView shell), signed, from GitHub Releases.
 - E-ink and standard display modes, EN / CS interface, help screen.
 
-[Unreleased]: https://github.com/ok1cdj/kQSO/compare/v1.4...HEAD
+[Unreleased]: https://github.com/ok1cdj/kQSO/compare/v1.5...HEAD
+[1.5]: https://github.com/ok1cdj/kQSO/compare/v1.4...v1.5
 [1.4]: https://github.com/ok1cdj/kQSO/compare/v1.3...v1.4
 [1.3]: https://github.com/ok1cdj/kQSO/compare/v1.2...v1.3
 [1.2]: https://github.com/ok1cdj/kQSO/compare/v1.1...v1.2
