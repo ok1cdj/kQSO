@@ -6,6 +6,17 @@ describe('reference detection', () => {
     expect(matchReference('OK/ZC/001')).toEqual({ kind: 'SOTA', value: 'OK/ZC-001' })
   })
 
+  it('GMA — three parts with a GMA-only association', () => {
+    expect(matchReference('OL/LI/001')).toEqual({ kind: 'GMA', value: 'OL/LI-001' })
+    expect(matchReference('DA/NI/001')).toEqual({ kind: 'GMA', value: 'DA/NI-001' })
+    expect(matchReference('OM0/BA/012')).toEqual({ kind: 'GMA', value: 'OM0/BA-012' })
+  })
+
+  it('SOTA associations stay SOTA (OK, DM)', () => {
+    expect(matchReference('OK/LI/001')).toEqual({ kind: 'SOTA', value: 'OK/LI-001' })
+    expect(matchReference('DM/BW/850')).toEqual({ kind: 'SOTA', value: 'DM/BW-850' })
+  })
+
   it('POTA — two parts, 2-letter ISO prefix', () => {
     expect(matchReference('CZ/0001')).toEqual({ kind: 'POTA', value: 'CZ-0001' })
   })
@@ -65,6 +76,7 @@ describe('parseReferenceInput — lenient form input (slash OR dash)', () => {
     expect(parseReferenceInput('US-10000')).toEqual({ kind: 'POTA', value: 'US-10000' })
     expect(parseReferenceInput('OKFF-0001')).toEqual({ kind: 'WWFF', value: 'OKFF-0001' })
     expect(parseReferenceInput('OKR-1001')).toEqual({ kind: 'TOTA', value: 'OKR-1001' })
+    expect(parseReferenceInput('OL/LI-001')).toEqual({ kind: 'GMA', value: 'OL/LI-001' })
   })
 
   it('lowercases input is normalized to upper', () => {

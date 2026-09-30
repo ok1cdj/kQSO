@@ -3,6 +3,7 @@
 // the last slash is normalized to a dash.
 
 import type { AwardReference, ReferenceKind } from './model'
+import { isGmaAssociation } from './gma'
 
 /**
  * The discriminator against a portable callsign: a reference's last `/`-part is
@@ -22,13 +23,19 @@ function twoPartKind(prefix: string): ReferenceKind {
   return 'POTA'
 }
 
+/** Three-part kind by association: GMA-only summits have their own (OL, OM0, DA). */
+function summitKind(association: string): ReferenceKind {
+  return isGmaAssociation(association) ? 'GMA' : 'SOTA'
+}
+
 /**
  * Classify a token as an award reference, or return null if it is not one
  * (in particular, if it is a portable callsign).
  *
- * Kind is decided by shape (SOTA three parts; POTA, WWFF, TOTA two, told apart
- * by the prefix):
+ * Kind is decided by shape (SOTA/GMA three parts, told apart by the association;
+ * POTA, WWFF, TOTA two, told apart by the prefix):
  *   OK/ZC/001  → SOTA (three parts)   → "OK/ZC-001"
+ *   OL/LI/001  → GMA (GMA-only association) → "OL/LI-001"
  *   CZ/0001    → POTA (two parts)     → "CZ-0001"
  *   OKFF/0001  → WWFF (prefix ends FF)→ "OKFF-0001"
  *   OKR/1001   → TOTA (3+ chars, ends R) → "OKR-1001"
@@ -46,7 +53,7 @@ export function matchReference(raw: string): AwardReference | null {
   if (parts.length === 2) {
     kind = twoPartKind(parts[0]!)
   } else if (parts.length === 3) {
-    kind = 'SOTA'
+    kind = summitKind(parts[0]!)
   } else {
     // Exotic shapes (GMA/HEMA) are out of scope.
     return null
@@ -76,6 +83,6 @@ export function parseReferenceInput(raw: string): AwardReference | null {
   const num = s.slice(dash + 1)
   if (!REF_LAST_PART.test(num)) return null
 
-  const kind: ReferenceKind = head.includes('/') ? 'SOTA' : twoPartKind(head)
+  const kind: ReferenceKind = head.includes('/') ? summitKind(head.split('/')[0]!) : twoPartKind(head)
   return { kind, value: `${head}-${num}` }
 }

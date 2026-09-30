@@ -57,6 +57,18 @@ describe('writeQso against reference output', () => {
     )
   })
 
+  it('Aktivace GMA — SIG=GMA/SIG_INFO + MY_SIG=GMA/MY_SIG_INFO', () => {
+    const qso: Qso = {
+      ...BASE,
+      call: 'OK2XYZ',
+      theirRef: { kind: 'GMA', value: 'DA/NI-001' },
+      myRef: { kind: 'GMA', value: 'OL/LI-001' },
+    }
+    expect(writeQso(qso)).toBe(
+      `${HEAD} <SIG:3>GMA <SIG_INFO:9>DA/NI-001 <MY_SIG:3>GMA <MY_SIG_INFO:9>OL/LI-001 <EOR>`,
+    )
+  })
+
   it('Aktivace TOTA — SIG=TOTA/SIG_INFO + MY_SIG=TOTA/MY_SIG_INFO (rozhledny.eu)', () => {
     const qso: Qso = {
       ...BASE,

@@ -24,7 +24,7 @@ const A = {
 } as const
 
 const PROFILE_IDS: readonly ProfileId[] = ['vkv', 'aktivace', 'obecny', 'sat']
-const REF_KINDS: readonly ReferenceKind[] = ['SOTA', 'POTA', 'WWFF', 'TOTA']
+const REF_KINDS: readonly ReferenceKind[] = ['SOTA', 'GMA', 'POTA', 'WWFF', 'TOTA']
 
 function metaFields(meta: LogMeta): string[] {
   const s = meta.defaultSignal

@@ -40,6 +40,7 @@ export function refToFields(ref: AwardReference, mine: boolean): Array<[string, 
       return [[mine ? F.MY_SOTA_REF : F.SOTA_REF, ref.value]]
     case 'POTA':
       return [[mine ? F.MY_POTA_REF : F.POTA_REF, ref.value]]
+    case 'GMA': // no GMA field in ADIF; gma.rocks asks the reference at upload anyway
     case 'WWFF':
     case 'TOTA': // rozhledny.eu wants MY_SIG=TOTA + MY_SIG_INFO=OKR-1001
       return mine
@@ -65,7 +66,7 @@ export function fieldsToRef(fields: Record<string, string>, mine: boolean): Awar
   const sig = fields[mine ? F.MY_SIG : F.SIG]
   const sigInfo = fields[mine ? F.MY_SIG_INFO : F.SIG_INFO]
   const sigKind = sig?.toUpperCase()
-  if ((sigKind === 'WWFF' || sigKind === 'TOTA') && sigInfo !== undefined) {
+  if ((sigKind === 'GMA' || sigKind === 'WWFF' || sigKind === 'TOTA') && sigInfo !== undefined) {
     return { kind: sigKind, value: sigInfo }
   }
   return undefined

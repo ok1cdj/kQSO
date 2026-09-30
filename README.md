@@ -46,7 +46,7 @@ QSO map: worked stations over the Maidenhead grid, your QTH as the crosshair
   6mm 4mm (ADIF names; EDI `PBand` 1,3…76 GHz). Microwaves can be typed in GHz —
   `1G 2G 3G 5G 10G 24G 47G 76G` — handy for `24G`, since the keyboard has no dot.
 - **Log profiles**, chosen when a log is created:
-  - **Activation** (SOTA / POTA / WWFF / TOTA lookout towers) — your reference is set when the log is
+  - **Activation** (SOTA / GMA / POTA / WWFF / TOTA lookout towers) — your reference is set when the log is
     created; the worked station's reference is logged for S2S.
   - **General** — adds the name.
   - **VHF contest** — serials, 6-char locator required, IARU R1 scoring (below).
@@ -96,6 +96,7 @@ empty line to save it. Only the callsign is required.
 OK1ABC                     callsign → saves with defaults
 OK2XYZ OK/ZC/001           worked station + SOTA reference (→ OK/ZC-001)
 OK2XYZ OKR/1001            lookout tower, TOTA (→ OKR-1001); POTA CZ/0001, WWFF OKFF/0001
+OK2XYZ OL/LI/001           GMA-only summit (→ OL/LI-001, MY_SIG=GMA)
 DL5ABC 55 JO60UN           received report + locator
 G8AHK/P PETR               name (General profile)
 1832 OK1ABC                HHMM first = manual UTC time

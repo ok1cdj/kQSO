@@ -6,6 +6,7 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 
 ### Added
 - **TOTA lookout towers** (rozhledny.eu): `OKR/1001` is recognized as a tower and written as `MY_SIG=TOTA` + `MY_SIG_INFO=OKR-1001`; tower-to-tower QSOs also get `SIG`/`SIG_INFO`.
+- **GMA-only summits** (gma.rocks): a summit with a GMA association (`OL/LI/001`, `OM0/…`, `OE0/…`, `DA/…`) is written as `MY_SIG=GMA` + `MY_SIG_INFO=OL/LI-001` instead of a SOTA reference. SOTA summits (`OK/LI/001`) stay SOTA; GMA accepts them too.
 
 ### Fixed
 - POTA references with 5 digits (`US/10000`) are accepted.
