@@ -271,7 +271,20 @@ body {
 }
 .key--wide {
   grid-column: span 2;
-  font-size: 1.9rem; /* Space and Enter glyphs bigger */
+}
+/* Space/Backspace/Enter as SVG (no font needed — the Tesla browser lacks ⌫ ↵). */
+.key-icon {
+  height: 1.6rem;
+  width: 1.6rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.key-icon--space {
+  height: 1.3rem;
+  width: 1.3rem;
 }
 
 /* --- management screens (bar, buttons, lists, forms) ---------------------- */

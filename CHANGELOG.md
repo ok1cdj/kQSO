@@ -4,6 +4,9 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 
 ## [Unreleased]
 
+### Fixed
+- Keyboard: Space, Backspace and Enter are drawn as icons instead of the ␣ ⌫ ↵ characters, which some browsers (Tesla) lack and showed as empty boxes.
+
 ## [1.5] – 2026-09-30
 
 ### Added
