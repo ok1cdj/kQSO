@@ -4,6 +4,9 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 
 ## [Unreleased]
 
+### Added
+- **Azimuth in the VHF contest header**: as soon as the locator is typed (or the callsign database knows it, shown grey) the header shows where to point the antenna, e.g. `146°`.
+
 ### Fixed
 - Keyboard: Space, Backspace and Enter are drawn as icons instead of the ␣ ⌫ ↵ characters, which some browsers (Tesla) lack and showed as empty boxes.
 

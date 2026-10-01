@@ -20,6 +20,7 @@ import {
   userHeader,
   isDupe,
   qsoPoints,
+  bearingDeg,
   defaultReport,
   applySatellite,
   satelliteByLabel,
@@ -260,13 +261,16 @@ export class LoggingScreen implements Screen {
   // --- rendering -------------------------------------------------------------
 
   private renderAll(): void {
-    this.renderHeader()
+    // Dry-run the current line onto the accumulated QSO once; the header (azimuth)
+    // and the preview both show what will actually be saved.
+    const dry = parseLine(this.line, this.state.sticky, this.state.partial, PROFILES[this.meta.profile])
+    this.renderHeader(dry.partial)
     this.renderLine()
-    this.renderPreview()
+    this.renderPreview(dry)
     this.renderStrip()
   }
 
-  private renderHeader(): void {
+  private renderHeader(p: PartialQso): void {
     const s = this.state.sticky
     const mid = el('div', 'hdr-mid')
     const profile = PROFILES[this.meta.profile]
@@ -280,6 +284,13 @@ export class LoggingScreen implements Screen {
     // VKV: show the next sent serial so the operator knows what to give out.
     if (profile.serialAfterCall) {
       mid.append(el('b', 'hdr-tx', `TX ${pad3(this.qsos.length + 1)}`))
+    }
+    // VHF contest: where to point the antenna. A typed locator wins; else the one the
+    // callsign database knows for the call, greyed like its + LOC suggestion.
+    if (profile.contest) {
+      const known = p.grid === undefined && p.call !== undefined ? this.db.lookup(p.call)?.loc : undefined
+      const az = bearingDeg(this.meta.myGrid, p.grid ?? known ?? '')
+      if (az !== undefined) mid.append(el('b', known ? 'hdr-az hdr-az--guess' : 'hdr-az', `${az}°`))
     }
     this.hdr.replaceChildren(
       button(t('logging.navLogs'), () => this.close(), 'hdr-nav'),
@@ -308,7 +319,7 @@ export class LoggingScreen implements Screen {
     this.inputEl.classList.toggle('inputline--dupe', dupe)
   }
 
-  private renderPreview(): void {
+  private renderPreview(dry: ReturnType<typeof parseLine>): void {
     const profile = PROFILES[this.meta.profile]
     // A lone W/D: show what Enter will do instead of parsing it (W would be a name).
     const cmd = matchCommand(this.line)
@@ -319,9 +330,8 @@ export class LoggingScreen implements Screen {
       this.previewEl.replaceChildren(fieldChip(this.line.trim(), what, blocked))
       return
     }
-    // Dry-run the current line onto the accumulated QSO so the preview shows what
-    // will actually be SAVED — filled fields, plus (for VKV) the still-missing ones.
-    const { partial: p, tokens } = parseLine(this.line, this.state.sticky, this.state.partial, profile)
+    // The dry run (renderAll): filled fields, plus (for VKV) the still-missing ones.
+    const { partial: p, tokens } = dry
     const chips: HTMLElement[] = []
     if (p.call) {
       chips.push(fieldChip('CALL', p.call))

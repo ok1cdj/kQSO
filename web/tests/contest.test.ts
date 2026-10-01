@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { gridCenter, qrbKm, qsoPoints } from '../src/core/locator'
+import { bearingDeg, gridCenter, qrbKm, qsoPoints } from '../src/core/locator'
 import { contestStats, scoreLog } from '../src/core/contest'
 import { isDupe } from '../src/core/dupe'
 import type { Qso } from '../src/core/model'
@@ -15,6 +15,25 @@ describe('locator centre', () => {
     expect(gridCenter('ZZ00')).toBeUndefined()
     expect(gridCenter('JO6')).toBeUndefined()
     expect(gridCenter('JO60ZZ')).toBeUndefined()
+  })
+})
+
+describe('azimuth (initial great-circle bearing, whole degrees)', () => {
+  // From Prague (JO70FC): Vienna SE, Berlin NNW, London W, Helsinki NNE.
+  const FROM_PRAGUE: ReadonlyArray<[string, number]> = [
+    ['JN88EF', 146],
+    ['JO62QM', 345],
+    ['IO91WM', 284],
+    ['KP20LE', 27],
+  ]
+  for (const [grid, deg] of FROM_PRAGUE) {
+    it(`JO70FC → ${grid} = ${deg}°`, () => expect(bearingDeg('JO70FC', grid)).toBe(deg))
+  }
+  it('same square is 0; 4-char works; invalid → undefined', () => {
+    expect(bearingDeg('JN79US', 'JN79US')).toBe(0)
+    expect(bearingDeg('JO70', 'JO62')).toBeGreaterThan(300)
+    expect(bearingDeg('JO70FC', '')).toBeUndefined()
+    expect(bearingDeg('XX', 'JO70FC')).toBeUndefined()
   })
 })
 

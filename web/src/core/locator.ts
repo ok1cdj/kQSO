@@ -34,6 +34,20 @@ export function qrbKm(a: string, b: string): number | undefined {
   return (Math.acos(Math.min(1, Math.max(-1, c))) / RAD) * KM_PER_DEG
 }
 
+/** Initial great-circle bearing from one locator centre to another, whole degrees
+ *  0–359 (where to point the antenna). Undefined when a locator is missing/invalid. */
+export function bearingDeg(from: string, to: string): number | undefined {
+  const p = gridCenter(from)
+  const q = gridCenter(to)
+  if (!p || !q) return undefined
+  const dLon = (q.lon - p.lon) * RAD
+  const y = Math.sin(dLon) * Math.cos(q.lat * RAD)
+  const x =
+    Math.cos(p.lat * RAD) * Math.sin(q.lat * RAD) - Math.sin(p.lat * RAD) * Math.cos(q.lat * RAD) * Math.cos(dLon)
+  if (x === 0 && y === 0) return 0 // same square
+  return Math.round((Math.atan2(y, x) / RAD + 360) % 360) % 360
+}
+
 /** QSO points: whole km + 1 (IARU R1). Undefined when a locator is missing/invalid. */
 export function qsoPoints(myGrid: string, theirGrid: string): number | undefined {
   const km = qrbKm(myGrid, theirGrid)

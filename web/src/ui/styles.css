@@ -213,6 +213,13 @@ body {
   padding: 0 0.3rem;
   border: var(--border-w) solid var(--fg);
 }
+/* VHF contest azimuth; grey while it comes from the callsign DB, not the line. */
+.hdr-az {
+  white-space: nowrap;
+}
+.hdr-az--guess {
+  color: var(--ghost);
+}
 /* Satellite (read-only) in the logging header. */
 .hdr-sat {
   font-weight: 700;
