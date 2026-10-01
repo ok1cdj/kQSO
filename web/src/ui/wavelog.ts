@@ -1,5 +1,5 @@
-// Wavelog API v2 client — the only network code in the app, and
-// only ever run on an explicit tap. CORS is handled by Wavelog v2 itself
+// Wavelog API v2 client — network code that only ever runs on an explicit tap
+// (the others: anonymous stats, ui/stats.ts; the map radar, ui/radar.ts). CORS is handled by Wavelog v2 itself
 // (Access-Control-Allow-Origin: *), for the PWA and the APK WebView alike.
 
 import { WavelogError, errorFor, parseImport, parseStations } from '../core/index'

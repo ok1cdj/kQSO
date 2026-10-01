@@ -16,6 +16,7 @@ import { wavelogErrorText } from '../wavelog-text'
 import { t } from '../i18n'
 import { BUNDLED_DB_SETTING, BUNDLED_IDS, bundledInfo } from '../bundled-db'
 import { MAP_LABELS_SETTING } from './map'
+import { RADAR_SETTING } from '../radar'
 import { STATS_SETTING, setStatsEnabled } from '../stats'
 
 export interface SettingsNav {
@@ -62,6 +63,7 @@ export class SettingsScreen implements Screen {
       await this.callDbSetting(),
       await this.wavelogSetting(),
       await this.mapLabelsSetting(),
+      await this.radarSetting(),
       this.storageSetting(persisted),
       ...(this.platform.nativeVersion ? [] : [await this.statsSetting()]),
       this.about(),
@@ -260,10 +262,19 @@ export class SettingsScreen implements Screen {
     return wrap
   }
 
-  /** A Yes/No switch stored as '1'/'0' under `key`; missing = yes. */
-  private async yesNo(key: string, onChange?: (on: boolean) => void): Promise<HTMLElement> {
+  /** VKV map: the rain radar on/off, default OFF (off = no network). */
+  private async radarSetting(): Promise<HTMLElement> {
+    const wrap = el('div', 'setting')
+    const seg = await this.yesNo(RADAR_SETTING, undefined, false)
+    wrap.append(el('span', 'field-label', t('settings.radar')), seg, el('div', 'about', t('settings.radarHint')))
+    return wrap
+  }
+
+  /** A Yes/No switch stored as '1'/'0' under `key`; missing = `def` (yes unless said). */
+  private async yesNo(key: string, onChange?: (on: boolean) => void, def = true): Promise<HTMLElement> {
     const seg = el('div', 'segmented')
-    const on = (await this.platform.getSetting(key)) !== '0'
+    const saved = await this.platform.getSetting(key)
+    const on = saved === null ? def : saved !== '0'
     const mk = (value: '1' | '0', label: string): HTMLButtonElement => {
       const b = button(label, () => {
         void this.platform.setSetting(key, value)

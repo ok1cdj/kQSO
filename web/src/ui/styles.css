@@ -467,6 +467,35 @@ body {
   display: block;
   touch-action: none;
 }
+/* Over the map: the tapped locator (top) and the radar attribution/time (bottom). */
+.map-pick,
+.map-note {
+  position: absolute;
+  left: 0.3rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: var(--bg);
+  color: var(--fg);
+  border: var(--border-w) solid var(--fg);
+  border-radius: var(--radius);
+}
+.map-pick {
+  top: 0.3rem;
+  padding: 0.15rem 0.2rem 0.15rem 0.5rem;
+  font-size: 0.9rem;
+}
+.map-note {
+  bottom: 0.3rem;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.7rem;
+  pointer-events: none;
+}
+.map-pick[hidden],
+.map-note[hidden] {
+  display: none;
+}
 /* EDI export: one block per band with its own equipment and export button. */
 .edi-band {
   display: flex;

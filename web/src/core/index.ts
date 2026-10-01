@@ -43,9 +43,23 @@ export type { ParsedLogFile } from './adif/logfile'
 export { emptySuggestions } from './suggest'
 export type { SuggestionSource } from './suggest'
 export { isDupe } from './dupe'
-export { bearingDeg, gridCenter, qrbKm, qsoPoints } from './locator'
+export { bearingDeg, gridCenter, latLonToGrid, qrbKm, qsoPoints } from './locator'
 export { fitView, project, unproject, zoomView, panView } from './mercator'
 export type { MapView, LatLon } from './mercator'
+export {
+  RADAR_META_URL,
+  latestFrame,
+  tileUrl,
+  tileZoom,
+  visibleTiles,
+  tileBox,
+  rainLevel,
+  pixelDbz,
+  recolor,
+  EINK_PALETTE,
+  COLOR_PALETTE,
+} from './radar'
+export type { RadarFrame, RadarPalette, TileRef } from './radar'
 export { contestStats, scoreLog } from './contest'
 export type { BandScore, ContestStats, ScoredQso } from './contest'
 export { writeEdi, ediBand, ediBands, ediAscii, parseEdiSettings, serializeEdiSettings, equipmentFor, EMPTY_EQUIPMENT } from './edi'

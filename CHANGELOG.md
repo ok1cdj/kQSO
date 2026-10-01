@@ -5,6 +5,8 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 ## [Unreleased]
 
 ### Added
+- **Rain radar on the VHF-contest map** (rain scatter, 3 cm): Settings → rain radar (off by default). The current RainViewer frame is drawn under the map and refreshed in the background while the map is open; 5 levels from dBZ, greys on e-ink (as kRadar), colours elsewhere. "Weather data by RainViewer" with the frame time is shown on the map.
+- **Tap on the map**: the locator there, its QRB and azimuth from your QTH (e.g. `JO61SF · 141 km · 333°`).
 - **Azimuth in the VHF contest header**: as soon as the locator is typed (or the callsign database knows it, shown grey) the header shows where to point the antenna, e.g. `146°`.
 
 ### Fixed

@@ -23,6 +23,21 @@ export function gridCenter(loc: string): { lat: number; lon: number } | undefine
   return { lat, lon }
 }
 
+/** 6-character locator of the square a point lies in (e.g. a tap on the map). */
+export function latLonToGrid(lat: number, lon: number): string {
+  const x = Math.min(Math.max(lon + 180, 0), 360 - 1e-9)
+  const y = Math.min(Math.max(lat + 90, 0), 180 - 1e-9)
+  const ch = (base: string, n: number): string => String.fromCharCode(base.charCodeAt(0) + n)
+  return (
+    ch('A', Math.floor(x / 20)) +
+    ch('A', Math.floor(y / 10)) +
+    String(Math.floor((x % 20) / 2)) +
+    String(Math.floor(y % 10)) +
+    ch('A', Math.floor(((x % 2) * 24) / 2)) +
+    ch('A', Math.floor((y % 1) * 24))
+  )
+}
+
 /** Great-circle distance between two locator centres in km (unrounded). */
 export function qrbKm(a: string, b: string): number | undefined {
   const p = gridCenter(a)

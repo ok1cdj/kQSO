@@ -63,7 +63,11 @@ QSO map: worked stations over the Maidenhead grid, your QTH as the crosshair
   list has points per QSO and a score line per band (QSO · points · WWL · ODX).
 - **QSO map** (VHF contest, satellite): a dot per worked locator with the call, the
   Maidenhead grid and your QTH over bundled Natural Earth coastlines and borders
-  (1:10m Europe, 1:50m world) — works offline; calls can be switched off.
+  (1:10m Europe, 1:50m world) — works offline; calls can be switched off. Tap the
+  map for that spot's locator, QRB and azimuth from your QTH (`JO61SF · 141 km · 333°`).
+- **Rain radar on the VHF-contest map** (rain scatter, 3 cm; off by default): the
+  current RainViewer frame under the map, refreshed in the background while the map
+  is open — greys on e-ink (as in kRadar), colours elsewhere, 5 levels from dBZ.
 - **Contest statistics:** per band points, average per QSO and the band's top 10.
 - **Export:** ADIF per log (all bands); VHF contest also **EDI (REG1TEST), one file
   per band** — contest name/section asked at export, station fields remembered.
@@ -82,6 +86,9 @@ QSO map: worked stations over the Maidenhead grid, your QTH as the crosshair
   Umami (`stats.ok1cdj.com`) by a plain `fetch` — no tracker script, no cookies,
   never any log content (no calls, locators, QSOs). Off in the APK and in dev;
   switchable in Settings; dropped when offline.
+- **Rain radar (when switched on):** the map fetches tiles from RainViewer
+  (`api.rainviewer.com`, `tilecache.rainviewer.com`) — your IP and the map area, no
+  log data. "Weather data by RainViewer" is shown on the map. Off = no request.
 
 Out of scope: ADIF import (the flow is log → export → forget).
 

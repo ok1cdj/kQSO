@@ -3,14 +3,29 @@
 // and borders (web/src/db/world.json — 1:10m Europe, 1:50m elsewhere — built by
 // web/scripts/mapdata.py). Canvas, Web Mercator (core/mercator.ts). E-ink friendly:
 // a drag only shifts the canvas and the map is redrawn once on release; zoom by buttons.
+// VKV logs can show the rain radar under the map (ui/radar.ts, setting, default off);
+// a tap (not a drag) shows that spot's locator, QRB and azimuth from the own QTH.
 
-import { fitView, gridCenter, panView, project, readLogFile, unproject, zoomView } from '../../core/index'
+import {
+  PROFILES,
+  bearingDeg,
+  fitView,
+  gridCenter,
+  latLonToGrid,
+  panView,
+  project,
+  qsoPoints as gridPoints,
+  readLogFile,
+  unproject,
+  zoomView,
+} from '../../core/index'
 import type { LatLon, LogMeta, MapView, Qso } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
 import { el, button } from '../dom'
 import { t } from '../i18n'
 import worldText from '../../db/world.json?raw'
+import { RADAR_SETTING, RadarLayer } from '../radar'
 
 /** Setting: calls next to the dots on the map ('0' = off; default on). */
 export const MAP_LABELS_SETTING = 'mapLabels'
@@ -80,6 +95,7 @@ const SQUARE_LINES_PX = 16 // square lines (2°×1°) from this width; the QSO l
 const SQUARE_DIGITS_PX = 30 // digits in every square from this width
 const SQUARE_FULL_PX = 60 // full square labels (JO70) from this width
 const MAX_LABELS = 80
+const TAP_PX = 6 // a pointer that moved less than this is a tap, not a drag
 
 export class MapScreen implements Screen {
   private readonly root = el('div', 'screen screen--map')
@@ -91,6 +107,10 @@ export class MapScreen implements Screen {
   private labels = true
   private resize: ResizeObserver | undefined
   private drag: { id: number; x: number; y: number; dx: number; dy: number } | undefined
+  private radar: RadarLayer | undefined
+  private readonly radarNote = el('div', 'map-note')
+  private readonly pickBar = el('div', 'map-pick')
+  private pick: string | undefined // tapped 6-char locator
 
   constructor(
     private readonly platform: KQSOPlatform,
@@ -105,6 +125,7 @@ export class MapScreen implements Screen {
 
   unmount(): void {
     this.resize?.disconnect()
+    this.radar?.stop()
   }
 
   private async load(): Promise<void> {
@@ -123,8 +144,17 @@ export class MapScreen implements Screen {
       button('⤢', () => this.fit(), 'btn btn--small'),
     )
     const note = noGrid > 0 ? [el('div', 'qsosum', t('map.noGrid', { n: noGrid }))] : []
-    this.wrap.replaceChildren(this.canvas)
+    this.pickBar.hidden = true
+    this.radarNote.hidden = true
+    this.wrap.replaceChildren(this.canvas, this.pickBar, this.radarNote)
     this.root.replaceChildren(bar, ...note, this.wrap)
+
+    // Rain radar: VKV logs only (rain scatter), and only when switched on.
+    if (PROFILES[meta.profile].contest && (await this.platform.getSetting(RADAR_SETTING)) === '1') {
+      this.radar = new RadarLayer(() => this.draw())
+      this.radarNote.hidden = false
+      this.radar.start()
+    }
 
     this.canvas.addEventListener('pointerdown', (e) => this.dragStart(e))
     this.canvas.addEventListener('pointermove', (e) => this.dragMove(e))
@@ -177,10 +207,37 @@ export class MapScreen implements Screen {
     if (!d || d.id !== e.pointerId) return
     this.drag = undefined
     this.canvas.style.transform = ''
-    if (this.view && (d.dx !== 0 || d.dy !== 0)) {
+    if (Math.abs(d.dx) < TAP_PX && Math.abs(d.dy) < TAP_PX) {
+      this.tap(e)
+      return
+    }
+    if (this.view) {
       this.view = panView(this.view, d.dx, d.dy)
       this.draw()
     }
+  }
+
+  /** A tap: the locator there, its QRB and azimuth from the own QTH (as in the log). */
+  private tap(e: PointerEvent): void {
+    if (!this.view || !this.meta) return
+    const r = this.canvas.getBoundingClientRect()
+    const { w, h } = this.size()
+    const p = unproject(e.clientX - r.left, e.clientY - r.top, this.view, w, h)
+    this.pick = latLonToGrid(p.lat, p.lon)
+    const km = gridPoints(this.meta.myGrid, this.pick)
+    const az = bearingDeg(this.meta.myGrid, this.pick)
+    const text = km !== undefined && az !== undefined ? `${this.pick} · ${km} km · ${az}°` : this.pick
+    const close = button('×', () => this.clearPick(), 'btn btn--small')
+    close.setAttribute('aria-label', t('map.pickClose'))
+    this.pickBar.replaceChildren(el('b', undefined, text), close)
+    this.pickBar.hidden = false
+    this.draw()
+  }
+
+  private clearPick(): void {
+    this.pick = undefined
+    this.pickBar.hidden = true
+    this.draw()
   }
 
   // --- drawing ---------------------------------------------------------------
@@ -209,6 +266,17 @@ export class MapScreen implements Screen {
 
     ctx.fillStyle = bg
     ctx.fillRect(0, 0, w, h)
+
+    // Rain radar first: the grid, coast and dots stay on top of it.
+    if (this.radar) {
+      this.radar.draw(ctx, view, w, h, css.getPropertyValue('--radar-palette').trim())
+      const time = this.radar.time
+      this.radarNote.textContent = this.radar.failed
+        ? t('map.radarOff')
+        : time !== undefined
+          ? t('map.radarBy', { time: hhmm(time) })
+          : t('map.radarLoading')
+    }
 
     const nw = unproject(0, 0, view, w, h)
     const se = unproject(w, h, view, w, h)
@@ -335,6 +403,18 @@ export class MapScreen implements Screen {
       ctx.lineTo(p.x, p.y + 11)
       ctx.stroke()
     }
+
+    // Tapped locator: a square outline around its centre, distinct from the QTH ring.
+    const picked = this.pick ? gridCenter(this.pick) : undefined
+    if (picked) {
+      const p = px(picked.lat, picked.lon)
+      ctx.lineWidth = 3
+      ctx.strokeStyle = bg
+      ctx.strokeRect(p.x - 7, p.y - 7, 14, 14)
+      ctx.lineWidth = 2
+      ctx.strokeStyle = fg
+      ctx.strokeRect(p.x - 7, p.y - 7, 14, 14)
+    }
   }
 
   /** Label next to each dot where it fits (the call, with/or the square): greedy, first
@@ -411,6 +491,12 @@ function qsoPoints(qsos: readonly Qso[]): QsoPoint[] {
     if (c) out.push({ ...c, call: q.call })
   }
   return out
+}
+
+/** HH:MM UTC of a unix time (seconds). */
+function hhmm(sec: number): string {
+  const d = new Date(sec * 1000)
+  return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`
 }
 
 /** 4-char locator of the square a point lies in. */

@@ -17,6 +17,7 @@
   --radius: 5px;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
   --transition: 100ms; /* 100 ms on state changes (standard) */
+  --radar-palette: color; /* map radar: colour ramp (core/radar.ts COLOR_PALETTE) */
 }
 
 /* Standard, dark — respects the OS preference. E-ink ignores it. */
@@ -50,4 +51,5 @@
   --radius: 0;
   --shadow: none;
   --transition: 0ms;
+  --radar-palette: eink; /* map radar: greys as kRadar (EINK_PALETTE) */
 }
