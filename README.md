@@ -10,8 +10,8 @@ Android APK (the same web app in a WebView shell).
 Target devices (all first-class): **Mudita Kompakt** (480×800 e-ink), iPad/tablet,
 desktop.
 
-- **Live web:** <https://kqso.ok1cdj.com/> (web 1.5.0; the old `ok1cdj.github.io/kQSO/` redirects there)
-- **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.5)
+- **Live web:** <https://kqso.ok1cdj.com/> (web 1.6.0; the old `ok1cdj.github.io/kQSO/` redirects there)
+- **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.6)
 - **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/ok1cdj)
@@ -173,8 +173,8 @@ export JAVA_HOME=/opt/android-studio/jbr
   build) → `web/dist` deployed to GitHub Pages, custom domain `kqso.ok1cdj.com`
   (DNS: `CNAME kqso → ok1cdj.github.io`). The build uses base `/`.
 - **APK:** bump `versionCode` / `versionName` in `app/build.gradle.kts`, rename
-  `## [Unreleased]` in [`CHANGELOG.md`](CHANGELOG.md) to `## [1.6] – date`, then push a
-  `v*` tag (`git tag v1.6 && git push origin v1.6`) → `release.yml` builds the web,
+  `## [Unreleased]` in [`CHANGELOG.md`](CHANGELOG.md) to `## [1.7] – date`, then push a
+  `v*` tag (`git tag v1.7 && git push origin v1.7`) → `release.yml` builds the web,
   signs the release APK and attaches it to a GitHub Release as
   `kqso-<versionName>.apk`, with that CHANGELOG section as the release notes (the
   release fails if the section is missing). It can also be run by hand (`workflow_dispatch`) —

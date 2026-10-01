@@ -4,6 +4,8 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 
 ## [Unreleased]
 
+## [1.6] – 2026-10-01
+
 ### Added
 - **Rain radar on the VHF-contest map** (rain scatter, 3 cm): Settings → rain radar (off by default). The current RainViewer frame is drawn under the map and refreshed in the background while the map is open; 5 levels from dBZ, greys on e-ink (as kRadar), colours elsewhere. "Weather data by RainViewer" with the frame time is shown on the map.
 - **Tap on the map**: the locator there, its QRB and azimuth from your QTH (e.g. `JO61SF · 141 km · 333°`).
@@ -70,7 +72,8 @@ First release as **kQSO** (earlier builds were test versions only).
 - **Android APK** (WebView shell), signed, from GitHub Releases.
 - E-ink and standard display modes, EN / CS interface, help screen.
 
-[Unreleased]: https://github.com/ok1cdj/kQSO/compare/v1.5...HEAD
+[Unreleased]: https://github.com/ok1cdj/kQSO/compare/v1.6...HEAD
+[1.6]: https://github.com/ok1cdj/kQSO/compare/v1.5...v1.6
 [1.5]: https://github.com/ok1cdj/kQSO/compare/v1.4...v1.5
 [1.4]: https://github.com/ok1cdj/kQSO/compare/v1.3...v1.4
 [1.3]: https://github.com/ok1cdj/kQSO/compare/v1.2...v1.3
