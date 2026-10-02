@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.WindowManager
+import android.widget.FrameLayout
 import android.webkit.ConsoleMessage
 import android.webkit.ValueCallback
 import android.webkit.JsResult
@@ -19,6 +20,9 @@ import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.webkit.WebViewAssetLoader
 import java.io.File
 
@@ -124,7 +128,24 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        setContentView(webView)
+        // Android 15+ (targetSdk 35+) always draws edge-to-edge: without this the
+        // header sits under the status bar and its buttons can't be tapped. Pad a
+        // container by the system bars / cutout (and the soft keyboard, for the form
+        // fields); where the system isn't edge-to-edge (the Kompakt) the insets are 0.
+        val root = FrameLayout(this).apply {
+            setBackgroundColor(android.graphics.Color.WHITE)
+            addView(webView, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            v.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, ime.bottom))
+            WindowInsetsCompat.CONSUMED
+        }
+        setContentView(root)
+        // Only after setContentView: before it there is no decor view and Android 12
+        // (the Kompakt) throws an NPE here.
+        WindowCompat.getInsetsController(window, root).isAppearanceLightStatusBars = true // dark icons on white
         webView.loadUrl("https://appassets.androidplatform.net/index.html")
     }
 

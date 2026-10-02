@@ -107,7 +107,8 @@ export function tilePicker(
     const node = el('button', 'tile')
     node.type = 'button'
     node.append(el('b', 'tile-title', it.title))
-    if (it.sub !== undefined) node.append(el('span', 'tile-sub', it.sub))
+    // A break chance after each slash, so SOTA/GMA/POTA/WWFF/TOTA wraps in a narrow tile.
+    if (it.sub !== undefined) node.append(el('span', 'tile-sub', it.sub.replace(/\//g, '/\u200b')))
     node.addEventListener('click', () => {
       current = it.value
       paint()

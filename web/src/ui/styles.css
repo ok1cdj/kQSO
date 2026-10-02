@@ -545,6 +545,7 @@ body {
   font-size: 1rem;
 }
 .tile-sub {
+  max-width: 100%;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.8rem;
   opacity: 0.85;

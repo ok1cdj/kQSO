@@ -4,6 +4,10 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 
 ## [Unreleased]
 
+### Fixed
+- APK on Android 15+ (edge-to-edge): the header sat under the status bar and its buttons could not be tapped; the app now keeps clear of the status/navigation bars, the display cutout and the soft keyboard. The Kompakt is unaffected.
+- New log: the Activation tile's sub-line (SOTA/GMA/POTA/WWFF/TOTA) wraps instead of running into the next tile.
+
 ## [1.6] – 2026-10-01
 
 ### Added
