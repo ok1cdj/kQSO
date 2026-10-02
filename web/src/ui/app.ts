@@ -14,6 +14,7 @@ import { EdiExportScreen } from './screens/ediexport'
 import { MapScreen } from './screens/map'
 import { StatsScreen } from './screens/stats'
 import { trackScreen } from './stats'
+import { KeyerController } from './keyer'
 
 export interface Screen {
   mount(root: HTMLElement): void | Promise<void>
@@ -22,11 +23,14 @@ export interface Screen {
 
 export class App {
   private readonly platform: KQSOPlatform = getPlatform()
+  // CW keyer: one link for the whole app, so it survives screen changes.
+  private readonly keyer = new KeyerController(this.platform)
   private root!: HTMLElement
   private current: Screen | null = null
 
   mount(root: HTMLElement): void {
     this.root = root
+    void this.keyer.init()
     this.showLogList()
   }
 
@@ -52,7 +56,7 @@ export class App {
 
   showSettings(): void {
     this.show(
-      new SettingsScreen(this.platform, {
+      new SettingsScreen(this.platform, this.keyer, {
         back: () => this.showLogList(),
         openHelp: () => this.showHelp(() => this.showSettings()),
       }),
@@ -72,7 +76,7 @@ export class App {
 
   showLogging(logId: string): void {
     this.show(
-      new LoggingScreen(this.platform, logId, {
+      new LoggingScreen(this.platform, this.keyer, logId, {
         toLogList: () => this.showLogList(),
         toQsoList: () => this.showQsoList(logId),
         editQso: (index) => this.showQsoEdit(logId, index, () => this.showLogging(logId)),

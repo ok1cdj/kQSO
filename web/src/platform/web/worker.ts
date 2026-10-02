@@ -104,15 +104,21 @@ async function handle(req: WorkerRequest): Promise<unknown> {
   }
 }
 
+// One op at a time: a SyncAccessHandle is exclusive, so two ops on the same file at
+// once (e.g. two screens reading the settings) fail with NoModificationAllowedError.
+let queue: Promise<void> = Promise.resolve()
+
 self.addEventListener('message', (e: MessageEvent<WorkerRequest>) => {
   const req = e.data
-  handle(req)
-    .then((value) => {
-      const resp: WorkerResponse = { id: req.id, ok: true, value }
-      self.postMessage(resp)
-    })
-    .catch((err: unknown) => {
-      const resp: WorkerResponse = { id: req.id, ok: false, error: String(err) }
-      self.postMessage(resp)
-    })
+  queue = queue.then(() =>
+    handle(req)
+      .then((value) => {
+        const resp: WorkerResponse = { id: req.id, ok: true, value }
+        self.postMessage(resp)
+      })
+      .catch((err: unknown) => {
+        const resp: WorkerResponse = { id: req.id, ok: false, error: String(err) }
+        self.postMessage(resp)
+      }),
+  )
 })

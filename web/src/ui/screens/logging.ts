@@ -12,7 +12,9 @@ import {
   readLogFile,
   writeLogFile,
   matchCommand,
+  matchKeyerCommand,
   hasContent,
+  expandMacro,
   LiveDb,
   combineSources,
   dbDate,
@@ -27,7 +29,7 @@ import {
   SATELLITES,
   PROFILES,
 } from '../../core/index'
-import type { CoreState, SuggestionSource, LogMeta, PartialQso, Qso } from '../../core/index'
+import type { CoreState, SuggestionSource, LogMeta, PartialQso, Qso, KeyerCommand, MacroSlot } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
 import { el, button } from '../dom'
@@ -36,6 +38,7 @@ import { t } from '../i18n'
 import { alignColumns, allFit } from '../columns'
 import { createKeyboard } from '../keyboard'
 import type { KeyAction } from '../keys'
+import type { KeyerController } from '../keyer'
 
 export interface LoggingNav {
   toLogList(): void
@@ -50,6 +53,15 @@ const RECENT_MAX = 30 // wide layout: rows rendered; CSS clips whatever doesn't 
 // Same breakpoint as the landscape layout in styles.css.
 const WIDE = window.matchMedia('(min-aspect-ratio: 1/1)')
 const hhmm = (d: Date): string => `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`
+// Keyer macro buttons in the strip: slot + its short label (MYCALL → MY, fits 480 px).
+const MACRO_BUTTONS: ReadonlyArray<readonly [MacroSlot, string]> = [
+  ['CQ', 'CQ'],
+  ['EXCH', 'EXCH'],
+  ['TU', 'TU'],
+  ['MYCALL', 'MY'],
+  ['AGN', 'AGN'],
+  ['?', '?'],
+]
 
 export class LoggingScreen implements Screen {
   private meta!: LogMeta
@@ -71,9 +83,11 @@ export class LoggingScreen implements Screen {
   private readonly banner = el('div', 'banner')
   private readonly onKeydown = (e: KeyboardEvent): void => this.onHardwareKey(e)
   private readonly onWideChange = (): void => this.renderStrip()
+  private unsubscribeKeyer: (() => void) | undefined
 
   constructor(
     private readonly platform: KQSOPlatform,
+    private readonly keyer: KeyerController,
     private readonly logId: string,
     private readonly nav: LoggingNav,
   ) {}
@@ -89,12 +103,14 @@ export class LoggingScreen implements Screen {
     root.replaceChildren(screen)
     window.addEventListener('keydown', this.onKeydown)
     WIDE.addEventListener('change', this.onWideChange)
+    this.unsubscribeKeyer = this.keyer.subscribe(() => this.onKeyerChange())
     void this.init()
   }
 
   unmount(): void {
     window.removeEventListener('keydown', this.onKeydown)
     WIDE.removeEventListener('change', this.onWideChange)
+    this.unsubscribeKeyer?.()
     this.recentResize?.disconnect()
     this.platform.keepAwake(false)
   }
@@ -135,6 +151,11 @@ export class LoggingScreen implements Screen {
 
   private onHardwareKey(e: KeyboardEvent): void {
     const k = e.key
+    if (k === 'Escape' && this.keyerOn()) {
+      e.preventDefault()
+      void this.keyer.stop()
+      return
+    }
     if (k === 'Enter') return this.handled(e, { type: 'enter' })
     if (k === 'Backspace') return this.handled(e, { type: 'backspace' })
     if (k === ' ') return this.handled(e, { type: 'space' })
@@ -174,6 +195,13 @@ export class LoggingScreen implements Screen {
   }
 
   private async commit(): Promise<void> {
+    // Keyer commands (R / S / S20) only while CW keying is on — otherwise R / S stay a name.
+    const kc = this.keyerOn() ? matchKeyerCommand(this.line) : undefined
+    if (kc) {
+      await this.runKeyerCommand(kc)
+      this.renderAll()
+      return
+    }
     const hadContent = hasContent(this.state.partial)
     const r = reduce(this.state, { type: 'enter', line: this.line }, this.meta)
     this.state = r.state
@@ -229,6 +257,68 @@ export class LoggingScreen implements Screen {
     await this.platform.rewriteLog(this.logId, writeLogFile(this.meta, this.qsos))
     this.renderRecent()
     this.notice = t('logging.deletedLast', { qso: formatQso(last) })
+  }
+
+  // --- CW keyer ------------------------------------------------------
+
+  /** Keying on and the mode is CW: header, macros, R / S / S20 and Esc apply. */
+  private keyerOn(): boolean {
+    return this.keyer.activeFor(this.state.sticky.mode)
+  }
+
+  private async runKeyerCommand(kc: KeyerCommand): Promise<void> {
+    this.line = ''
+    // The command letter stamped the QSO time; drop it unless a QSO is under way.
+    if (!hasContent(this.state.partial)) this.state = { ...this.state, partial: {}, hasStarted: false }
+    if (kc.type === 'run' || kc.type === 'sp') {
+      await this.keyer.setMode(kc.type)
+      this.notice = t(kc.type === 'run' ? 'logging.modeRun' : 'logging.modeSp')
+    } else if (!kc.inRange) {
+      this.notice = t('logging.cmdSpeedRange')
+    } else if (!this.keyer.connected) {
+      this.notice = t('logging.cmdSpeedOff')
+    } else {
+      await this.keyer.setSpeed(kc.wpm)
+      this.notice = t('logging.speedSet', { wpm: kc.wpm })
+    }
+  }
+
+  /** Expand a slot of the current profile × RUN / S&P and send it. Values come from
+   *  what Enter would save now (typed line included), the call from the QSO just saved
+   *  when nothing is typed (TU after the save). */
+  private async sendMacro(slot: MacroSlot): Promise<void> {
+    const dry = parseLine(this.line, this.state.sticky, this.state.partial, PROFILES[this.meta.profile]).partial
+    const last = this.qsos.length > 0 ? this.qsos[this.qsos.length - 1] : undefined
+    const text = expandMacro(this.keyer.macroText(this.meta.profile, slot), {
+      call: dry.call ?? last?.call,
+      myCall: this.meta.myCall,
+      myLoc: this.meta.myGrid,
+      myRef: this.meta.myRef?.value,
+      rst: dry.reportSent ?? defaultReport(this.state.sticky.mode),
+      nr: pad3(this.qsos.length + 1),
+      loc: dry.grid,
+      ref: dry.theirRef?.value,
+    })
+    const dropped = await this.keyer.send(text)
+    if (dropped.length > 0) {
+      this.notice = t('logging.keyerDropped', { chars: dropped.join(' ') })
+      this.renderStrip()
+    }
+  }
+
+  private onKeyerChange(): void {
+    const n = this.keyer.notice
+    if (n?.type === 'error') {
+      this.notice = t('logging.keyerError', { what: n.what })
+      this.keyer.clearNotice()
+    }
+    this.renderAll()
+  }
+
+  /** STOP while the keyer is sending — always first in the strip, even before suggestions. */
+  private stopButtons(): HTMLElement[] {
+    if (!this.keyerOn() || !this.keyer.connected || !this.keyer.sending) return []
+    return [this.suggestButton('STOP', () => void this.keyer.stop(), 'suggest suggest--stop')]
   }
 
   // --- crash-journal recovery --------------------------------------
@@ -287,6 +377,10 @@ export class LoggingScreen implements Screen {
     }
     // VHF contest: where to point the antenna. A typed locator wins; else the one the
     // callsign database knows for the call, greyed like its + LOC suggestion.
+    // CW keyer: RUN / S&P (grey while the keyer is not connected).
+    if (this.keyerOn()) {
+      mid.append(el('b', this.keyer.connected ? 'hdr-keyer' : 'hdr-keyer hdr-keyer--off', this.keyer.mode === 'run' ? 'RUN' : 'S&P'))
+    }
     if (profile.contest) {
       const known = p.grid === undefined && p.call !== undefined ? this.db.lookup(p.call)?.loc : undefined
       const az = bearingDeg(this.meta.myGrid, p.grid ?? known ?? '')
@@ -321,6 +415,23 @@ export class LoggingScreen implements Screen {
 
   private renderPreview(dry: ReturnType<typeof parseLine>): void {
     const profile = PROFILES[this.meta.profile]
+    // Keyer R / S / S20: what Enter will do (only while CW keying is on).
+    const kc = this.keyerOn() ? matchKeyerCommand(this.line) : undefined
+    if (kc) {
+      const bad = kc.type === 'speed' && (!kc.inRange || !this.keyer.connected)
+      const what =
+        kc.type === 'run'
+          ? t('logging.cmdRun')
+          : kc.type === 'sp'
+            ? t('logging.cmdSp')
+            : !kc.inRange
+              ? t('logging.cmdSpeedRange')
+              : !this.keyer.connected
+                ? t('logging.cmdSpeedOff')
+                : t('logging.cmdSpeed', { wpm: kc.wpm })
+      this.previewEl.replaceChildren(fieldChip(this.line.trim(), what, bad))
+      return
+    }
     // A lone W/D: show what Enter will do instead of parsing it (W would be a name).
     const cmd = matchCommand(this.line)
     if (cmd) {
@@ -353,8 +464,9 @@ export class LoggingScreen implements Screen {
   }
 
   private renderStrip(): void {
+    const stop = this.stopButtons()
     if (this.notice) {
-      this.stripEl.replaceChildren(document.createTextNode(this.notice))
+      this.stripEl.replaceChildren(...stop, document.createTextNode(this.notice))
       return
     }
     const frag = this.line.trim()
@@ -363,6 +475,7 @@ export class LoggingScreen implements Screen {
       const hits = this.db.search(frag, 3)
       if (hits.length > 0) {
         this.stripEl.replaceChildren(
+          ...stop,
           ...hits.map(({ call }) => {
             // Already worked on this band+mode → mark it (inverse), so a dupe stands out.
             const worked = isDupe(this.qsos, call, this.state.sticky.band, this.dupeMode())
@@ -376,7 +489,15 @@ export class LoggingScreen implements Screen {
     const call = this.state.partial.call
     const loc = call ? this.db.lookup(call)?.loc : undefined
     if (loc && this.state.partial.grid === undefined) {
-      this.stripEl.replaceChildren(this.suggestButton(`+ ${loc}`, () => this.fillGrid(loc), 'suggest suggest--ghost'))
+      this.stripEl.replaceChildren(...stop, this.suggestButton(`+ ${loc}`, () => this.fillGrid(loc), 'suggest suggest--ghost'))
+      return
+    }
+    // CW keyer connected: the macro buttons take the strip (nothing to suggest now).
+    if (this.keyerOn() && this.keyer.connected) {
+      this.stripEl.replaceChildren(
+        ...stop,
+        ...MACRO_BUTTONS.map(([slot, label]) => this.suggestButton(label, () => void this.sendMacro(slot), 'suggest suggest--macro')),
+      )
       return
     }
     // Default: last written QSO. The wide layout already lists it in the

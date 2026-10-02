@@ -15,6 +15,29 @@ export interface LogSummary {
   readonly qsoCount: number
 }
 
+/** Link state of the CW keyer. */
+export type KeyerLinkState = 'off' | 'connecting' | 'on'
+
+/**
+ * BLE link to the M5-ESP32-keyer (Nordic UART). Text lines both ways; the line
+ * protocol itself is core/keyer.ts. Present only where the host can do BLE: Web
+ * Bluetooth in Chrome now, the APK's native bridge later (phase 3).
+ */
+export interface KeyerTransport {
+  /** `pick` = show the device chooser (needs a user tap); otherwise reconnect the
+   *  remembered keyer quietly, and do nothing when there is none. */
+  connect(pick: boolean): Promise<void>
+  disconnect(): Promise<void>
+  /** Drop the remembered keyer (the next connect asks again). */
+  forget(): Promise<void>
+  /** One write of at most `mtu` bytes; writes go out in order. */
+  write(chunk: string): void
+  readonly mtu: number
+  onData(cb: (text: string) => void): void
+  onState(cb: (s: KeyerLinkState, name?: string) => void): void
+  onBattery(cb: (pct: number) => void): void
+}
+
 export interface KQSOPlatform {
   /** Host-forced display mode; the web shim leaves it undefined. */
   readonly displayMode?: 'eink' | 'standard'
@@ -53,4 +76,7 @@ export interface KQSOPlatform {
 
   /** Whether storage is persistent, i.e. exempt from WebKit's 7-day eviction. */
   isPersisted(): Promise<boolean>
+
+  /** CW keyer over BLE; undefined where the host has no BLE (Safari, Firefox, memory). */
+  readonly keyer?: KeyerTransport | undefined
 }

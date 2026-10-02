@@ -4,7 +4,8 @@
 
 import type { LogMeta } from '../../core/model'
 import { readLogFile, writeLogHeader } from '../../core/index'
-import type { KQSOPlatform, LogSummary } from '../types'
+import type { KQSOPlatform, KeyerTransport, LogSummary } from '../types'
+import { WebBluetoothKeyer, webBluetoothAvailable } from './keyer'
 import type { RequestBody, WorkerRequest, WorkerResponse } from './protocol'
 
 /** True when OPFS + Workers are available (i.e. the web shim can persist). */
@@ -27,6 +28,9 @@ export class WebPlatform implements KQSOPlatform {
   private readonly pending = new Map<number, Pending>()
   private wakeLock: WakeLockSentinel | null = null
   private persistRequested = false
+  private settingsWrites: Promise<void> = Promise.resolve()
+  /** CW keyer over Web Bluetooth — Chrome / Edge only; Safari and Firefox have none. */
+  readonly keyer: KeyerTransport | undefined = webBluetoothAvailable() ? new WebBluetoothKeyer() : undefined
 
   constructor() {
     // Ask for persistent storage as early as possible. On an installed PWA the
@@ -171,9 +175,15 @@ export class WebPlatform implements KQSOPlatform {
   }
 
   async setSetting(key: string, value: string): Promise<void> {
-    const s = await this.allSettings()
-    s[key] = value
-    await this.call<void>({ op: 'writeSettings', content: JSON.stringify(s) })
+    // Read-modify-write of one JSON file: chained, so two quick changes (a switch and
+    // the keyer's own setting, say) cannot overwrite each other.
+    const next = this.settingsWrites.then(async () => {
+      const s = await this.allSettings()
+      s[key] = value
+      await this.call<void>({ op: 'writeSettings', content: JSON.stringify(s) })
+    })
+    this.settingsWrites = next.catch(() => {})
+    return next
   }
 
   keepAwake(on: boolean): void {

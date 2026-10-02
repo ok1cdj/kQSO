@@ -220,6 +220,27 @@ body {
 .hdr-az--guess {
   color: var(--ghost);
 }
+/* CW keyer: RUN / S&P in the header, grey while the keyer is not connected. */
+.hdr-keyer {
+  padding: 0 0.3rem;
+  border: var(--border-w) solid var(--fg);
+}
+.hdr-keyer--off {
+  color: var(--ghost);
+  border-color: var(--ghost);
+}
+/* Keyer macros in the strip: six buttons must fit the 480 px Kompakt. */
+.suggest--macro {
+  padding: 0.5rem 0.1rem;
+  min-width: 0;
+}
+/* STOP while sending: inverse, first in the strip. */
+.suggest--stop {
+  flex: 1.4;
+  background: var(--fg);
+  color: var(--bg);
+  font-weight: 700;
+}
 /* Satellite (read-only) in the logging header. */
 .hdr-sat {
   font-weight: 700;
@@ -581,6 +602,28 @@ body {
 }
 .segmented .btn {
   flex: 1;
+}
+/* Keyer settings: the part under the CW keying switch. */
+.keyer-settings,
+.keyer-macros,
+.keyer-macro-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.keyer-settings {
+  margin-top: 0.4rem;
+}
+.keyer-settings[hidden] {
+  display: none;
+}
+/* Default speed: − 22 WPM + */
+.keyer-speed {
+  align-items: center;
+}
+.keyer-wpm {
+  flex: 1.4;
+  text-align: center;
 }
 .segmented--wrap {
   flex-wrap: wrap;

@@ -104,6 +104,15 @@ const EN: readonly Section[] = [
     ],
   },
   {
+    title: 'CW keyer (Bluetooth)',
+    rows: [
+      { text: 'Settings → CW keying (off by default) → Connect: the M5-ESP32-keyer over Bluetooth, in Chrome / Edge. In CW the strip then offers the macros CQ EXCH TU MY AGN ? whenever it has nothing to suggest; the header shows RUN or S&P.' },
+      { text: 'Each profile has its own macros for RUN (I call CQ) and S&P (I answer a CQ), editable in Settings. While sending, STOP is first in the strip; Esc stops too.' },
+      { code: 'R ⏎ / S ⏎', text: 'RUN / S&P mode (only while CW keying is on).' },
+      { code: 'S20 ⏎', text: 'Speed 20 WPM until the keyer disconnects; on connect the default speed from Settings is sent.' },
+    ],
+  },
+  {
     title: 'Keyboard',
     rows: [
       { text: 'On-screen keyboard is alphabetical, 6×7. Space is single width; Backspace and Enter are double. A hardware keyboard works too.' },
@@ -193,6 +202,15 @@ const CS: readonly Section[] = [
       { text: 'Co přelet, to log: družici vybereš při zakládání logu a ta nastaví pásma uplink/downlink i SAT_NAME. Hlavička ji ukazuje.' },
       { code: '9A5Y 59 JN86', text: 'Předává se report + locator. Na lineárních družicích můžeš přepnout ssb/cw; napsané pásmo se ignoruje.' },
       { text: 'Seznam QSO → Mapa ukáže udělané lokátory; QSO bez lokátoru jsou spočítané nad mapou.' },
+    ],
+  },
+  {
+    title: 'CW klíčovač (Bluetooth)',
+    rows: [
+      { text: 'Nastavení → CW klíčování (výchozí vypnuto) → Připojit: klíčovač M5-ESP32-keyer přes Bluetooth, v Chromu / Edge. V CW pak lišta nabízí makra CQ EXCH TU MY AGN ?, kdykoli zrovna nic nenavrhuje; hlavička ukazuje RUN nebo S&P.' },
+      { text: 'Každý profil má vlastní makra pro RUN (dávám CQ) a S&P (odpovídám na CQ), upravíš je v Nastavení. Během vysílání je v liště na prvním místě STOP; zastaví i Esc.' },
+      { code: 'R ⏎ / S ⏎', text: 'Režim RUN / S&P (jen se zapnutým CW klíčováním).' },
+      { code: 'S20 ⏎', text: 'Rychlost 20 WPM do odpojení klíčovače; po připojení se pošle výchozí rychlost z Nastavení.' },
     ],
   },
   {

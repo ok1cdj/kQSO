@@ -29,6 +29,6 @@ export function platformKind(): 'native' | 'opfs' | 'memory' {
   return opfsAvailable() ? 'opfs' : 'memory'
 }
 
-export type { KQSOPlatform, LogSummary } from './types'
+export type { KQSOPlatform, LogSummary, KeyerTransport, KeyerLinkState } from './types'
 export { MemoryPlatform } from './memory'
 export { WebPlatform, opfsAvailable } from './web/opfs'
