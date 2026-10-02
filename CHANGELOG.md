@@ -4,6 +4,8 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 
 ## [Unreleased]
 
+## [1.6.1] – 2026-10-02
+
 ### Changed
 - New log: picking **VHF contest** sets the band to 2m and the mode to SSB (still changeable).
 
@@ -79,7 +81,8 @@ First release as **kQSO** (earlier builds were test versions only).
 - **Android APK** (WebView shell), signed, from GitHub Releases.
 - E-ink and standard display modes, EN / CS interface, help screen.
 
-[Unreleased]: https://github.com/ok1cdj/kQSO/compare/v1.6...HEAD
+[Unreleased]: https://github.com/ok1cdj/kQSO/compare/v1.6.1...HEAD
+[1.6.1]: https://github.com/ok1cdj/kQSO/compare/v1.6...v1.6.1
 [1.6]: https://github.com/ok1cdj/kQSO/compare/v1.5...v1.6
 [1.5]: https://github.com/ok1cdj/kQSO/compare/v1.4...v1.5
 [1.4]: https://github.com/ok1cdj/kQSO/compare/v1.3...v1.4
