@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { initialState, reduce } from '../src/core/reducer'
 import type { CoreState, LogMeta } from '../src/core/model'
+import { PROFILES } from '../src/core/model'
+import { missingParts } from '../src/core/qso'
 
 const meta: LogMeta = {
   name: 'SOTA OK/ZC-001',
@@ -88,7 +90,7 @@ describe('timestamp behavior', () => {
   })
 })
 
-describe('VKV contest requires a locator', () => {
+describe('VKV contest requires the number and the locator', () => {
   const vkv: LogMeta = { ...meta, profile: 'vkv', defaultSignal: { band: '2m', mode: 'SSB' } }
   const start = (): CoreState => reduce(initialState(vkv), { type: 'firstKeystroke', at: T }, vkv).state
 
@@ -100,6 +102,25 @@ describe('VKV contest requires a locator', () => {
     // Adding the locator then commits.
     s = reduce(r.state, { type: 'enter', line: 'JO70FD' }, vkv).state
     expect(reduce(s, { type: 'enter', line: '' }, vkv).committed).toMatchObject({ call: 'OK1ABC', grid: 'JO70FD' })
+  })
+
+  it('does not commit without the received number, keeps the QSO open', () => {
+    let s = reduce(start(), { type: 'enter', line: 'OK1ABC JO70FD' }, vkv).state
+    const r = reduce(s, { type: 'enter', line: '' }, vkv)
+    expect(r.committed).toBeUndefined()
+    expect(r.state.partial).toMatchObject({ call: 'OK1ABC', grid: 'JO70FD' })
+    // Adding the number then commits.
+    s = reduce(r.state, { type: 'enter', line: '001' }, vkv).state
+    expect(reduce(s, { type: 'enter', line: '' }, vkv).committed).toMatchObject({ call: 'OK1ABC', grid: 'JO70FD', serial: '001' })
+  })
+
+  it('missingParts names what is still missing', () => {
+    expect(missingParts({ call: 'OK1ABC' }, PROFILES.vkv)).toEqual(['NR', 'LOC'])
+    expect(missingParts({ call: 'OK1ABC', serial: '001' }, PROFILES.vkv)).toEqual(['LOC'])
+    expect(missingParts({ call: 'OK1ABC', grid: 'JO70FD' }, PROFILES.vkv)).toEqual(['NR'])
+    expect(missingParts({ call: 'OK1ABC', serial: '001', grid: 'JO70FD' }, PROFILES.vkv)).toEqual([])
+    expect(missingParts({ call: 'OK1ABC' }, PROFILES.obecny)).toEqual([])
+    expect(missingParts({ call: 'OK1ABC' }, PROFILES.sat)).toEqual([])
   })
 
   it('other profiles still commit call-only', () => {

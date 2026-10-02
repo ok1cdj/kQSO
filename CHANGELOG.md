@@ -4,6 +4,9 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 
 ## [Unreleased]
 
+### Fixed
+- VHF contest: a QSO could be saved without the received number. It now needs the number as well as the locator; until then an empty Enter keeps the QSO open (the preview shows NR —).
+
 ## [1.6.2] – 2026-10-02
 
 ### Fixed

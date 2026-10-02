@@ -31,7 +31,7 @@ export { parseLine } from './parse'
 export { matchCommand, hasContent } from './command'
 export type { LineCommand } from './command'
 export type { ParseResult } from './parse'
-export { buildQso } from './qso'
+export { buildQso, missingParts } from './qso'
 export { initialState, reduce } from './reducer'
 export type { CoreEvent, ReduceResult } from './reducer'
 
