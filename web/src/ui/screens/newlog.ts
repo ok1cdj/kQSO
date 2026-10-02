@@ -80,7 +80,7 @@ export class NewLogScreen implements Screen {
     const today = dateName(new Date())
     const name = fieldRow(t('newlog.name'), today, { placeholder: t('newlog.namePlaceholder') })
     // syncFields is defined below; the tile's onChange only fires on tap (after render).
-    const profile = tilePicker(t('newlog.profile'), PROFILE_TILES(), prev.profile, () => syncFields())
+    const profile = tilePicker(t('newlog.profile'), PROFILE_TILES(), prev.profile, () => onProfile())
     const myCall = fieldRow(t('newlog.myCall'), rememberedCall)
     const myGrid = fieldRow(t('newlog.myGrid'), rememberedGrid)
     // VKV contest can't score QRB without the own locator — block Create until it's valid.
@@ -149,6 +149,15 @@ export class NewLogScreen implements Screen {
       mode.row.hidden = isSat
       sat.row.hidden = !isSat
       myRef.row.hidden = profileId !== 'aktivace'
+    }
+    // Picking VHF contest starts it on 2m SSB (still changeable below). Only on a tap:
+    // a VKV log prefilled from the last one keeps that log's band and mode.
+    const onProfile = (): void => {
+      if (profile.value() === 'vkv') {
+        band.select.value = '2m'
+        mode.select.value = 'SSB'
+      }
+      syncFields()
     }
     syncFields()
     name.input.focus()
