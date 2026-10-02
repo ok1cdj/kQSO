@@ -22,7 +22,7 @@ import {
 import type { LatLon, LogMeta, MapView, Qso } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
-import { el, button } from '../dom'
+import { el, button, switchOn } from '../dom'
 import { t } from '../i18n'
 import worldText from '../../db/world.json?raw'
 import { RADAR_SETTING, RadarLayer } from '../radar'
@@ -97,6 +97,28 @@ const SQUARE_FULL_PX = 60 // full square labels (JO70) from this width
 const MAX_LABELS = 80
 const TAP_PX = 6 // a pointer that moved less than this is a tap, not a drag
 
+// 24×24 stroke paths for the bar buttons: font glyphs (⤢ especially) come from
+// fallback fonts with their own size and baseline, so they never sit centred.
+const BAR_ICONS = {
+  zoomOut: 'M6 12h12',
+  zoomIn: 'M12 6v12M6 12h12',
+  fit: 'M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5', // corner brackets: fit the view
+} as const
+
+function iconButton(icon: keyof typeof BAR_ICONS, label: string, onClick: () => void): HTMLButtonElement {
+  const b = button('', onClick, 'btn btn--small btn--mapicon')
+  b.setAttribute('aria-label', label)
+  const ns = 'http://www.w3.org/2000/svg'
+  const svg = document.createElementNS(ns, 'svg')
+  svg.setAttribute('viewBox', '0 0 24 24')
+  svg.setAttribute('aria-hidden', 'true')
+  const path = document.createElementNS(ns, 'path')
+  path.setAttribute('d', BAR_ICONS[icon])
+  svg.appendChild(path)
+  b.appendChild(svg)
+  return b
+}
+
 export class MapScreen implements Screen {
   private readonly root = el('div', 'screen screen--map')
   private readonly wrap = el('div', 'map-wrap')
@@ -131,7 +153,7 @@ export class MapScreen implements Screen {
   private async load(): Promise<void> {
     const { meta, qsos } = readLogFile(await this.platform.readLog(this.logId))
     this.meta = meta
-    this.labels = (await this.platform.getSetting(MAP_LABELS_SETTING)) !== '0'
+    this.labels = switchOn(await this.platform.getSetting(MAP_LABELS_SETTING))
     this.points = qsoPoints(qsos)
     const noGrid = qsos.length - qsos.filter((q) => q.grid && gridCenter(q.grid)).length
 
@@ -139,9 +161,9 @@ export class MapScreen implements Screen {
     bar.append(
       button(`‹ ${t('common.back')}`, () => this.nav.back(), 'hdr-nav'),
       el('b', 'title', `${meta.name} · ${qsos.length} QSO`),
-      button('−', () => this.zoom(1 / ZOOM), 'btn btn--small'),
-      button('+', () => this.zoom(ZOOM), 'btn btn--small'),
-      button('⤢', () => this.fit(), 'btn btn--small'),
+      iconButton('zoomOut', '−', () => this.zoom(1 / ZOOM)),
+      iconButton('zoomIn', '+', () => this.zoom(ZOOM)),
+      iconButton('fit', '⤢', () => this.fit()),
     )
     const note = noGrid > 0 ? [el('div', 'qsosum', t('map.noGrid', { n: noGrid }))] : []
     this.pickBar.hidden = true
@@ -150,7 +172,7 @@ export class MapScreen implements Screen {
     this.root.replaceChildren(bar, ...note, this.wrap)
 
     // Rain radar: VKV logs only (rain scatter), and only when switched on.
-    if (PROFILES[meta.profile].contest && (await this.platform.getSetting(RADAR_SETTING)) === '1') {
+    if (PROFILES[meta.profile].contest && switchOn(await this.platform.getSetting(RADAR_SETTING), false)) {
       this.radar = new RadarLayer(() => this.draw())
       this.radarNote.hidden = false
       this.radar.start()

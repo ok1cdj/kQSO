@@ -11,6 +11,12 @@ export function el<K extends keyof HTMLElementTagNameMap>(
   return e
 }
 
+/** A Yes/No setting ('1'/'0', see Settings → yesNo): missing = `def`, anything but
+ *  '0' = on. The switch and every reader use this, so they can't disagree. */
+export function switchOn(saved: string | null, def = true): boolean {
+  return saved === null ? def : saved !== '0'
+}
+
 export function button(label: string, onClick: () => void, cls = 'btn'): HTMLButtonElement {
   const b = el('button', cls, label)
   b.type = 'button'

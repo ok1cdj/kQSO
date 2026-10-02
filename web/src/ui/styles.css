@@ -467,6 +467,22 @@ body {
   display: block;
   touch-action: none;
 }
+/* Map bar zoom / fit: SVG icons in equal squares, centred. */
+.btn--mapicon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem;
+}
+.btn--mapicon svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 /* Over the map: the tapped locator (top) and the radar attribution/time (bottom). */
 .map-pick,
 .map-note {

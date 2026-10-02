@@ -10,7 +10,7 @@ import type { KQSOPlatform } from '../../platform/index'
 import { currentDisplayMode, setDisplayMode } from '../../theme/mode'
 import type { DisplayMode } from '../../theme/mode'
 import type { Screen } from '../app'
-import { el, button, fieldRow } from '../dom'
+import { el, button, fieldRow, switchOn } from '../dom'
 import { connect } from '../wavelog'
 import { wavelogErrorText } from '../wavelog-text'
 import { t } from '../i18n'
@@ -273,8 +273,7 @@ export class SettingsScreen implements Screen {
   /** A Yes/No switch stored as '1'/'0' under `key`; missing = `def` (yes unless said). */
   private async yesNo(key: string, onChange?: (on: boolean) => void, def = true): Promise<HTMLElement> {
     const seg = el('div', 'segmented')
-    const saved = await this.platform.getSetting(key)
-    const on = saved === null ? def : saved !== '0'
+    const on = switchOn(await this.platform.getSetting(key), def)
     const mk = (value: '1' | '0', label: string): HTMLButtonElement => {
       const b = button(label, () => {
         void this.platform.setSetting(key, value)
