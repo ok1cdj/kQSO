@@ -4,6 +4,17 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 
 ## [Unreleased]
 
+## [1.6.3] – 2026-10-02
+
+### Fixed
+- VHF contest: a QSO could be saved without the received number. It now needs the number as well as the locator; until then an empty Enter keeps the QSO open (the preview shows NR —).
+
+## [1.6.2] – 2026-10-02
+
+### Fixed
+- Rain radar: the map and the Settings switch now read the setting the same way. Before, Settings could show radar **Yes** while the map did not start it (seen in the APK); switching No → Yes worked around it.
+- Map: the zoom − / + and fit buttons are drawn as icons in equal squares; the fit glyph (⤢) came from a fallback font and sat off-centre.
+
 ## [1.6.1] – 2026-10-02
 
 ### Changed
@@ -81,7 +92,9 @@ First release as **kQSO** (earlier builds were test versions only).
 - **Android APK** (WebView shell), signed, from GitHub Releases.
 - E-ink and standard display modes, EN / CS interface, help screen.
 
-[Unreleased]: https://github.com/ok1cdj/kQSO/compare/v1.6.1...HEAD
+[Unreleased]: https://github.com/ok1cdj/kQSO/compare/v1.6.3...HEAD
+[1.6.3]: https://github.com/ok1cdj/kQSO/compare/v1.6.2...v1.6.3
+[1.6.2]: https://github.com/ok1cdj/kQSO/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/ok1cdj/kQSO/compare/v1.6...v1.6.1
 [1.6]: https://github.com/ok1cdj/kQSO/compare/v1.5...v1.6
 [1.5]: https://github.com/ok1cdj/kQSO/compare/v1.4...v1.5
