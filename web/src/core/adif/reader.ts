@@ -33,6 +33,10 @@ function toQso(r: Record<string, string>): Qso {
   const signal: Signal = { band: r[F.BAND] ?? '', mode: r[F.MODE] ?? '' }
   const bandRx = r[F.BAND_RX]
   if (bandRx !== undefined) (signal as { bandRx?: string }).bandRx = bandRx
+  const freq = r[F.FREQ]
+  if (freq !== undefined) (signal as { freq?: string }).freq = freq
+  const freqRx = r[F.FREQ_RX]
+  if (freqRx !== undefined) (signal as { freqRx?: string }).freqRx = freqRx
 
   const qso: { -readonly [K in keyof Qso]: Qso[K] } = {
     call: r[F.CALL] ?? '',

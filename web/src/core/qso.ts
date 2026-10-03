@@ -39,6 +39,8 @@ export function buildQso(partial: PartialQso, sticky: StickyState, meta: LogMeta
   const signal: Signal = { band: sticky.band, mode: sticky.mode }
   if (sticky.bandRx !== undefined) (signal as { bandRx?: string }).bandRx = sticky.bandRx
   if (sticky.modeRx !== undefined) (signal as { modeRx?: string }).modeRx = sticky.modeRx
+  if (sticky.freq !== undefined) (signal as { freq?: string }).freq = sticky.freq
+  if (sticky.freqRx !== undefined) (signal as { freqRx?: string }).freqRx = sticky.freqRx
 
   const qso: { -readonly [K in keyof Qso]: Qso[K] } = {
     call: partial.call,

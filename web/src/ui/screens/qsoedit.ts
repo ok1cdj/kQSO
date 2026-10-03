@@ -102,6 +102,9 @@ export class QsoEditScreen implements Screen {
       }
       if (orig.signal.bandRx !== undefined) (signal as { bandRx?: string }).bandRx = orig.signal.bandRx
       if (orig.signal.modeRx !== undefined) (signal as { modeRx?: string }).modeRx = orig.signal.modeRx
+      // The frequencies stay with their band: a changed (uplink) band drops FREQ.
+      if (orig.signal.freq !== undefined && signal.band === orig.signal.band) (signal as { freq?: string }).freq = orig.signal.freq
+      if (orig.signal.freqRx !== undefined) (signal as { freqRx?: string }).freqRx = orig.signal.freqRx
 
       const q: { -readonly [K in keyof Qso]: Qso[K] } = {
         call: call.input.value.trim().toUpperCase() || orig.call,

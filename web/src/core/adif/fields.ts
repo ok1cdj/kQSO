@@ -9,6 +9,8 @@ export const F = {
   TIME_ON: 'TIME_ON',
   BAND: 'BAND',
   BAND_RX: 'BAND_RX',
+  FREQ: 'FREQ', // MHz
+  FREQ_RX: 'FREQ_RX', // MHz
   MODE: 'MODE',
   RST_SENT: 'RST_SENT',
   RST_RCVD: 'RST_RCVD',

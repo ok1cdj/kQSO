@@ -20,7 +20,7 @@ export type {
 export { PROFILES, defaultReport } from './model'
 
 export { BANDS, MODES, matchBand, matchMode } from './dictionaries'
-export { SATELLITES, satelliteByLabel, satelliteSignal } from './satellites'
+export { SATELLITES, satelliteByLabel, satelliteSignal, fillSatFrequencies } from './satellites'
 export type { Satellite } from './satellites'
 export { matchReference, parseReferenceInput } from './reference'
 export { tokenize } from './tokenize'

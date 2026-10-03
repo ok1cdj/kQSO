@@ -3,7 +3,17 @@
 // manual Wavelog push once it's configured in Settings, with the last
 // push result under the name.
 
-import { PROFILES, WAVELOG_SETTINGS, WavelogError, apiBase, pushStatusKey, readPushStatus } from '../../core/index'
+import {
+  PROFILES,
+  WAVELOG_SETTINGS,
+  WavelogError,
+  apiBase,
+  fillSatFrequencies,
+  pushStatusKey,
+  readLogFile,
+  readPushStatus,
+  writeLogFile,
+} from '../../core/index'
 import type { PushStatus, WavelogStation } from '../../core/index'
 import type { KQSOPlatform, LogSummary } from '../../platform/index'
 import type { Screen } from '../app'
@@ -68,7 +78,7 @@ export class LogListScreen implements Screen {
     open.append(status)
     const exp = button(t('loglist.export'), () => {
       trackEvent('export', { format: 'adif', profile: log.profile })
-      void this.platform.exportLog(log.id, `${log.id}.adi`)
+      void this.fillSatFrequencies(log.id).then(() => this.platform.exportLog(log.id, `${log.id}.adi`))
     }, 'btn btn--small')
     const del = button(t('loglist.delete'), () => void this.remove(log), 'btn btn--small')
     li.append(open, exp)
@@ -83,6 +93,14 @@ export class LogListScreen implements Screen {
     }
     li.append(del)
     return li
+  }
+
+  /** Satellite QSOs from before FREQ / FREQ_RX were stored get them written into the
+   *  log file (once), so export and push carry the frequencies. */
+  private async fillSatFrequencies(logId: string): Promise<void> {
+    const { meta, qsos } = readLogFile(await this.platform.readLog(logId))
+    const filled = fillSatFrequencies(qsos)
+    if (filled) await this.platform.rewriteLog(logId, writeLogFile(meta, filled))
   }
 
   /** URL + token + station from Settings, or null when Wavelog isn't set up. */
@@ -106,6 +124,7 @@ export class LogListScreen implements Screen {
     status.hidden = false
     let result: PushStatus
     try {
+      await this.fillSatFrequencies(log.id)
       const { imported, skipped } = await pushAdif(wl.base, wl.token, wl.station.id, await this.platform.readLog(log.id))
       result = { at: new Date().toISOString(), ok: true, imported, skipped }
       trackEvent('wavelog-push', { profile: log.profile })
