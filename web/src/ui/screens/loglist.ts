@@ -22,6 +22,7 @@ import { t } from '../i18n'
 import { trackEvent } from '../stats'
 import { pushAdif } from '../wavelog'
 import { pushStatusText, wavelogErrorText } from '../wavelog-text'
+import { RELEASES_PAGE, availableUpdate, dismissUpdate } from '../update'
 
 interface WavelogTarget {
   readonly base: string
@@ -67,7 +68,26 @@ export class LogListScreen implements Screen {
     } else {
       for (const log of logs) list.append(this.row(log, wl, readPushStatus(await this.platform.getSetting(pushStatusKey(log.id)))))
     }
-    this.root.replaceChildren(top, list)
+    // APK: a newer release → one quiet line under the bar (filled in once the check is back).
+    const update = el('div', 'update-notice')
+    update.hidden = true
+    this.root.replaceChildren(top, update, list)
+    void this.showUpdate(update)
+  }
+
+  private async showUpdate(box: HTMLElement): Promise<void> {
+    const v = await availableUpdate(this.platform)
+    if (!v) return
+    const get = el('a', 'btn btn--small', t('update.download'))
+    get.href = RELEASES_PAGE
+    get.target = '_blank'
+    get.rel = 'noopener'
+    const hide = button(t('update.hide'), () => {
+      box.hidden = true
+      void dismissUpdate(this.platform, v)
+    }, 'btn btn--small')
+    box.replaceChildren(el('span', undefined, t('update.available', { v })), get, hide)
+    box.hidden = false
   }
 
   private row(log: LogSummary, wl: WavelogTarget | null, pushed: PushStatus | null): HTMLElement {

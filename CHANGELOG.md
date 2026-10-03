@@ -8,6 +8,8 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 
 ### Added
 - Satellite QSOs carry the uplink / downlink frequencies (ADIF `FREQ` / `FREQ_RX`, the transponder centre or the FM channel), so Wavelog and other logbooks get them on import. Older satellite QSOs get them filled in (from SAT_NAME + SAT_MODE) when the log is exported or pushed.
+- "What's new" after an update: the new version's highlights once on start (not after a fresh install), any time from Settings → About.
+- APK: a new version on GitHub shows a quiet line on the log list (Download / Hide), checked at most once a day; Settings → Check for updates turns it off. Links out of the app open in the browser.
 
 ### Fixed
 - APK: settings that are off by default (rain radar on the VHF map) behaved as on until switched once.

@@ -708,3 +708,37 @@ body {
     max-height: 100%;
   }
 }
+
+/* "What's new" (screens/whatsnew.ts) and the APK new-version line on the log list. */
+.whatsnew-list {
+  margin: 0.3rem 0;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+.whatsnew-list li {
+  margin: 0.3rem 0;
+}
+.whatsnew-coffee {
+  margin: 1.2rem 0 0.8rem;
+  font-size: 0.9rem;
+}
+.whatsnew-coffee a {
+  color: var(--fg);
+}
+.update-notice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.4rem 0;
+  border-bottom: var(--border-w) solid var(--fg);
+  font-size: 0.9rem;
+}
+.update-notice span {
+  flex: 1 1 auto;
+}
+.update-notice a.btn {
+  text-decoration: none;
+  color: inherit;
+}

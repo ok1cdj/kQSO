@@ -10,6 +10,16 @@ export const lang: Lang =
 
 const en = {
   'common.back': 'Back',
+  'whatsnew.title': "What's new",
+  'whatsnew.version': 'Version {v}',
+  'whatsnew.coffee': 'Enjoying kQSO? Buy me a coffee ☕',
+  'whatsnew.ok': 'OK',
+  'update.available': 'New version {v}',
+  'update.download': 'Download',
+  'update.hide': 'Hide',
+  'settings.updateCheck': 'Check for updates',
+  'settings.updateCheckHint': 'Once a day the app asks GitHub for the latest release and shows a notice on the log list. The request goes to api.github.com (no log data). Off = no request.',
+  'settings.whatsNew': "What's new",
   'common.cancel': 'Cancel',
   'common.save': 'Save',
   'common.delete': 'Delete',
@@ -170,6 +180,16 @@ const en = {
 
 const cs: Record<keyof typeof en, string> = {
   'common.back': 'Zpět',
+  'whatsnew.title': 'Co je nového',
+  'whatsnew.version': 'Verze {v}',
+  'whatsnew.coffee': 'Líbí se ti kQSO? Kup mi kafe ☕',
+  'whatsnew.ok': 'OK',
+  'update.available': 'Nová verze {v}',
+  'update.download': 'Stáhnout',
+  'update.hide': 'Skrýt',
+  'settings.updateCheck': 'Kontrolovat aktualizace',
+  'settings.updateCheckHint': 'Jednou denně se aplikace zeptá GitHubu na poslední verzi a ukáže upozornění na seznamu logů. Dotaz jde na api.github.com (žádná data z logu). Vypnuto = žádný dotaz.',
+  'settings.whatsNew': 'Co je nového',
   'common.cancel': 'Zrušit',
   'common.save': 'Uložit',
   'common.delete': 'Smazat',

@@ -18,10 +18,12 @@ import { BUNDLED_DB_SETTING, BUNDLED_IDS, bundledInfo } from '../bundled-db'
 import { MAP_LABELS_SETTING } from './map'
 import { RADAR_SETTING } from '../radar'
 import { STATS_SETTING, setStatsEnabled } from '../stats'
+import { UPDATE_SETTINGS } from '../update'
 
 export interface SettingsNav {
   back(): void
   openHelp(): void
+  openWhatsNew(): void
 }
 
 const STORAGE_KEY: Record<ReturnType<typeof platformKind>, 'settings.storageNative' | 'settings.storageOpfs' | 'settings.storageMemory'> = {
@@ -65,7 +67,7 @@ export class SettingsScreen implements Screen {
       await this.mapLabelsSetting(),
       await this.radarSetting(),
       this.storageSetting(persisted),
-      ...(this.platform.nativeVersion ? [] : [await this.statsSetting()]),
+      ...(this.platform.nativeVersion ? [await this.updateSetting()] : [await this.statsSetting()]),
       this.about(),
     )
   }
@@ -255,6 +257,14 @@ export class SettingsScreen implements Screen {
     return wrap
   }
 
+  /** APK only: the daily new-version check on GitHub (update.ts), default on. */
+  private async updateSetting(): Promise<HTMLElement> {
+    const wrap = el('div', 'setting')
+    const seg = await this.yesNo(UPDATE_SETTINGS.enabled)
+    wrap.append(el('span', 'field-label', t('settings.updateCheck')), seg, el('div', 'about', t('settings.updateCheckHint')))
+    return wrap
+  }
+
   /** QSO map: the calls next to the dots on/off, default on. */
   private async mapLabelsSetting(): Promise<HTMLElement> {
     const wrap = el('div', 'setting')
@@ -313,6 +323,7 @@ export class SettingsScreen implements Screen {
       el('div', undefined, t('settings.aboutLicense')),
       el('div', undefined, t('settings.aboutAuthor')),
       el('div', undefined, 'github.com/ok1cdj/kQSO'),
+      button(t('settings.whatsNew'), () => this.nav.openWhatsNew(), 'btn btn--small'),
     )
     return wrap
   }
