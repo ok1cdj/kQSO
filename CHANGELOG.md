@@ -5,7 +5,7 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 ## [Unreleased]
 
 ### Added
-- **CW keyer over Bluetooth** (APK and web in Chrome / Edge): Settings → CW keying (off by default) connects the M5-ESP32-keyer. In CW the strip offers the macros CQ EX TU MY REF/LOC/INFO (my reference, my locator, or free text in the general profile) ? when there is nothing to suggest, STOP is first while sending (Esc stops too). The header shows RUN or S&P with the speed, or ✕ when the keyer is not connected — tap it, or `C` on the line, to connect again. Macros per log profile × RUN / S&P, editable in Settings, with variables incl. `{HI}` (GM / GA / GE by local time). Default speed in Settings; `S20` on the line = 20 WPM until disconnect; `R` / `S` switch RUN / S&P. Free text: `K PSE QRS` sends it once; `K` alone = CW keyboard mode (each typed word goes out on Space; an empty Enter or END leaves it).
+- **CW keyer over Bluetooth** (APK and web in Chrome / Edge): Settings → CW keying (off by default) connects the M5-ESP32-keyer. In CW the strip offers the macros CQ EX TU MY REF/LOC/INFO (my reference, my locator, or free text in the general profile) ? when there is nothing to suggest, STOP is first while sending (Esc stops too). The header shows RUN or S&P with the speed, or ✕ when the keyer is not connected — tap it, or `C` on the line, to connect again. Macros per log profile × RUN / S&P, editable in Settings, with variables incl. `{HI}` (GM / GA / GE by local time). Default speed in Settings; `S20` on the line = 20 WPM until disconnect; `R` / `S` switch RUN / S&P. ESM (as in N1MM, off by default, `E` or Settings switches it, header RUN·ESM): Enter sends the macros — RUN: CQ, EXCH on the call, TU on the save; S&P: my call, EXCH on the save; a VHF contest QSO missing the number / locator asks NR ? / LOC ?. Free text: `K PSE QRS` sends it once; `K` alone = CW keyboard mode (each typed word goes out on Space; an empty Enter or END leaves it).
 - Narrow phones: the logging header shows only ‹ for Logs, and the VHF contest serial without the TX label, so the header fits.
 - Satellite QSOs carry the uplink / downlink frequencies (ADIF `FREQ` / `FREQ_RX`, the transponder centre or the FM channel), so Wavelog and other logbooks get them on import. Older satellite QSOs get them filled in (from SAT_NAME + SAT_MODE) when the log is exported or pushed.
 - "What's new" after an update: the new version's highlights once on start (not after a fresh install), any time from Settings → About.
@@ -13,6 +13,7 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 - `H` on the logging line opens the help.
 
 ### Fixed
+- VHF contest: a received number typed short (23) is saved as 023, like the numbers we send.
 - APK: settings that are off by default (rain radar on the VHF map) behaved as on until switched once.
 - Web: two storage operations on the same file at once (e.g. two screens reading the settings) could fail, and two quick setting changes could overwrite each other; storage now runs them one after another.
 

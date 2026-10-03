@@ -83,7 +83,7 @@ QSO map: worked stations over the Maidenhead grid, your QTH as the crosshair
   offers the macros CQ EX TU MY REF/LOC/INFO ?, STOP while sending (also Esc), RUN / S&P
   (`R` / `S`) with own macros per log profile (editable in Settings), `S20` = 20 WPM
   until disconnect, default speed in Settings, `C` = connect again, `K text` = send
-  text, `K` = CW keyboard mode.
+  text, `K` = CW keyboard mode, ESM (Enter sends the macros, as in N1MM; `E`).
 - **E-ink / standard display modes** (the APK starts in e-ink), keep-screen-on while
   logging, EN / CS UI (by the system language).
 

@@ -13,6 +13,7 @@ import {
   parseMacros,
   DEFAULT_MACROS,
   infoLabel,
+  esmMessage,
 } from '../src/core/keyer'
 import type { KeyerEvent, MacroContext } from '../src/core/keyer'
 import { matchKeyerCommand } from '../src/core/command'
@@ -141,8 +142,8 @@ describe('macros', () => {
   const ctx: MacroContext = { call: 'OK1ABC', myCall: 'OK1CDJ', myLoc: 'JO70NC', myRef: 'OK/ZC-001', rst: '599', nr: '007', loc: 'JN79US' }
 
   it('expands each profile × RUN/S&P default', () => {
-    expect(expandMacro(DEFAULT_MACROS.vkv.run.EXCH, ctx)).toBe('OK1ABC 599007 JO70NC K')
-    expect(expandMacro(DEFAULT_MACROS.vkv.sp.EXCH, ctx)).toBe('TU 599007 JO70NC K')
+    expect(expandMacro(DEFAULT_MACROS.vkv.run.EXCH, ctx)).toBe('OK1ABC 599 007 JO70NC K')
+    expect(expandMacro(DEFAULT_MACROS.vkv.sp.EXCH, ctx)).toBe('TU 599 007 JO70NC K')
     expect(expandMacro(DEFAULT_MACROS.vkv.run.CQ, ctx)).toBe('CQ TEST OK1CDJ OK1CDJ TEST')
     expect(expandMacro(DEFAULT_MACROS.aktivace.run.CQ, ctx)).toBe('CQ CQ DE OK1CDJ OK1CDJ OK/ZC-001 K')
     expect(expandMacro(DEFAULT_MACROS.aktivace.run.EXCH, ctx)).toBe('OK1ABC 599')
@@ -189,6 +190,7 @@ describe('keyer line commands', () => {
     expect(matchKeyerCommand(' s ')).toEqual({ type: 'sp' })
     expect(matchKeyerCommand('c')).toEqual({ type: 'connect' })
     expect(matchKeyerCommand('k')).toEqual({ type: 'keyboard' })
+    expect(matchKeyerCommand('e')).toEqual({ type: 'esm' })
     expect(matchKeyerCommand('k pse qrs ')).toEqual({ type: 'text', text: 'PSE QRS' })
     expect(matchKeyerCommand('S20')).toEqual({ type: 'speed', wpm: 20, inRange: true })
     expect(matchKeyerCommand('S5')).toEqual({ type: 'speed', wpm: 5, inRange: true })
@@ -214,5 +216,59 @@ describe('INFO macro slot', () => {
     expect(infoLabel('aktivace')).toBe('REF')
     expect(infoLabel('vkv')).toBe('LOC')
     expect(infoLabel('obecny')).toBe('INFO')
+  })
+})
+
+describe('esmMessage (docs/keyer.md, "Co odešle Enter")', () => {
+  const idle = { lineEmpty: true, hadContent: false, hadCall: false }
+  const typedCall = { lineEmpty: false, hadContent: false, hadCall: false }
+  const typedMore = { lineEmpty: false, hadContent: true, hadCall: true }
+  const open = { lineEmpty: true, hadContent: true, hadCall: true }
+  const none = { committed: false, hasCall: false, missing: [] as ('NR' | 'LOC')[] }
+
+  it('empty line, nothing open: RUN = CQ, S&P = my call', () => {
+    expect(esmMessage('run', idle, none)).toBe('CQ')
+    expect(esmMessage('sp', idle, none)).toBe('MYCALL')
+  })
+
+  it('the Enter that brings the call: RUN = EXCH, S&P = my call', () => {
+    const after = { committed: false, hasCall: true, missing: [] as ('NR' | 'LOC')[] }
+    expect(esmMessage('run', typedCall, after)).toBe('EXCH')
+    expect(esmMessage('sp', typedCall, after)).toBe('MYCALL')
+  })
+
+  it('filling in (report, number, locator) sends nothing', () => {
+    const after = { committed: false, hasCall: true, missing: [] as ('NR' | 'LOC')[] }
+    expect(esmMessage('run', typedMore, after)).toBeNull()
+    expect(esmMessage('sp', typedMore, after)).toBeNull()
+  })
+
+  it('empty Enter that saves: RUN = TU, S&P = EXCH', () => {
+    const saved = { committed: true, hasCall: false, missing: [] as ('NR' | 'LOC')[] }
+    expect(esmMessage('run', open, saved)).toBe('TU')
+    expect(esmMessage('sp', open, saved)).toBe('EXCH')
+  })
+
+  it('empty Enter refused for the VHF number / locator asks for it, both modes', () => {
+    const refused = (missing: ('NR' | 'LOC')[]) => ({ committed: false, hasCall: true, missing })
+    for (const mode of ['run', 'sp'] as const) {
+      expect(esmMessage(mode, open, refused(['NR']))).toBe('NR?')
+      expect(esmMessage(mode, open, refused(['LOC']))).toBe('LOC?')
+      expect(esmMessage(mode, open, refused(['NR', 'LOC']))).toBe('NRLOC?')
+    }
+  })
+
+  it('an open QSO without a call (only a locator typed) sends nothing', () => {
+    const noCall = { lineEmpty: true, hadContent: true, hadCall: false }
+    expect(esmMessage('run', noCall, { committed: false, hasCall: false, missing: ['NR'] })).toBeNull()
+  })
+
+  it('the ESM-only slots have their defaults in every set', () => {
+    for (const p of ['aktivace', 'vkv', 'obecny', 'sat'] as const)
+      for (const m of ['run', 'sp'] as const) {
+        expect(DEFAULT_MACROS[p][m]['NR?']).toBe('NR ?')
+        expect(DEFAULT_MACROS[p][m]['LOC?']).toBe('LOC ?')
+        expect(DEFAULT_MACROS[p][m]['NRLOC?']).toBe('NR LOC ?')
+      }
   })
 })

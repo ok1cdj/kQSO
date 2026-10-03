@@ -204,8 +204,11 @@ export function sanitize(text: string): { text: string; dropped: string[] } {
 // (VHF, satellite); in the general profile free text (name, QTH…), empty until set in
 // Settings. Its button label follows the profile (infoLabel).
 // No AGN slot: `?` asks for a repeat just as well.
-export type MacroSlot = 'CQ' | 'EXCH' | 'TU' | 'MYCALL' | 'INFO' | '?'
-export const MACRO_SLOTS: readonly MacroSlot[] = ['CQ', 'EXCH', 'TU', 'MYCALL', 'INFO', '?']
+// NR? / LOC? / NRLOC?: ESM only — asked when an empty Enter can't save a VHF contest QSO
+// for the missing number / locator; not in the strip.
+export type MacroSlot = 'CQ' | 'EXCH' | 'TU' | 'MYCALL' | 'INFO' | '?' | 'NR?' | 'LOC?' | 'NRLOC?'
+export const MACRO_SLOTS: readonly MacroSlot[] = ['CQ', 'EXCH', 'TU', 'MYCALL', 'INFO', '?', 'NR?', 'LOC?', 'NRLOC?']
+export const ESM_ONLY_SLOTS: readonly MacroSlot[] = ['NR?', 'LOC?', 'NRLOC?']
 export type RunMode = 'run' | 'sp'
 export type MacroSet = Readonly<Record<MacroSlot, string>>
 
@@ -234,20 +237,21 @@ export function infoLabel(profile: ProfileId): string {
 }
 
 const CQ_DEFAULT = 'CQ CQ DE {MYCALL} {MYCALL} K'
+const ASK = { 'NR?': 'NR ?', 'LOC?': 'LOC ?', 'NRLOC?': 'NR LOC ?' } as const
 
 const RUN: Readonly<Record<ProfileId, MacroSet>> = {
-  aktivace: { CQ: 'CQ CQ DE {MYCALL} {MYCALL} {MYREF} K', EXCH: '{CALL} {RST}', TU: 'TU {MYCALL}', MYCALL: '{MYCALL}', INFO: '{MYREF}', '?': '?' },
-  vkv: { CQ: 'CQ TEST {MYCALL} {MYCALL} TEST', EXCH: '{CALL} {RST}{NR} {MYLOC} K', TU: 'TU {MYCALL} TEST', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?' },
-  obecny: { CQ: CQ_DEFAULT, EXCH: '{CALL} {RST}', TU: 'TU {MYCALL}', MYCALL: '{MYCALL}', INFO: '', '?': '?' },
-  sat: { CQ: CQ_DEFAULT, EXCH: '{CALL} UR {RST} {MYLOC}', TU: 'TU {MYCALL}', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?' },
+  aktivace: { CQ: 'CQ CQ DE {MYCALL} {MYCALL} {MYREF} K', EXCH: '{CALL} {RST}', TU: 'TU {MYCALL}', MYCALL: '{MYCALL}', INFO: '{MYREF}', '?': '?', ...ASK },
+  vkv: { CQ: 'CQ TEST {MYCALL} {MYCALL} TEST', EXCH: '{CALL} {RST} {NR} {MYLOC} K', TU: 'TU {MYCALL} TEST', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?', ...ASK },
+  obecny: { CQ: CQ_DEFAULT, EXCH: '{CALL} {RST}', TU: 'TU {MYCALL}', MYCALL: '{MYCALL}', INFO: '', '?': '?', ...ASK },
+  sat: { CQ: CQ_DEFAULT, EXCH: '{CALL} UR {RST} {MYLOC}', TU: 'TU {MYCALL}', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?', ...ASK },
 }
 
 // S&P: I answer someone's CQ, so their call is not repeated; CQ = "my call".
 const SP: Readonly<Record<ProfileId, MacroSet>> = {
-  aktivace: { CQ: '{MYCALL}', EXCH: 'TU {RST}', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '{MYREF}', '?': '?' },
-  vkv: { CQ: '{MYCALL}', EXCH: 'TU {RST}{NR} {MYLOC} K', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?' },
-  obecny: { CQ: '{MYCALL}', EXCH: 'TU {RST}', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '', '?': '?' },
-  sat: { CQ: '{MYCALL}', EXCH: 'TU UR {RST} {MYLOC}', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?' },
+  aktivace: { CQ: '{MYCALL}', EXCH: 'TU {RST}', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '{MYREF}', '?': '?', ...ASK },
+  vkv: { CQ: '{MYCALL}', EXCH: 'TU {RST} {NR} {MYLOC} K', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?', ...ASK },
+  obecny: { CQ: '{MYCALL}', EXCH: 'TU {RST}', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '', '?': '?', ...ASK },
+  sat: { CQ: '{MYCALL}', EXCH: 'TU UR {RST} {MYLOC}', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?', ...ASK },
 }
 
 export const DEFAULT_MACROS: Readonly<Record<ProfileId, Readonly<Record<RunMode, MacroSet>>>> = {
@@ -318,4 +322,39 @@ export function expandMacro(template: string, ctx: MacroContext): string {
 
 export function clampWpm(n: number): number {
   return Math.min(WPM_MAX, Math.max(WPM_MIN, Math.round(n)))
+}
+
+// --- ESM (Enter Sends Message) -----------------------------------------------------
+
+/** The line and the QSO just before Enter. */
+export interface EsmBefore {
+  readonly lineEmpty: boolean
+  readonly hadContent: boolean // an unfinished QSO (anything typed besides the time)
+  readonly hadCall: boolean
+}
+
+/** What Enter did. */
+export interface EsmAfter {
+  readonly committed: boolean
+  readonly hasCall: boolean
+  readonly missing: readonly ('NR' | 'LOC')[] // missingParts after Enter
+}
+
+/**
+ * The macro Enter sends in ESM (docs/keyer.md, "Co odešle Enter"), or null for none.
+ * Decided from what the reducer did, not from the text: the first callsign, a save,
+ * a save refused for the missing number / locator.
+ */
+export function esmMessage(mode: RunMode, before: EsmBefore, after: EsmAfter): MacroSlot | null {
+  const run = mode === 'run'
+  if (!before.lineEmpty) {
+    // Typed Enter: only the one that brings the callsign answers; filling in is silent.
+    return !before.hadCall && after.hasCall ? (run ? 'EXCH' : 'MYCALL') : null
+  }
+  if (!before.hadContent) return run ? 'CQ' : 'MYCALL'
+  if (after.committed) return run ? 'TU' : 'EXCH'
+  if (!after.hasCall) return null
+  const nr = after.missing.includes('NR')
+  const loc = after.missing.includes('LOC')
+  return nr && loc ? 'NRLOC?' : nr ? 'NR?' : loc ? 'LOC?' : null
 }

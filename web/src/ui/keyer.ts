@@ -21,6 +21,7 @@ export const KEYER_SETTINGS = {
   wpm: 'keyerWpm', // default speed, sent on every connect
   mode: 'keyerRunMode', // 'run' | 'sp'
   macros: 'keyerMacros', // JSON, only the edited slots (core/keyer.ts SavedMacros)
+  esm: 'keyerEsm', // '1' / '0', default off — Enter sends the macros (ESM)
 } as const
 
 /** Something the screens should tell the operator once (strip notice). */
@@ -39,6 +40,7 @@ export class KeyerController {
   mode: RunMode = 'run'
   defaultWpm = WPM_DEFAULT
   macros: SavedMacros = {}
+  esm = false
   /** Last thing to report; screens show it and call clearNotice(). */
   notice: KeyerNotice | undefined
 
@@ -75,6 +77,7 @@ export class KeyerController {
     this.defaultWpm = clampWpm(Number(await p.getSetting(KEYER_SETTINGS.wpm)) || WPM_DEFAULT)
     this.mode = (await p.getSetting(KEYER_SETTINGS.mode)) === 'sp' ? 'sp' : 'run'
     this.macros = parseMacros(await p.getSetting(KEYER_SETTINGS.macros))
+    this.esm = switchOn(await p.getSetting(KEYER_SETTINGS.esm), false)
     document.addEventListener('visibilitychange', () => {
       // Back from sleep / another app: the link may have dropped meanwhile.
       if (!document.hidden && this.enabled && this.wantLink && this.link === 'off') void this.connect(false)
@@ -174,6 +177,13 @@ export class KeyerController {
 
   get wpm(): number | undefined {
     return this.proto?.wpm
+  }
+
+  /** ESM on / off (E on the line, Settings). `save` = false when the caller stored it. */
+  async setEsm(on: boolean, save = true): Promise<void> {
+    this.esm = on
+    if (save) await this.platform.setSetting(KEYER_SETTINGS.esm, on ? '1' : '0')
+    this.emit()
   }
 
   async setMode(mode: RunMode): Promise<void> {

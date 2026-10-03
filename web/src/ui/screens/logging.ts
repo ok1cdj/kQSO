@@ -14,8 +14,11 @@ import {
   matchCommand,
   matchKeyerCommand,
   hasContent,
+  esmMessage,
   expandMacro,
   infoLabel,
+  missingParts,
+  padSerial,
   greeting,
   LiveDb,
   combineSources,
@@ -218,6 +221,7 @@ export class LoggingScreen implements Screen {
       return
     }
     const hadContent = hasContent(this.state.partial)
+    const before = { lineEmpty: this.line.trim() === '', hadContent, hadCall: this.state.partial.call !== undefined }
     const r = reduce(this.state, { type: 'enter', line: this.line }, this.meta)
     this.state = r.state
     if (r.clearInput) this.line = ''
@@ -228,9 +232,10 @@ export class LoggingScreen implements Screen {
       return
     }
 
+    let committed: Qso | undefined
     if (r.committed) {
       // VKV contest: stamp the auto-incremented sent serial (STX) at commit time.
-      const committed = PROFILES[this.meta.profile].serialAfterCall
+      committed = PROFILES[this.meta.profile].serialAfterCall
         ? { ...r.committed, sentSerial: pad3(this.qsos.length + 1) }
         : r.committed
       await this.platform.appendQso(this.logId, writeQso(committed))
@@ -244,6 +249,21 @@ export class LoggingScreen implements Screen {
       await this.platform.writeJournal(this.logId, serialize(this.state.partial))
     }
     this.renderAll()
+    // ESM: Enter sends the macro for what it just did (after the save, so the macro
+    // carries the saved QSO's call, report and number).
+    if (this.esmOn()) {
+      const slot = esmMessage(this.keyer.mode, before, {
+        committed: committed !== undefined,
+        hasCall: this.state.partial.call !== undefined,
+        missing: missingParts(this.state.partial, PROFILES[this.meta.profile]),
+      })
+      if (slot) await this.sendMacro(slot, committed)
+    }
+  }
+
+  /** ESM applies: keying on, CW, keyer connected, ESM switched on. */
+  private esmOn(): boolean {
+    return this.keyerOn() && this.keyer.connected && this.keyer.esm
   }
 
   // --- line commands ----------------------------------------------
@@ -296,6 +316,10 @@ export class LoggingScreen implements Screen {
     } else if (kc.type === 'connect') {
       this.notice = ''
       await this.keyer.reconnect()
+    } else if (kc.type === 'esm') {
+      // No notice: the header shows ESM.
+      this.notice = ''
+      await this.keyer.setEsm(!this.keyer.esm)
     } else if (kc.type === 'keyboard' || kc.type === 'text') {
       if (!this.keyer.connected) this.notice = t('logging.cmdSpeedOff')
       else if (kc.type === 'keyboard') this.enterTx()
@@ -315,22 +339,35 @@ export class LoggingScreen implements Screen {
   }
 
   /** Expand a slot of the current profile × RUN / S&P and send it. Values come from
-   *  what Enter would save now (typed line included), the call from the QSO just saved
-   *  when nothing is typed (TU after the save). */
-  private async sendMacro(slot: MacroSlot): Promise<void> {
+   *  what Enter would save now (typed line included). With no new call typed they all
+   *  come from the last saved QSO — a repeat (AGN?) gets the same call, report and
+   *  number again, not the next number; likewise `saved`, the QSO an ESM Enter has just
+   *  saved (S&P sends its exchange with that QSO's number). */
+  private async sendMacro(slot: MacroSlot, saved?: Qso): Promise<void> {
     const dry = parseLine(this.line, this.state.sticky, this.state.partial, PROFILES[this.meta.profile]).partial
     const last = this.qsos.length > 0 ? this.qsos[this.qsos.length - 1] : undefined
-    const text = expandMacro(this.keyer.macroText(this.meta.profile, slot), {
-      call: dry.call ?? last?.call,
-      myCall: this.meta.myCall,
-      myLoc: this.meta.myGrid,
-      myRef: this.meta.myRef?.value,
-      rst: dry.reportSent ?? defaultReport(this.state.sticky.mode),
-      nr: pad3(this.qsos.length + 1),
-      loc: dry.grid,
-      ref: dry.theirRef?.value,
-      hi: greeting(new Date()),
-    })
+    const from = saved ?? (dry.call === undefined ? last : undefined)
+    const common = { myCall: this.meta.myCall, myLoc: this.meta.myGrid, myRef: this.meta.myRef?.value, hi: greeting(new Date()) }
+    const text = expandMacro(
+      this.keyer.macroText(this.meta.profile, slot),
+      from
+        ? {
+            ...common,
+            call: from.call,
+            rst: from.report.sent,
+            nr: from.sentSerial ?? pad3(this.qsos.length),
+            loc: from.grid,
+            ref: from.theirRef?.value,
+          }
+        : {
+            ...common,
+            call: dry.call,
+            rst: dry.reportSent ?? defaultReport(this.state.sticky.mode),
+            nr: pad3(this.qsos.length + 1),
+            loc: dry.grid,
+            ref: dry.theirRef?.value,
+          },
+    )
     // An empty macro (INFO in the general profile until filled in) would do nothing silently.
     if (text === '') {
       this.notice = t('logging.macroEmpty', { slot: slot === 'INFO' ? infoLabel(this.meta.profile) : slot })
@@ -479,8 +516,9 @@ export class LoggingScreen implements Screen {
       const link = this.keyer.link
       const wpm = this.keyer.wpm
       const state = link === 'off' ? ' ✕' : link === 'connecting' ? ' …' : wpm !== undefined ? ` ${wpm}` : ''
-      // Keyboard mode: TX instead of RUN / S&P, inverted.
-      const label = `${this.txMode ? 'TX' : this.keyer.mode === 'run' ? 'RUN' : 'S&P'}${state}`
+      // Keyboard mode: TX instead of RUN / S&P, inverted. ·ESM = Enter sends the macros.
+      const what = this.txMode ? 'TX' : `${this.keyer.mode === 'run' ? 'RUN' : 'S&P'}${this.keyer.esm ? '·ESM' : ''}`
+      const label = `${what}${state}`
       const cls = link !== 'on' ? 'hdr-keyer hdr-keyer--off' : this.txMode ? 'hdr-keyer hdr-keyer--tx' : 'hdr-keyer'
       mid.append(button(label, () => void this.keyer.reconnect(), cls))
     }
@@ -567,7 +605,7 @@ export class LoggingScreen implements Screen {
       chips.push(fieldChip('CALL', p.call))
       chips.push(fieldChip('RST', p.reportRcvd ?? defaultReport(this.state.sticky.mode)))
       if (p.reportSent) chips.push(fieldChip('TX-RST', p.reportSent))
-      if (profile.serialAfterCall) chips.push(fieldChip('NR', p.serial ?? '—', p.serial === undefined))
+      if (profile.serialAfterCall) chips.push(fieldChip('NR', p.serial !== undefined ? padSerial(p.serial) : '—', p.serial === undefined))
       // Locator is expected in VKV and Satellite exchanges → always show (— if missing).
       if (profile.serialAfterCall || profile.fixedBand || p.grid !== undefined) {
         chips.push(fieldChip('LOC', p.grid ?? '—', p.grid === undefined))
@@ -579,7 +617,20 @@ export class LoggingScreen implements Screen {
       if (p.name) chips.push(fieldChip('NAME', p.name))
     }
     for (const t of tokens) if (t.cls.type === 'unknown') chips.push(unknownChip(t.raw))
+    const loc = this.macrosShown() ? this.locSuggestion() : undefined
+    if (loc) chips.push(this.suggestButton(`+ ${loc}`, () => this.fillGrid(loc), 'suggest suggest--ghost suggest--inline'))
     this.previewEl.replaceChildren(...chips)
+  }
+
+  /** The callsign database's locator for the call just entered, while none is typed. */
+  private locSuggestion(): string | undefined {
+    const call = this.state.partial.call
+    return call && this.state.partial.grid === undefined ? this.db.lookup(call)?.loc : undefined
+  }
+
+  /** The keyer's macro buttons own the strip (CW keying on, keyer connected). */
+  private macrosShown(): boolean {
+    return this.keyerOn() && this.keyer.connected
   }
 
   /** What Enter will do with a keyer command, and whether it can't. */
@@ -594,6 +645,8 @@ export class LoggingScreen implements Screen {
         return this.keyer.link === 'off'
           ? { what: t('logging.cmdConnect'), bad: false }
           : { what: t('logging.cmdConnected'), bad: true }
+      case 'esm':
+        return { what: t(this.keyer.esm ? 'logging.cmdEsmOff' : 'logging.cmdEsmOn'), bad: false }
       case 'keyboard':
         return off ? { what: t('logging.cmdSpeedOff'), bad: true } : { what: t('logging.cmdKeyboard'), bad: false }
       case 'text':
@@ -636,15 +689,15 @@ export class LoggingScreen implements Screen {
         return
       }
     }
-    // Completed call with a known locator → prefill chip.
-    const call = this.state.partial.call
-    const loc = call ? this.db.lookup(call)?.loc : undefined
-    if (loc && this.state.partial.grid === undefined) {
+    // Completed call with a known locator → prefill chip. With the keyer's macros in the
+    // strip it moves to the preview line instead (renderPreview), the macros stay.
+    const loc = this.locSuggestion()
+    if (loc && !this.macrosShown()) {
       this.stripEl.replaceChildren(...stop, this.suggestButton(`+ ${loc}`, () => this.fillGrid(loc), 'suggest suggest--ghost'))
       return
     }
     // CW keyer connected: the macro buttons take the strip (nothing to suggest now).
-    if (this.keyerOn() && this.keyer.connected) {
+    if (this.macrosShown()) {
       this.stripEl.replaceChildren(
         ...stop,
         ...MACRO_BUTTONS.map(([slot, label]) =>

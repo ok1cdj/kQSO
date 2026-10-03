@@ -205,6 +205,12 @@ body {
   color: var(--bg);
 }
 /* Prefilled locator/name suggestion — the single grey. */
+/* + LOC on the preview line (the keyer's macros keep the strip). */
+.suggest--inline {
+  flex: none;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.8rem;
+}
 .suggest--ghost {
   color: var(--ghost);
   border-color: var(--ghost);

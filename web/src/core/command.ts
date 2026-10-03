@@ -25,13 +25,15 @@ export function hasContent(p: PartialQso): boolean {
 
 /** Keyer line commands (only while CW keying is on — otherwise R / S stay a name):
  *  R = RUN, S = S&P, S<n> = speed n WPM until disconnect, C = connect the keyer again,
- *  K = keyboard mode (typed words go out as CW), K <text> = send that text once. `inRange` is false for
+ *  K = keyboard mode (typed words go out as CW), K <text> = send that text once,
+ *  E = ESM on / off. `inRange` is false for
  *  S4 / S51 so the preview can say why nothing will be sent. */
 export type KeyerCommand =
   | { readonly type: 'run' }
   | { readonly type: 'sp' }
   | { readonly type: 'connect' }
   | { readonly type: 'keyboard' }
+  | { readonly type: 'esm' }
   | { readonly type: 'text'; readonly text: string }
   | { readonly type: 'speed'; readonly wpm: number; readonly inRange: boolean }
 
@@ -41,6 +43,7 @@ export function matchKeyerCommand(line: string): KeyerCommand | undefined {
   if (l === 'S') return { type: 'sp' }
   if (l === 'C') return { type: 'connect' }
   if (l === 'K') return { type: 'keyboard' }
+  if (l === 'E') return { type: 'esm' }
   const text = /^K\s+(.+)$/.exec(l)
   if (text) return { type: 'text', text: text[1]! }
   const m = /^S(\d{1,2})$/.exec(l)

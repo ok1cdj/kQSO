@@ -1,7 +1,7 @@
 // Edit / delete a single QSO. Classic form, not the parser. Saving and
 // deleting rewrite the whole file via rewriteLog() — never append.
 
-import { BANDS, MODES, PROFILES, matchBand, matchMode, parseReferenceInput, readLogFile, writeLogFile } from '../../core/index'
+import { BANDS, MODES, PROFILES, matchBand, matchMode, parseReferenceInput, readLogFile, writeLogFile, padSerial } from '../../core/index'
 import type { Qso, Signal } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
@@ -122,7 +122,7 @@ export class QsoEditScreen implements Screen {
       if (r) q.theirRef = r
       if (orig.myRef !== undefined) q.myRef = orig.myRef
       const sn = serial.input.value.trim()
-      if (sn) q.serial = sn
+      if (sn) q.serial = padSerial(sn)
       if (orig.sentSerial !== undefined) q.sentSerial = orig.sentSerial // TX serial is auto, not edited
       if (orig.satName !== undefined) q.satName = orig.satName // satellite fields carried, not edited
       if (orig.satMode !== undefined) q.satMode = orig.satMode

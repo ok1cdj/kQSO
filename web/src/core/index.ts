@@ -45,15 +45,17 @@ export {
   clampWpm,
   DEFAULT_MACROS,
   MACRO_SLOTS,
+  ESM_ONLY_SLOTS,
+  esmMessage,
   infoLabel,
   SEND_MAX,
   WPM_MIN,
   WPM_MAX,
   WPM_DEFAULT,
 } from './keyer'
-export type { KeyerEvent, MacroSlot, RunMode, MacroSet, MacroContext, SavedMacros } from './keyer'
+export type { KeyerEvent, MacroSlot, RunMode, MacroSet, MacroContext, SavedMacros, EsmBefore, EsmAfter } from './keyer'
 export type { ParseResult } from './parse'
-export { buildQso, missingParts } from './qso'
+export { buildQso, missingParts, padSerial } from './qso'
 export { initialState, reduce } from './reducer'
 export type { CoreEvent, ReduceResult } from './reducer'
 
