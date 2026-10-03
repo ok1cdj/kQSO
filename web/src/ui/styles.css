@@ -100,6 +100,12 @@ body {
   cursor: pointer;
   transition: background var(--transition), color var(--transition);
 }
+/* Narrow phones (OnePlus 360 px): "‹ Logy" → "‹", the header middle needs the room. */
+@media (max-width: 400px) {
+  .hdr-nav-word {
+    display: none;
+  }
+}
 .hdr-nav:active {
   background: var(--fg);
   color: var(--bg);

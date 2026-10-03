@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- CW klíčovač (KeyerBle) -->
+    <string name="keyer_searching">Hledám klíčovač…</string>
+    <string name="keyer_choose">Vyber klíčovač</string>
+    <string name="keyer_none">Klíčovač nenalezen — je zapnutý?</string>
+    <string name="keyer_no_bt">Zařízení nemá Bluetooth</string>
+    <string name="keyer_bt_off">Bluetooth je vypnutý</string>
+    <string name="keyer_no_permission">Oprávnění pro Bluetooth nepovoleno</string>
+    <string name="keyer_not_keyer">Zařízení není klíčovač (chybí UART služba)</string>
+    <string name="keyer_failed">spojení ztraceno</string>
+    <string name="keyer_failed_status">připojení selhalo (status %1$d)</string>
+</resources>

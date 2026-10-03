@@ -3,6 +3,7 @@ package com.ok1cdj.kqso
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -34,6 +35,8 @@ import java.io.File
 class MainActivity : ComponentActivity() {
 
     private lateinit var webView: WebView
+    private lateinit var keyer: KeyerBle
+    private var pendingPermission: ((Boolean) -> Unit)? = null
     private var pendingExport: String? = null
     private var pendingChooser: ValueCallback<Array<Uri>>? = null
 
@@ -56,6 +59,15 @@ class MainActivity : ComponentActivity() {
         // The callback must always be answered (null on cancel), or the input stays dead.
         pendingChooser?.onReceiveValue(uri?.let { arrayOf(it) })
         pendingChooser = null
+    }
+
+    // Bluetooth permissions for the CW keyer, asked on the first Connect.
+    private val requestPermissions = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        val cb = pendingPermission
+        pendingPermission = null
+        cb?.invoke(result.values.all { it })
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -81,7 +93,8 @@ class MainActivity : ComponentActivity() {
             settings.cacheMode = WebSettings.LOAD_NO_CACHE
             settings.allowFileAccess = false
             settings.allowContentAccess = false
-            addJavascriptInterface(KQSOBridge(this@MainActivity), "KQSONative")
+            keyer = KeyerBle(this@MainActivity)
+            addJavascriptInterface(KQSOBridge(this@MainActivity, keyer), "KQSONative")
             webViewClient = object : WebViewClient() {
                 override fun shouldInterceptRequest(
                     view: WebView,
@@ -147,6 +160,24 @@ class MainActivity : ComponentActivity() {
         // (the Kompakt) throws an NPE here.
         WindowCompat.getInsetsController(window, root).isAppearanceLightStatusBars = true // dark icons on white
         webView.loadUrl("https://appassets.androidplatform.net/index.html")
+    }
+
+    override fun onDestroy() {
+        keyer.close()
+        super.onDestroy()
+    }
+
+    /** Ask for the BLE permissions (or answer at once when already granted). */
+    fun requestBlePermissions(cb: (Boolean) -> Unit) {
+        val perms = KeyerBle.blePermissions()
+        if (perms.all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }) return cb(true)
+        pendingPermission?.invoke(false)
+        pendingPermission = cb
+        requestPermissions.launch(perms)
+    }
+
+    fun evalJs(script: String) {
+        webView.post { webView.evaluateJavascript(script, null) }
     }
 
     fun setKeepScreenOn(on: Boolean) = runOnUiThread {

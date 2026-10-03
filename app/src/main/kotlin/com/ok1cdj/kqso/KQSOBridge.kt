@@ -11,7 +11,7 @@ import java.io.File
  * synchronous methods into the async KQSOPlatform. Logs are real .adi files in
  * app storage (reachable via ADB), so there is no WebKit-style eviction.
  */
-class KQSOBridge(private val activity: MainActivity) {
+class KQSOBridge(private val activity: MainActivity, private val keyer: KeyerBle) {
 
     private val ctx: Context = activity.applicationContext
     private val logsDir: File = File(ctx.filesDir, "logs").apply { mkdirs() }
@@ -92,4 +92,20 @@ class KQSOBridge(private val activity: MainActivity) {
 
     @JavascriptInterface
     fun keepAwake(on: Boolean) = activity.setKeepScreenOn(on)
+
+    // CW keyer (KeyerBle). Bridge calls come on a binder thread; BLE state lives on main.
+    @JavascriptInterface
+    fun keyerConnect(pick: Boolean) = activity.runOnUiThread { keyer.connect(pick) }
+
+    @JavascriptInterface
+    fun keyerDisconnect() = activity.runOnUiThread { keyer.disconnect() }
+
+    @JavascriptInterface
+    fun keyerForget() = activity.runOnUiThread { keyer.forget() }
+
+    @JavascriptInterface
+    fun keyerWrite(chunk: String) = activity.runOnUiThread { keyer.write(chunk) }
+
+    @JavascriptInterface
+    fun keyerMtu(): Int = keyer.mtu()
 }

@@ -5,9 +5,11 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 ## [Unreleased]
 
 ### Added
-- **CW keyer over Bluetooth** (web: Chrome / Edge; the APK follows later): Settings → CW keying (off by default) connects the M5-ESP32-keyer. In CW the strip offers the macros CQ EXCH TU MY AGN ? when there is nothing to suggest, STOP is first while sending (Esc stops too), the header shows RUN or S&P. Macros per log profile × RUN / S&P, editable in Settings. Default speed in Settings; `S20` on the line = 20 WPM until disconnect; `R` / `S` switch RUN / S&P.
+- **CW keyer over Bluetooth** (APK and web in Chrome / Edge): Settings → CW keying (off by default) connects the M5-ESP32-keyer. In CW the strip offers the macros CQ EX TU MY AGN ? when there is nothing to suggest, STOP is first while sending (Esc stops too). The header shows RUN or S&P with the speed, or ✕ when the keyer is not connected — tap it, or `C` on the line, to connect again. Macros per log profile × RUN / S&P, editable in Settings, with variables incl. `{HI}` (GM / GA / GE by local time). Default speed in Settings; `S20` on the line = 20 WPM until disconnect; `R` / `S` switch RUN / S&P.
+- Narrow phones: the logging header shows only ‹ for Logs, and the VHF contest serial without the TX label, so the header fits.
 
 ### Fixed
+- APK: settings that are off by default (rain radar on the VHF map) behaved as on until switched once.
 - Web: two storage operations on the same file at once (e.g. two screens reading the settings) could fail, and two quick setting changes could overwrite each other; storage now runs them one after another.
 
 ## [1.6.3] – 2026-10-02

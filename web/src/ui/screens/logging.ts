@@ -54,10 +54,10 @@ const RECENT_MAX = 30 // wide layout: rows rendered; CSS clips whatever doesn't 
 // Same breakpoint as the landscape layout in styles.css.
 const WIDE = window.matchMedia('(min-aspect-ratio: 1/1)')
 const hhmm = (d: Date): string => `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`
-// Keyer macro buttons in the strip: slot + its short label (MYCALL → MY, fits 480 px).
+// Keyer macro buttons in the strip: slot + its short label (EXCH → EX, MYCALL → MY: with STOP it is seven buttons on a 360 px phone).
 const MACRO_BUTTONS: ReadonlyArray<readonly [MacroSlot, string]> = [
   ['CQ', 'CQ'],
-  ['EXCH', 'EXCH'],
+  ['EXCH', 'EX'],
   ['TU', 'TU'],
   ['MYCALL', 'MY'],
   ['AGN', 'AGN'],
@@ -379,11 +379,15 @@ export class LoggingScreen implements Screen {
       // fixed by the bird and didn't fit the narrow Kompakt header.
       mid.append(el('b', 'hdr-sat', `${this.satLabel} ${s.mode}`))
     } else {
-      mid.append(el('b', undefined, `${s.band} ${s.mode}`))
+      // With the keyer badge the mode is CW by definition — drop it, the header is tight.
+      mid.append(el('b', undefined, this.keyerOn() ? s.band : `${s.band} ${s.mode}`))
     }
-    // VKV: show the next sent serial so the operator knows what to give out.
+    // VKV: show the next sent serial so the operator knows what to give out (boxed, no
+    // "TX" label — the header is tight on a phone).
     if (profile.serialAfterCall) {
-      mid.append(el('b', 'hdr-tx', `TX ${pad3(this.qsos.length + 1)}`))
+      const b = el('b', 'hdr-tx', pad3(this.qsos.length + 1))
+      b.title = 'TX'
+      mid.append(b)
     }
     // VHF contest: where to point the antenna. A typed locator wins; else the one the
     // callsign database knows for the call, greyed like its + LOC suggestion.
@@ -403,11 +407,19 @@ export class LoggingScreen implements Screen {
       if (az !== undefined) mid.append(el('b', known ? 'hdr-az hdr-az--guess' : 'hdr-az', `${az}°`))
     }
     this.hdr.replaceChildren(
-      button(t('logging.navLogs'), () => this.close(), 'hdr-nav'),
+      this.navLogsButton(),
       mid,
       button('?', () => this.nav.toHelp(), 'hdr-nav'),
       button(`QSO ${this.qsos.length} ›`, () => this.nav.toQsoList(), 'hdr-nav'),
     )
+  }
+
+  /** "‹ Logy"; on a narrow phone only "‹" (styles.css), so the header middle fits. */
+  private navLogsButton(): HTMLButtonElement {
+    const b = button('‹', () => this.close(), 'hdr-nav')
+    b.title = t('logging.navLogs')
+    b.append(el('span', 'hdr-nav-word', ` ${t('logging.navLogs')}`))
+    return b
   }
 
   // No export prompt on close — it nagged on every exit; export lives in the log list.

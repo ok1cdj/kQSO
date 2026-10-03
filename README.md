@@ -78,11 +78,11 @@ QSO map: worked stations over the Maidenhead grid, your QTH as the crosshair
 - **Storage that survives:** every QSO is appended to the log file at once; an
   unfinished QSO is kept in a crash journal and offered back after a restart.
   Web: OPFS (persistent storage requested); APK: `.adi` files in app storage.
-- **CW keyer over Bluetooth** (web in Chrome / Edge for now; off by default): the
+- **CW keyer over Bluetooth** (APK, or web in Chrome / Edge; off by default): the
   [M5-ESP32-keyer](https://github.com/ok1cdj/M5-ESP32-keyer) — in CW the strip
-  offers the macros CQ EXCH TU MY AGN ?, STOP while sending (also Esc), RUN / S&P
+  offers the macros CQ EX TU MY AGN ?, STOP while sending (also Esc), RUN / S&P
   (`R` / `S`) with own macros per log profile (editable in Settings), `S20` = 20 WPM
-  until disconnect, default speed in Settings.
+  until disconnect, default speed in Settings, `C` = connect again.
 - **E-ink / standard display modes** (the APK starts in e-ink), keep-screen-on while
   logging, EN / CS UI (by the system language).
 

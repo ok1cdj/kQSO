@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">kQSO</string>
+    <!-- CW keyer (KeyerBle) -->
+    <string name="keyer_searching">Searching for the keyer…</string>
+    <string name="keyer_choose">Choose the keyer</string>
+    <string name="keyer_none">No keyer found — is it on?</string>
+    <string name="keyer_no_bt">This device has no Bluetooth</string>
+    <string name="keyer_bt_off">Bluetooth is off</string>
+    <string name="keyer_no_permission">Bluetooth permission not granted</string>
+    <string name="keyer_not_keyer">The device is not a keyer (no UART service)</string>
+    <string name="keyer_failed">connection lost</string>
+    <string name="keyer_failed_status">connection failed (status %1$d)</string>
 </resources>
