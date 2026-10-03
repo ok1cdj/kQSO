@@ -37,6 +37,8 @@ export function writeQso(qso: Qso): string {
     writeField(F.BAND, qso.signal.band),
   ]
   if (qso.signal.bandRx !== undefined) parts.push(writeField(F.BAND_RX, qso.signal.bandRx))
+  if (qso.signal.freq !== undefined) parts.push(writeField(F.FREQ, qso.signal.freq))
+  if (qso.signal.freqRx !== undefined) parts.push(writeField(F.FREQ_RX, qso.signal.freqRx))
   parts.push(
     writeField(F.MODE, qso.signal.mode),
     writeField(F.RST_SENT, qso.report.sent),

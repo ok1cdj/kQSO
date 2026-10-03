@@ -16,7 +16,10 @@ export function initialSticky(meta: LogMeta): StickyState {
 }
 
 export function applyBand(s: StickyState, band: string): StickyState {
-  return { ...s, band }
+  // Another band → a satellite's uplink frequency no longer applies.
+  if (band === s.band) return s
+  const { freq: _drop, ...rest } = s
+  return { ...rest, band }
 }
 
 export function applyMode(s: StickyState, mode: string): StickyState {
@@ -32,5 +35,7 @@ export function applySatellite(s: StickyState, sat: Satellite, mode: string): St
     mode: sat.fm ? 'FM' : mode,
     satName: sat.name,
     satMode: sat.satMode,
+    freq: sat.upMHz, // FREQ = uplink centre
+    freqRx: sat.downMHz, // FREQ_RX = downlink centre
   }
 }

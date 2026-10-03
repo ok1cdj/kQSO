@@ -100,6 +100,18 @@ class MainActivity : ComponentActivity() {
                     view: WebView,
                     request: WebResourceRequest,
                 ): WebResourceResponse? = loader.shouldInterceptRequest(request.url)
+
+                // Links out of the app (Buy Me a Coffee, the new release on GitHub) open in
+                // the system browser instead of replacing the app in the WebView.
+                override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                    if (request.url.host == "appassets.androidplatform.net") return false
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, request.url))
+                    } catch (_: Exception) {
+                        // No browser: nothing to open it with.
+                    }
+                    return true
+                }
             }
             // Without a WebChromeClient the WebView silently suppresses window.alert /
             // confirm — which would break delete confirmations and the export prompt.

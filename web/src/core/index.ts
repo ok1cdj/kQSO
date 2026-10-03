@@ -20,7 +20,7 @@ export type {
 export { PROFILES, defaultReport } from './model'
 
 export { BANDS, MODES, matchBand, matchMode } from './dictionaries'
-export { SATELLITES, satelliteByLabel, satelliteSignal } from './satellites'
+export { SATELLITES, satelliteByLabel, satelliteSignal, fillSatFrequencies } from './satellites'
 export type { Satellite } from './satellites'
 export { matchReference, parseReferenceInput } from './reference'
 export { tokenize } from './tokenize'
@@ -85,6 +85,9 @@ export { contestStats, scoreLog } from './contest'
 export type { BandScore, ContestStats, ScoredQso } from './contest'
 export { writeEdi, ediBand, ediBands, ediAscii, parseEdiSettings, serializeEdiSettings, equipmentFor, EMPTY_EQUIPMENT } from './edi'
 export type { EdiStation, EdiEquipment, EdiSettings } from './edi'
+export { announceUpdate, compareVersions, parseVersion } from './version'
+export { WHATS_NEW, notesSince, seenBaseline } from './whatsnew'
+export type { WhatsNewEntry } from './whatsnew'
 export { LiveDb, LIVE_MAX, baseSource, combineSources, dbDate, mergeEntry, parseDb, serializeDb, userHeader } from './calldb'
 export type { Entry, ParsedDb } from './calldb'
 export {

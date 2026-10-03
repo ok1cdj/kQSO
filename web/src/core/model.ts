@@ -12,6 +12,8 @@ export interface Signal {
   readonly bandRx?: string // future SAT → ADIF BAND_RX; undefined in phase 1
   readonly mode: string // canonical dictionary key: "CW" | "SSB" | "FM"
   readonly modeRx?: string // future SAT; undefined in phase 1
+  readonly freq?: string // TX frequency in MHz → ADIF FREQ (satellites: uplink centre)
+  readonly freqRx?: string // RX frequency in MHz → ADIF FREQ_RX (satellites: downlink centre)
 }
 
 /** RST report. Stored as the raw digit string so 59 vs 599 (CW) is preserved verbatim. */
@@ -108,6 +110,8 @@ export interface StickyState {
   readonly modeRx?: string
   readonly satName?: string // Satellite: ADIF SAT_NAME
   readonly satMode?: string // Satellite: ADIF SAT_MODE
+  readonly freq?: string // Satellite: uplink centre, MHz (ADIF FREQ)
+  readonly freqRx?: string // Satellite: downlink centre, MHz (ADIF FREQ_RX)
 }
 
 /** One token's classification. Union order documents the classification priority. */

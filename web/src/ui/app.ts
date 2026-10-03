@@ -13,6 +13,10 @@ import { HelpScreen } from './screens/help'
 import { EdiExportScreen } from './screens/ediexport'
 import { MapScreen } from './screens/map'
 import { StatsScreen } from './screens/stats'
+import { WhatsNewScreen } from './screens/whatsnew'
+import { takeUnseenNotes } from './whatsnew'
+import { WHATS_NEW } from '../core/index'
+import type { WhatsNewEntry } from '../core/index'
 import { trackScreen } from './stats'
 import { KeyerController } from './keyer'
 
@@ -31,7 +35,18 @@ export class App {
   mount(root: HTMLElement): void {
     this.root = root
     void this.keyer.init()
-    this.showLogList()
+    void this.start()
+  }
+
+  /** After an update: the new version's notes once, then the log list. */
+  private async start(): Promise<void> {
+    const notes = await takeUnseenNotes(this.platform, __APP_VERSION__).catch(() => [])
+    if (notes.length > 0) this.showWhatsNew(notes, () => this.showLogList())
+    else this.showLogList()
+  }
+
+  showWhatsNew(entries: readonly WhatsNewEntry[], back: () => void): void {
+    this.show(new WhatsNewScreen(entries, { back }), 'whatsnew')
   }
 
   /** `name` is the anonymous screen name for the web statistics (stats.ts). */
@@ -59,6 +74,7 @@ export class App {
       new SettingsScreen(this.platform, this.keyer, {
         back: () => this.showLogList(),
         openHelp: () => this.showHelp(() => this.showSettings()),
+        openWhatsNew: () => this.showWhatsNew(WHATS_NEW, () => this.showSettings()),
       }),
       'settings',
     )

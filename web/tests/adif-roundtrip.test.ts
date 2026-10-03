@@ -99,12 +99,14 @@ describe('parse → ADIF → parse roundtrip', () => {
     const qso: Qso = {
       ...BASE,
       call: '9A5Y',
-      signal: { band: '2m', bandRx: '70cm', mode: 'SSB' },
+      signal: { band: '2m', bandRx: '70cm', mode: 'SSB', freq: '145.965', freqRx: '435.640' },
       grid: 'JN86',
       satName: 'RS-44',
       satMode: 'V/U',
     }
     const text = writeAdif([qso])
+    expect(text).toContain('<FREQ:7>145.965')
+    expect(text).toContain('<FREQ_RX:7>435.640')
     expect(text).toContain('<PROP_MODE:3>SAT')
     expect(text).toContain('<SAT_NAME:5>RS-44')
     expect(roundtrip(qso)).toEqual(qso)
