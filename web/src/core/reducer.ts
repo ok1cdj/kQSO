@@ -22,8 +22,9 @@ export interface ReduceResult {
   readonly command?: 'wipe' | 'deleteLast' | 'deleteLastBlocked' | 'help'
 }
 
-export function initialState(meta: LogMeta): CoreState {
-  return { sticky: initialSticky(meta), partial: {}, hasStarted: false }
+/** `last` = the log's last QSO, whose band / mode the new one starts from. */
+export function initialState(meta: LogMeta, last?: Qso): CoreState {
+  return { sticky: initialSticky(meta, last), partial: {}, hasStarted: false }
 }
 
 export function reduce(state: CoreState, ev: CoreEvent, meta: LogMeta): ReduceResult {

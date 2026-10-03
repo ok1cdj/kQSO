@@ -17,6 +17,7 @@ import {
   esmMessage,
   expandMacro,
   infoLabel,
+  cqLabel,
   missingParts,
   padSerial,
   greeting,
@@ -60,9 +61,10 @@ const WIDE = window.matchMedia('(min-aspect-ratio: 1/1)')
 const TX_SHOWN = 40 // keyboard mode: how much of the sent text the preview keeps
 const hhmm = (d: Date): string => `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`
 // Keyer macro buttons in the strip: slot + its short label (EXCH → EX, MYCALL → MY: with
-// STOP it is seven buttons on a 360 px phone). INFO is labelled by the profile (REF / LOC).
+// STOP it is seven buttons on a 360 px phone). CQ is labelled by the mode (CQ / DE), INFO
+// by the profile (REF / LOC / INFO).
 const MACRO_BUTTONS: ReadonlyArray<readonly [MacroSlot, string | undefined]> = [
-  ['CQ', 'CQ'],
+  ['CQ', undefined],
   ['EXCH', 'EX'],
   ['TU', 'TU'],
   ['MYCALL', 'MY'],
@@ -137,14 +139,15 @@ export class LoggingScreen implements Screen {
     const setId = PROFILES[meta.profile].bundledDb
     const useBundled = (await this.platform.getSetting(BUNDLED_DB_SETTING)) !== '0'
     this.db = combineSources(setId && useBundled ? bundledSource(setId) : null, this.live)
-    this.state = initialState(this.meta)
+    this.state = initialState(this.meta, qsos[qsos.length - 1])
     // Satellite log: the bird is fixed at log creation (one log per pass). Apply it
     // so band/mode/SAT_NAME are set; the header just shows it (read-only).
     if (PROFILES[this.meta.profile].fixedBand) {
       const label = this.meta.satLabel ?? (await this.platform.getSetting('satLabel')) ?? ''
       const sat = satelliteByLabel(label) ?? SATELLITES[0]!
       this.satLabel = sat.label
-      this.state = { ...this.state, sticky: applySatellite(this.state.sticky, sat, 'SSB') }
+      // Linear birds keep the last QSO's mode (SSB / CW); SSB for a new log.
+      this.state = { ...this.state, sticky: applySatellite(this.state.sticky, sat, qsos.length > 0 ? this.state.sticky.mode : 'SSB') }
     }
     this.platform.keepAwake(true)
     await this.offerRecovery()
@@ -701,7 +704,11 @@ export class LoggingScreen implements Screen {
       this.stripEl.replaceChildren(
         ...stop,
         ...MACRO_BUTTONS.map(([slot, label]) =>
-          this.suggestButton(label ?? infoLabel(this.meta.profile), () => void this.sendMacro(slot), 'suggest suggest--macro'),
+          this.suggestButton(
+            label ?? (slot === 'CQ' ? cqLabel(this.keyer.mode) : infoLabel(this.meta.profile)),
+            () => void this.sendMacro(slot),
+            'suggest suggest--macro',
+          ),
         ),
       )
       return

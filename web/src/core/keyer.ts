@@ -231,6 +231,11 @@ export function greeting(now: Date): string {
   return h < 12 ? 'GM' : h >= 12 && h < 18 ? 'GA' : 'GE'
 }
 
+/** The CQ slot's button / editor label: CQ in RUN, DE in S&P. */
+export function cqLabel(mode: RunMode): string {
+  return mode === 'run' ? 'CQ' : 'DE'
+}
+
 /** The INFO button / editor label for a profile. */
 export function infoLabel(profile: ProfileId): string {
   return profile === 'aktivace' ? 'REF' : profile === 'obecny' ? 'INFO' : 'LOC'
@@ -246,12 +251,14 @@ const RUN: Readonly<Record<ProfileId, MacroSet>> = {
   sat: { CQ: CQ_DEFAULT, EXCH: '{CALL} UR {RST} {MYLOC}', TU: 'TU {MYCALL}', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?', ...ASK },
 }
 
-// S&P: I answer someone's CQ, so their call is not repeated; CQ = "my call".
+// S&P: I answer someone's CQ, so their call is not repeated in the exchange. The CQ slot
+// is "DE" here: calling the station by its call (it didn't hear me, a pile-up). ESM in
+// S&P still sends only MYCALL.
 const SP: Readonly<Record<ProfileId, MacroSet>> = {
-  aktivace: { CQ: '{MYCALL}', EXCH: 'TU {RST}', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '{MYREF}', '?': '?', ...ASK },
-  vkv: { CQ: '{MYCALL}', EXCH: 'TU {RST} {NR} {MYLOC} K', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?', ...ASK },
-  obecny: { CQ: '{MYCALL}', EXCH: 'TU {RST}', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '', '?': '?', ...ASK },
-  sat: { CQ: '{MYCALL}', EXCH: 'TU UR {RST} {MYLOC}', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?', ...ASK },
+  aktivace: { CQ: '{CALL} DE {MYCALL}', EXCH: 'TU {RST}', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '{MYREF}', '?': '?', ...ASK },
+  vkv: { CQ: '{CALL} DE {MYCALL}', EXCH: 'TU {RST} {NR} {MYLOC} K', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?', ...ASK },
+  obecny: { CQ: '{CALL} DE {MYCALL}', EXCH: 'TU {RST}', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '', '?': '?', ...ASK },
+  sat: { CQ: '{CALL} DE {MYCALL}', EXCH: 'TU UR {RST} {MYLOC}', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?', ...ASK },
 }
 
 export const DEFAULT_MACROS: Readonly<Record<ProfileId, Readonly<Record<RunMode, MacroSet>>>> = {

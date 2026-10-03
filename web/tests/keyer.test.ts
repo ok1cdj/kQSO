@@ -149,7 +149,7 @@ describe('macros', () => {
     expect(expandMacro(DEFAULT_MACROS.aktivace.run.EXCH, ctx)).toBe('OK1ABC 599')
     expect(expandMacro(DEFAULT_MACROS.sat.run.EXCH, ctx)).toBe('OK1ABC UR 599 JO70NC')
     expect(expandMacro(DEFAULT_MACROS.sat.sp.EXCH, ctx)).toBe('TU UR 599 JO70NC')
-    expect(expandMacro(DEFAULT_MACROS.obecny.sp.CQ, ctx)).toBe('OK1CDJ')
+    expect(expandMacro(DEFAULT_MACROS.obecny.sp.CQ, ctx)).toBe('OK1ABC DE OK1CDJ') // DE in S&P
     expect(expandMacro(DEFAULT_MACROS.obecny.sp.TU, ctx)).toBe('TU 73')
   })
 

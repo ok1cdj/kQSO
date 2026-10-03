@@ -13,6 +13,7 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 - `H` on the logging line opens the help.
 
 ### Fixed
+- Reopening a log continues on the band and mode of its last QSO, not the log's default.
 - VHF contest: a received number typed short (23) is saved as 023, like the numbers we send.
 - APK: settings that are off by default (rain radar on the VHF map) behaved as on until switched once.
 - Web: two storage operations on the same file at once (e.g. two screens reading the settings) could fail, and two quick setting changes could overwrite each other; storage now runs them one after another.

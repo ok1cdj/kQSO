@@ -48,6 +48,7 @@ export {
   ESM_ONLY_SLOTS,
   esmMessage,
   infoLabel,
+  cqLabel,
   SEND_MAX,
   WPM_MIN,
   WPM_MAX,
