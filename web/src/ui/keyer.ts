@@ -116,11 +116,26 @@ export class KeyerController {
 
   /** `pick` = the chooser (from a tap); otherwise the remembered keyer, if any. */
   async connect(pick: boolean): Promise<void> {
+    const tr = this.transport
+    await this.attempt(async () => void (await tr!.connect(pick)))
+  }
+
+  /** From the logging screen (C ⏎, a tap on RUN / S&P): the remembered keyer, else the
+   *  chooser — right away, while the key press / tap still counts as a user gesture. */
+  async reconnect(): Promise<void> {
+    if (this.link !== 'off') return
+    const tr = this.transport
+    await this.attempt(async () => {
+      if (!(await tr!.connect(false))) await tr!.connect(true)
+    })
+  }
+
+  private async attempt(f: () => Promise<void>): Promise<void> {
     if (!this.transport || !this.enabled) return
     this.wantLink = true
     this.retried = false
     try {
-      await this.transport.connect(pick)
+      await f()
     } catch (e) {
       // Closing the chooser is not an error worth a message.
       if (!(e instanceof DOMException && e.name === 'NotFoundError')) {

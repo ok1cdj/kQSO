@@ -25,8 +25,9 @@ export type KeyerLinkState = 'off' | 'connecting' | 'on'
  */
 export interface KeyerTransport {
   /** `pick` = show the device chooser (needs a user tap); otherwise reconnect the
-   *  remembered keyer quietly, and do nothing when there is none. */
-  connect(pick: boolean): Promise<void>
+   *  remembered keyer quietly, and do nothing when there is none. Resolves false
+   *  when there was no keyer to try (no remembered one, chooser unavailable). */
+  connect(pick: boolean): Promise<boolean>
   disconnect(): Promise<void>
   /** Drop the remembered keyer (the next connect asks again). */
   forget(): Promise<void>

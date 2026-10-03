@@ -162,6 +162,7 @@ describe('keyer line commands', () => {
   it('R, S and S<n>', () => {
     expect(matchKeyerCommand('R')).toEqual({ type: 'run' })
     expect(matchKeyerCommand(' s ')).toEqual({ type: 'sp' })
+    expect(matchKeyerCommand('c')).toEqual({ type: 'connect' })
     expect(matchKeyerCommand('S20')).toEqual({ type: 'speed', wpm: 20, inRange: true })
     expect(matchKeyerCommand('S5')).toEqual({ type: 'speed', wpm: 5, inRange: true })
     expect(matchKeyerCommand('S50')).toEqual({ type: 'speed', wpm: 50, inRange: true })
@@ -170,6 +171,6 @@ describe('keyer line commands', () => {
   })
 
   it('anything else is ordinary input', () => {
-    for (const l of ['S20X', 'S100', 'R1', 'OK1ABC S', 'S 20', 'RS', '']) expect(matchKeyerCommand(l)).toBeUndefined()
+    for (const l of ['S20X', 'S100', 'R1', 'OK1ABC S', 'S 20', 'RS', 'C1', '']) expect(matchKeyerCommand(l)).toBeUndefined()
   })
 })

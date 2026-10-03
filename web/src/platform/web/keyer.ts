@@ -41,9 +41,9 @@ export class WebBluetoothKeyer implements KeyerTransport {
     this.batteryCb = cb
   }
 
-  async connect(pick: boolean): Promise<void> {
+  async connect(pick: boolean): Promise<boolean> {
     const bt = navigator.bluetooth
-    if (!bt) return
+    if (!bt) return false
     let dev = this.device
     if (pick) {
       // Either filter matches: the service UUID or the keyer-XXXX name (scan response).
@@ -54,7 +54,7 @@ export class WebBluetoothKeyer implements KeyerTransport {
     } else if (!dev) {
       dev = await this.remembered()
     }
-    if (!dev) return
+    if (!dev) return false
     this.attach(dev)
     this.stateCb('connecting', dev.name)
     try {
@@ -67,6 +67,7 @@ export class WebBluetoothKeyer implements KeyerTransport {
       await this.watchBattery(server)
       safeSet(REMEMBERED, dev.id)
       this.stateCb('on', dev.name)
+      return true
     } catch (e) {
       this.rx = undefined
       if (dev.gatt?.connected) dev.gatt.disconnect()

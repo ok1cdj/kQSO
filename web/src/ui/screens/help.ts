@@ -110,6 +110,7 @@ const EN: readonly Section[] = [
       { text: 'Each profile has its own macros for RUN (I call CQ) and S&P (I answer a CQ), editable in Settings. While sending, STOP is first in the strip; Esc stops too.' },
       { code: 'R ⏎ / S ⏎', text: 'RUN / S&P mode (only while CW keying is on).' },
       { code: 'S20 ⏎', text: 'Speed 20 WPM until the keyer disconnects; on connect the default speed from Settings is sent.' },
+      { code: 'C ⏎', text: 'Connect the keyer again after it dropped (✕ next to RUN / S&P in the header). Tapping RUN / S&P does the same.' },
     ],
   },
   {
@@ -211,6 +212,7 @@ const CS: readonly Section[] = [
       { text: 'Každý profil má vlastní makra pro RUN (dávám CQ) a S&P (odpovídám na CQ), upravíš je v Nastavení. Během vysílání je v liště na prvním místě STOP; zastaví i Esc.' },
       { code: 'R ⏎ / S ⏎', text: 'Režim RUN / S&P (jen se zapnutým CW klíčováním).' },
       { code: 'S20 ⏎', text: 'Rychlost 20 WPM do odpojení klíčovače; po připojení se pošle výchozí rychlost z Nastavení.' },
+      { code: 'C ⏎', text: 'Znovu připojí klíčovač, když spadl (✕ u RUN / S&P v hlavičce). Totéž udělá klepnutí na RUN / S&P.' },
     ],
   },
   {

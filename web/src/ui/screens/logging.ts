@@ -271,8 +271,12 @@ export class LoggingScreen implements Screen {
     // The command letter stamped the QSO time; drop it unless a QSO is under way.
     if (!hasContent(this.state.partial)) this.state = { ...this.state, partial: {}, hasStarted: false }
     if (kc.type === 'run' || kc.type === 'sp') {
+      // No notice: the header shows RUN / S&P, and the strip keeps the macro buttons.
       await this.keyer.setMode(kc.type)
-      this.notice = t(kc.type === 'run' ? 'logging.modeRun' : 'logging.modeSp')
+      this.notice = ''
+    } else if (kc.type === 'connect') {
+      this.notice = ''
+      await this.keyer.reconnect()
     } else if (!kc.inRange) {
       this.notice = t('logging.cmdSpeedRange')
     } else if (!this.keyer.connected) {
@@ -310,6 +314,9 @@ export class LoggingScreen implements Screen {
     const n = this.keyer.notice
     if (n?.type === 'error') {
       this.notice = t('logging.keyerError', { what: n.what })
+      this.keyer.clearNotice()
+    } else if (n?.type === 'connectFailed') {
+      this.notice = t('settings.keyerFailed', { msg: n.message })
       this.keyer.clearNotice()
     }
     this.renderAll()
@@ -377,9 +384,13 @@ export class LoggingScreen implements Screen {
     }
     // VHF contest: where to point the antenna. A typed locator wins; else the one the
     // callsign database knows for the call, greyed like its + LOC suggestion.
-    // CW keyer: RUN / S&P (grey while the keyer is not connected).
+    // CW keyer: RUN / S&P, and whether the link is up (✕ = not connected, tap = connect).
     if (this.keyerOn()) {
-      mid.append(el('b', this.keyer.connected ? 'hdr-keyer' : 'hdr-keyer hdr-keyer--off', this.keyer.mode === 'run' ? 'RUN' : 'S&P'))
+      const link = this.keyer.link
+      const label = `${this.keyer.mode === 'run' ? 'RUN' : 'S&P'}${link === 'off' ? ' ✕' : link === 'connecting' ? ' …' : ''}`
+      mid.append(
+        button(label, () => void this.keyer.reconnect(), link === 'on' ? 'hdr-keyer' : 'hdr-keyer hdr-keyer--off'),
+      )
     }
     if (profile.contest) {
       const known = p.grid === undefined && p.call !== undefined ? this.db.lookup(p.call)?.loc : undefined
@@ -418,13 +429,16 @@ export class LoggingScreen implements Screen {
     // Keyer R / S / S20: what Enter will do (only while CW keying is on).
     const kc = this.keyerOn() ? matchKeyerCommand(this.line) : undefined
     if (kc) {
-      const bad = kc.type === 'speed' && (!kc.inRange || !this.keyer.connected)
+      const bad =
+        (kc.type === 'speed' && (!kc.inRange || !this.keyer.connected)) || (kc.type === 'connect' && this.keyer.link !== 'off')
       const what =
         kc.type === 'run'
           ? t('logging.cmdRun')
           : kc.type === 'sp'
             ? t('logging.cmdSp')
-            : !kc.inRange
+            : kc.type === 'connect'
+              ? t(this.keyer.link === 'off' ? 'logging.cmdConnect' : 'logging.cmdConnected')
+              : !kc.inRange
               ? t('logging.cmdSpeedRange')
               : !this.keyer.connected
                 ? t('logging.cmdSpeedOff')
@@ -498,6 +512,11 @@ export class LoggingScreen implements Screen {
         ...stop,
         ...MACRO_BUTTONS.map(([slot, label]) => this.suggestButton(label, () => void this.sendMacro(slot), 'suggest suggest--macro')),
       )
+      return
+    }
+    // CW keyer dropped: offer the reconnect where the macros were.
+    if (this.keyerOn() && this.keyer.link === 'off') {
+      this.stripEl.replaceChildren(this.suggestButton(t('logging.keyerReconnect'), () => void this.keyer.reconnect()))
       return
     }
     // Default: last written QSO. The wide layout already lists it in the

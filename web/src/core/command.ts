@@ -23,17 +23,19 @@ export function hasContent(p: PartialQso): boolean {
 }
 
 /** Keyer line commands (only while CW keying is on — otherwise R / S stay a name):
- *  R = RUN, S = S&P, S<n> = speed n WPM until disconnect. `inRange` is false for
+ *  R = RUN, S = S&P, S<n> = speed n WPM until disconnect, C = connect the keyer again. `inRange` is false for
  *  S4 / S51 so the preview can say why nothing will be sent. */
 export type KeyerCommand =
   | { readonly type: 'run' }
   | { readonly type: 'sp' }
+  | { readonly type: 'connect' }
   | { readonly type: 'speed'; readonly wpm: number; readonly inRange: boolean }
 
 export function matchKeyerCommand(line: string): KeyerCommand | undefined {
   const l = line.trim().toUpperCase()
   if (l === 'R') return { type: 'run' }
   if (l === 'S') return { type: 'sp' }
+  if (l === 'C') return { type: 'connect' }
   const m = /^S(\d{1,2})$/.exec(l)
   if (m) {
     const wpm = Number(m[1])

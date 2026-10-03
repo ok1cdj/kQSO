@@ -220,14 +220,20 @@ body {
 .hdr-az--guess {
   color: var(--ghost);
 }
-/* CW keyer: RUN / S&P in the header, grey while the keyer is not connected. */
+/* CW keyer: RUN / S&P in the header; dashed grey with ✕ while not connected (tap = connect). */
 .hdr-keyer {
+  font: inherit;
+  font-weight: 700;
+  background: var(--bg);
+  color: var(--fg);
   padding: 0 0.3rem;
   border: var(--border-w) solid var(--fg);
+  cursor: pointer;
 }
 .hdr-keyer--off {
   color: var(--ghost);
   border-color: var(--ghost);
+  border-style: dashed;
 }
 /* Keyer macros in the strip: six buttons must fit the 480 px Kompakt. */
 .suggest--macro {
