@@ -108,7 +108,7 @@ const en = {
   'settings.keyerSpeed': 'Default speed',
   'settings.keyerSpeedHint': 'Sent on every connect. S20 on the logging line = 20 WPM until disconnect.',
   'settings.keyerMacros': 'Macros',
-  'settings.keyerMacrosHint': 'Per profile and RUN / S&P. Variables: {CALL} {MYCALL} {MYLOC} {MYREF} {RST} {NR} {LOC} {REF}. Prosigns as <AR> <SK> <BT> <KN>.',
+  'settings.keyerMacrosHint': 'Per profile and RUN / S&P. Variables: {CALL} {MYCALL} {MYLOC} {MYREF} {RST} {NR} {LOC} {REF} {HI} (GM / GA / GE). Prosigns as <AR> <SK> <BT> <KN>.',
   'settings.keyerReset': 'Reset to defaults',
   'settings.stats': 'Anonymous usage statistics',
   'settings.statsHint': 'Web only: which screens and features are used (Umami, no cookies). Never your log — no calls, locators or QSOs.',
@@ -186,7 +186,6 @@ const en = {
   'logging.cmdSpeed': 'SPEED {wpm} WPM',
   'logging.cmdSpeedRange': 'OUT OF 5–50',
   'logging.cmdSpeedOff': 'KEYER NOT CONNECTED',
-  'logging.speedSet': 'Speed {wpm} WPM until disconnect.',
   'logging.keyerDropped': 'Not sent: {chars}',
   'logging.keyerError': 'Keyer: {what}',
 
@@ -293,7 +292,7 @@ const cs: Record<keyof typeof en, string> = {
   'settings.keyerSpeed': 'Výchozí rychlost',
   'settings.keyerSpeedHint': 'Pošle se po každém připojení. S20 na logovacím řádku = 20 WPM do odpojení.',
   'settings.keyerMacros': 'Makra',
-  'settings.keyerMacrosHint': 'Pro každý profil a RUN / S&P. Proměnné: {CALL} {MYCALL} {MYLOC} {MYREF} {RST} {NR} {LOC} {REF}. Zkratky jako <AR> <SK> <BT> <KN>.',
+  'settings.keyerMacrosHint': 'Pro každý profil a RUN / S&P. Proměnné: {CALL} {MYCALL} {MYLOC} {MYREF} {RST} {NR} {LOC} {REF} {HI} (GM / GA / GE). Zkratky jako <AR> <SK> <BT> <KN>.',
   'settings.keyerReset': 'Obnovit výchozí',
   'settings.stats': 'Anonymní statistiky používání',
   'settings.statsHint': 'Jen web: které obrazovky a funkce se používají (Umami, bez cookies). Nikdy tvůj log — žádné značky, lokátory ani QSO.',
@@ -371,7 +370,6 @@ const cs: Record<keyof typeof en, string> = {
   'logging.cmdSpeed': 'RYCHLOST {wpm} WPM',
   'logging.cmdSpeedRange': 'MIMO 5–50',
   'logging.cmdSpeedOff': 'KLÍČOVAČ NEPŘIPOJEN',
-  'logging.speedSet': 'Rychlost {wpm} WPM do odpojení.',
   'logging.keyerDropped': 'Neodesláno: {chars}',
   'logging.keyerError': 'Klíčovač: {what}',
 

@@ -15,6 +15,7 @@ import {
   matchKeyerCommand,
   hasContent,
   expandMacro,
+  greeting,
   LiveDb,
   combineSources,
   dbDate,
@@ -282,8 +283,9 @@ export class LoggingScreen implements Screen {
     } else if (!this.keyer.connected) {
       this.notice = t('logging.cmdSpeedOff')
     } else {
+      // No notice: the header shows the speed, and the strip keeps the macro buttons.
       await this.keyer.setSpeed(kc.wpm)
-      this.notice = t('logging.speedSet', { wpm: kc.wpm })
+      this.notice = ''
     }
   }
 
@@ -302,6 +304,7 @@ export class LoggingScreen implements Screen {
       nr: pad3(this.qsos.length + 1),
       loc: dry.grid,
       ref: dry.theirRef?.value,
+      hi: greeting(new Date()),
     })
     const dropped = await this.keyer.send(text)
     if (dropped.length > 0) {
@@ -384,10 +387,12 @@ export class LoggingScreen implements Screen {
     }
     // VHF contest: where to point the antenna. A typed locator wins; else the one the
     // callsign database knows for the call, greyed like its + LOC suggestion.
-    // CW keyer: RUN / S&P, and whether the link is up (✕ = not connected, tap = connect).
+    // CW keyer: RUN / S&P + speed, and whether the link is up (✕ = not connected, tap = connect).
     if (this.keyerOn()) {
       const link = this.keyer.link
-      const label = `${this.keyer.mode === 'run' ? 'RUN' : 'S&P'}${link === 'off' ? ' ✕' : link === 'connecting' ? ' …' : ''}`
+      const wpm = this.keyer.wpm
+      const state = link === 'off' ? ' ✕' : link === 'connecting' ? ' …' : wpm !== undefined ? ` ${wpm}` : ''
+      const label = `${this.keyer.mode === 'run' ? 'RUN' : 'S&P'}${state}`
       mid.append(
         button(label, () => void this.keyer.reconnect(), link === 'on' ? 'hdr-keyer' : 'hdr-keyer hdr-keyer--off'),
       )

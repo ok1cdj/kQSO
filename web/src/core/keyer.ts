@@ -212,6 +212,13 @@ export interface MacroContext {
   readonly nr: string // my next sent serial, 001
   readonly loc?: string | undefined // their locator
   readonly ref?: string | undefined // their reference
+  readonly hi?: string | undefined // greeting by the local time, greeting()
+}
+
+/** {HI}: GM from midnight to noon, GA until 18:00, GE until midnight — local time on the device. */
+export function greeting(now: Date): string {
+  const h = now.getHours()
+  return h < 12 ? 'GM' : h >= 12 && h < 18 ? 'GA' : 'GE'
 }
 
 const CQ_DEFAULT = 'CQ CQ DE {MYCALL} {MYCALL} K'
@@ -286,6 +293,7 @@ export function expandMacro(template: string, ctx: MacroContext): string {
     NR: ctx.nr,
     LOC: ctx.loc,
     REF: ctx.ref,
+    HI: ctx.hi,
   }
   return template
     .replace(/\{([A-Za-z]+)\}/g, (all, name: string) => {

@@ -6,6 +6,7 @@ import {
   asyncEvent,
   sanitize,
   expandMacro,
+  greeting,
   macroFor,
   withMacro,
   resetMacros,
@@ -131,6 +132,12 @@ describe('macros', () => {
     expect(expandMacro(DEFAULT_MACROS.sat.sp.EXCH, ctx)).toBe('TU UR 599 JO70NC')
     expect(expandMacro(DEFAULT_MACROS.obecny.sp.CQ, ctx)).toBe('OK1CDJ')
     expect(expandMacro(DEFAULT_MACROS.obecny.sp.TU, ctx)).toBe('TU 73')
+  })
+
+  it('{HI} greets by the local time', () => {
+    const at = (h: number) => greeting(new Date(2026, 9, 3, h, 30))
+    expect([at(0), at(11), at(12), at(17), at(18), at(23)]).toEqual(['GM', 'GM', 'GA', 'GA', 'GE', 'GE'])
+    expect(expandMacro('{HI} {CALL} TU', { ...ctx, hi: 'GA' })).toBe('GA OK1ABC TU')
   })
 
   it('missing values vanish, unknown placeholders stay', () => {

@@ -37,6 +37,7 @@ export {
   asyncEvent,
   sanitize,
   expandMacro,
+  greeting,
   macroFor,
   withMacro,
   resetMacros,
