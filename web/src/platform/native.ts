@@ -100,7 +100,9 @@ class NativePlatform implements KQSOPlatform {
   }
 
   async getSetting(key: string): Promise<string | null> {
-    return this.raw.getSetting(key)
+    // A Kotlin null comes through the bridge as undefined, not null — and the callers
+    // test `=== null` for "never set" (switchOn: a default-off switch would read Yes).
+    return this.raw.getSetting(key) ?? null
   }
 
   async setSetting(key: string, value: string): Promise<void> {

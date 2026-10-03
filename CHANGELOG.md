@@ -4,6 +4,11 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 
 ## [Unreleased]
 
+## [Unreleased]
+
+### Fixed
+- APK: settings that are off by default (rain radar on the VHF map) behaved as on until switched once.
+
 ## [1.6.3] – 2026-10-02
 
 ### Fixed
