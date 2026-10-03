@@ -12,6 +12,7 @@ import {
   resetMacros,
   parseMacros,
   DEFAULT_MACROS,
+  infoLabel,
 } from '../src/core/keyer'
 import type { KeyerEvent, MacroContext } from '../src/core/keyer'
 import { matchKeyerCommand } from '../src/core/command'
@@ -96,7 +97,24 @@ describe('KeyerProtocol', () => {
     await s
     expect(out).toHaveLength(2)
     for (const l of out) expect(l.length).toBeLessThanOrEqual('SEND '.length + 240 + 1)
-    expect(out.map((l) => l.slice(5, -1)).join(' ')).toBe(text)
+    // The keyer's queue just appends: the second part carries the word gap itself.
+    expect(out.map((l) => l.slice(5, -1)).join('')).toBe(text)
+  })
+
+  it('text queued behind text still on the air starts with a space', async () => {
+    const { p, out } = setup()
+    const a = p.send('CQ')
+    p.receive('OK\n')
+    await a
+    const b = p.send('TEST')
+    p.receive('OK\n')
+    await b
+    expect(out).toEqual(['SEND CQ\n', 'SEND  TEST\n'])
+    p.receive('DONE\n')
+    const c = p.send('TU')
+    p.receive('OK\n')
+    await c
+    expect(out[2]).toBe('SEND TU\n') // idle keyer: no leading gap
   })
 
   it('a rejected SEND throws; reset fails waiting commands', async () => {
@@ -150,12 +168,12 @@ describe('macros', () => {
     expect(macroFor(saved, 'vkv', 'run', 'TU')).toBe('TU TEST')
     expect(macroFor(saved, 'vkv', 'sp', 'TU')).toBe('TU 73')
     expect(macroFor(saved, 'obecny', 'run', 'CQ')).toBe(DEFAULT_MACROS.obecny.run.CQ)
-    saved = withMacro(saved, 'vkv', 'run', 'AGN', 'PSE AGN')
-    expect(macroFor(saved, 'vkv', 'run', 'AGN')).toBe('PSE AGN')
+    saved = withMacro(saved, 'vkv', 'run', 'INFO', 'QTH {MYLOC}')
+    expect(macroFor(saved, 'vkv', 'run', 'INFO')).toBe('QTH {MYLOC}')
     saved = withMacro(saved, 'vkv', 'run', 'TU', DEFAULT_MACROS.vkv.run.TU)
     expect(saved.vkv?.run?.TU).toBeUndefined()
     saved = resetMacros(saved, 'vkv', 'run')
-    expect(macroFor(saved, 'vkv', 'run', 'AGN')).toBe('AGN?')
+    expect(macroFor(saved, 'vkv', 'run', 'INFO')).toBe('{MYLOC}')
   })
 
   it('bad saved JSON gives no edits', () => {
@@ -170,6 +188,8 @@ describe('keyer line commands', () => {
     expect(matchKeyerCommand('R')).toEqual({ type: 'run' })
     expect(matchKeyerCommand(' s ')).toEqual({ type: 'sp' })
     expect(matchKeyerCommand('c')).toEqual({ type: 'connect' })
+    expect(matchKeyerCommand('k')).toEqual({ type: 'keyboard' })
+    expect(matchKeyerCommand('k pse qrs ')).toEqual({ type: 'text', text: 'PSE QRS' })
     expect(matchKeyerCommand('S20')).toEqual({ type: 'speed', wpm: 20, inRange: true })
     expect(matchKeyerCommand('S5')).toEqual({ type: 'speed', wpm: 5, inRange: true })
     expect(matchKeyerCommand('S50')).toEqual({ type: 'speed', wpm: 50, inRange: true })
@@ -178,6 +198,21 @@ describe('keyer line commands', () => {
   })
 
   it('anything else is ordinary input', () => {
-    for (const l of ['S20X', 'S100', 'R1', 'OK1ABC S', 'S 20', 'RS', 'C1', '']) expect(matchKeyerCommand(l)).toBeUndefined()
+    for (const l of ['S20X', 'S100', 'R1', 'OK1ABC S', 'S 20', 'RS', 'C1', 'K1ABC', 'KX', '']) expect(matchKeyerCommand(l)).toBeUndefined()
+  })
+})
+
+describe('INFO macro slot', () => {
+  it('activation: my reference (REF); VHF / satellite: my locator (LOC); general: free text (INFO)', () => {
+    expect(DEFAULT_MACROS.aktivace.run.INFO).toBe('{MYREF}')
+    expect(DEFAULT_MACROS.aktivace.sp.INFO).toBe('{MYREF}')
+    for (const p of ['vkv', 'sat'] as const) {
+      expect(DEFAULT_MACROS[p].run.INFO).toBe('{MYLOC}')
+      expect(DEFAULT_MACROS[p].sp.INFO).toBe('{MYLOC}')
+    }
+    expect(DEFAULT_MACROS.obecny.run.INFO).toBe('') // free text, set by the operator
+    expect(infoLabel('aktivace')).toBe('REF')
+    expect(infoLabel('vkv')).toBe('LOC')
+    expect(infoLabel('obecny')).toBe('INFO')
   })
 })

@@ -15,6 +15,7 @@ import {
   matchKeyerCommand,
   hasContent,
   expandMacro,
+  infoLabel,
   greeting,
   LiveDb,
   combineSources,
@@ -53,14 +54,16 @@ const pad3 = (n: number): string => String(n).padStart(3, '0')
 const RECENT_MAX = 30 // wide layout: rows rendered; CSS clips whatever doesn't fit
 // Same breakpoint as the landscape layout in styles.css.
 const WIDE = window.matchMedia('(min-aspect-ratio: 1/1)')
+const TX_SHOWN = 40 // keyboard mode: how much of the sent text the preview keeps
 const hhmm = (d: Date): string => `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`
-// Keyer macro buttons in the strip: slot + its short label (EXCH → EX, MYCALL → MY: with STOP it is seven buttons on a 360 px phone).
-const MACRO_BUTTONS: ReadonlyArray<readonly [MacroSlot, string]> = [
+// Keyer macro buttons in the strip: slot + its short label (EXCH → EX, MYCALL → MY: with
+// STOP it is seven buttons on a 360 px phone). INFO is labelled by the profile (REF / LOC).
+const MACRO_BUTTONS: ReadonlyArray<readonly [MacroSlot, string | undefined]> = [
   ['CQ', 'CQ'],
   ['EXCH', 'EX'],
   ['TU', 'TU'],
   ['MYCALL', 'MY'],
-  ['AGN', 'AGN'],
+  ['INFO', undefined],
   ['?', '?'],
 ]
 
@@ -72,6 +75,10 @@ export class LoggingScreen implements Screen {
   private db: SuggestionSource = emptySuggestions
   private live = new LiveDb() // own worked stations; persisted on every commit
   private satLabel = '' // current satellite (Satellite profile only)
+  // CW keyboard mode (K ⏎): typed words go out as CW, nothing goes into the QSO.
+  private txMode = false
+  private txWord = '' // the word being typed, not sent yet
+  private txSent = '' // the tail of what went out, shown in the preview
   private notice = '' // one-shot result of a line command (W/D), shown in the strip until the next key
 
   private readonly hdr = el('header', 'hdr')
@@ -112,6 +119,7 @@ export class LoggingScreen implements Screen {
     window.removeEventListener('keydown', this.onKeydown)
     WIDE.removeEventListener('change', this.onWideChange)
     this.unsubscribeKeyer?.()
+    this.exitTx()
     this.recentResize?.disconnect()
     this.platform.keepAwake(false)
   }
@@ -154,9 +162,14 @@ export class LoggingScreen implements Screen {
     const k = e.key
     if (k === 'Escape' && this.keyerOn()) {
       e.preventDefault()
-      void this.keyer.stop()
+      // Esc = STOP; with nothing on the air it leaves keyboard mode.
+      if (this.txMode && !this.keyer.sending) this.exitTx()
+      else void this.keyer.stop()
+      this.renderAll()
       return
     }
+    // Keyboard mode also takes the keyer's punctuation from a hardware keyboard.
+    if (this.txMode && /^[?.,=+-]$/.test(k)) return this.handled(e, { type: 'char', value: k })
     if (k === 'Enter') return this.handled(e, { type: 'enter' })
     if (k === 'Backspace') return this.handled(e, { type: 'backspace' })
     if (k === ' ') return this.handled(e, { type: 'space' })
@@ -169,6 +182,7 @@ export class LoggingScreen implements Screen {
   }
 
   private onKey(a: KeyAction): void {
+    if (this.txMode) return this.onTxKey(a)
     if (a.type !== 'enter') this.notice = ''
     switch (a.type) {
       case 'char':
@@ -234,7 +248,11 @@ export class LoggingScreen implements Screen {
 
   // --- line commands ----------------------------------------------
 
-  private async runCommand(cmd: 'wipe' | 'deleteLast' | 'deleteLastBlocked', hadContent: boolean): Promise<void> {
+  private async runCommand(cmd: 'wipe' | 'deleteLast' | 'deleteLastBlocked' | 'help', hadContent: boolean): Promise<void> {
+    if (cmd === 'help') {
+      this.nav.toHelp()
+      return
+    }
     if (cmd === 'deleteLastBlocked') {
       this.notice = t('logging.deleteLastBlocked')
       return
@@ -278,6 +296,13 @@ export class LoggingScreen implements Screen {
     } else if (kc.type === 'connect') {
       this.notice = ''
       await this.keyer.reconnect()
+    } else if (kc.type === 'keyboard' || kc.type === 'text') {
+      if (!this.keyer.connected) this.notice = t('logging.cmdSpeedOff')
+      else if (kc.type === 'keyboard') this.enterTx()
+      else {
+        this.notice = ''
+        await this.sendKeyed(kc.text)
+      }
     } else if (!kc.inRange) {
       this.notice = t('logging.cmdSpeedRange')
     } else if (!this.keyer.connected) {
@@ -306,6 +331,17 @@ export class LoggingScreen implements Screen {
       ref: dry.theirRef?.value,
       hi: greeting(new Date()),
     })
+    // An empty macro (INFO in the general profile until filled in) would do nothing silently.
+    if (text === '') {
+      this.notice = t('logging.macroEmpty', { slot: slot === 'INFO' ? infoLabel(this.meta.profile) : slot })
+      this.renderStrip()
+      return
+    }
+    await this.sendKeyed(text)
+  }
+
+  /** Send text as is; characters the keyer can't send are named in the strip. */
+  private async sendKeyed(text: string): Promise<void> {
     const dropped = await this.keyer.send(text)
     if (dropped.length > 0) {
       this.notice = t('logging.keyerDropped', { chars: dropped.join(' ') })
@@ -313,8 +349,55 @@ export class LoggingScreen implements Screen {
     }
   }
 
+  // --- CW keyboard mode (K ⏎) -------------------------------------------------
+  // Space sends the word just typed (type-ahead, the keyer queues it); Backspace edits
+  // only the unsent word; Enter sends it, an empty Enter ends the mode (so do KONEC,
+  // Esc with nothing on the air, leaving the screen and a dropped keyer).
+
+  private enterTx(): void {
+    this.txMode = true
+    this.txWord = ''
+    this.txSent = ''
+    this.notice = ''
+  }
+
+  private exitTx(): void {
+    this.txMode = false
+    this.txWord = ''
+    this.txSent = ''
+  }
+
+  private onTxKey(a: KeyAction): void {
+    this.notice = ''
+    switch (a.type) {
+      case 'char':
+        this.txWord += a.value
+        break
+      case 'space':
+        this.flushTx()
+        break
+      case 'backspace':
+        this.txWord = this.txWord.slice(0, -1)
+        break
+      case 'enter':
+        if (this.txWord.trim()) this.flushTx()
+        else this.exitTx()
+        break
+    }
+    this.renderAll()
+  }
+
+  private flushTx(): void {
+    const word = this.txWord.trim()
+    this.txWord = ''
+    if (!word) return
+    this.txSent = `${this.txSent} ${word}`.trim().slice(-TX_SHOWN)
+    void this.sendKeyed(word)
+  }
+
   private onKeyerChange(): void {
     const n = this.keyer.notice
+    if (this.txMode && !this.keyer.connected) this.exitTx()
     if (n?.type === 'error') {
       this.notice = t('logging.keyerError', { what: n.what })
       this.keyer.clearNotice()
@@ -396,10 +479,10 @@ export class LoggingScreen implements Screen {
       const link = this.keyer.link
       const wpm = this.keyer.wpm
       const state = link === 'off' ? ' ✕' : link === 'connecting' ? ' …' : wpm !== undefined ? ` ${wpm}` : ''
-      const label = `${this.keyer.mode === 'run' ? 'RUN' : 'S&P'}${state}`
-      mid.append(
-        button(label, () => void this.keyer.reconnect(), link === 'on' ? 'hdr-keyer' : 'hdr-keyer hdr-keyer--off'),
-      )
+      // Keyboard mode: TX instead of RUN / S&P, inverted.
+      const label = `${this.txMode ? 'TX' : this.keyer.mode === 'run' ? 'RUN' : 'S&P'}${state}`
+      const cls = link !== 'on' ? 'hdr-keyer hdr-keyer--off' : this.txMode ? 'hdr-keyer hdr-keyer--tx' : 'hdr-keyer'
+      mid.append(button(label, () => void this.keyer.reconnect(), cls))
     }
     if (profile.contest) {
       const known = p.grid === undefined && p.call !== undefined ? this.db.lookup(p.call)?.loc : undefined
@@ -428,6 +511,12 @@ export class LoggingScreen implements Screen {
   }
 
   private renderLine(): void {
+    this.inputEl.classList.toggle('inputline--tx', this.txMode)
+    if (this.txMode) {
+      this.inputEl.replaceChildren(el('span', 'tx-prompt', 'CW›'), document.createTextNode(` ${this.txWord}`), el('span', 'cursor'))
+      this.inputEl.classList.remove('inputline--dupe')
+      return
+    }
     this.inputEl.replaceChildren(document.createTextNode(this.line), el('span', 'cursor'))
     // DUPE: invert the input line. Satellite dupe keys on call + SAT_NAME
     // (a station can be re-worked on another bird); VHF contest call + band; otherwise call + band + mode.
@@ -442,25 +531,17 @@ export class LoggingScreen implements Screen {
   }
 
   private renderPreview(dry: ReturnType<typeof parseLine>): void {
+    if (this.txMode) {
+      // What went out so far, else how the mode works.
+      this.previewEl.replaceChildren(el('span', 'tx-sent', this.txSent || t('logging.txHint')))
+      return
+    }
     const profile = PROFILES[this.meta.profile]
     // Keyer R / S / S20: what Enter will do (only while CW keying is on).
     const kc = this.keyerOn() ? matchKeyerCommand(this.line) : undefined
     if (kc) {
-      const bad =
-        (kc.type === 'speed' && (!kc.inRange || !this.keyer.connected)) || (kc.type === 'connect' && this.keyer.link !== 'off')
-      const what =
-        kc.type === 'run'
-          ? t('logging.cmdRun')
-          : kc.type === 'sp'
-            ? t('logging.cmdSp')
-            : kc.type === 'connect'
-              ? t(this.keyer.link === 'off' ? 'logging.cmdConnect' : 'logging.cmdConnected')
-              : !kc.inRange
-              ? t('logging.cmdSpeedRange')
-              : !this.keyer.connected
-                ? t('logging.cmdSpeedOff')
-                : t('logging.cmdSpeed', { wpm: kc.wpm })
-      this.previewEl.replaceChildren(fieldChip(this.line.trim(), what, bad))
+      const { what, bad } = this.keyerCommandPreview(kc)
+      this.previewEl.replaceChildren(fieldChip(kc.type === 'text' ? 'K' : this.line.trim(), what, bad))
       return
     }
     // A lone W/D: show what Enter will do instead of parsing it (W would be a name).
@@ -468,7 +549,14 @@ export class LoggingScreen implements Screen {
     if (cmd) {
       // D is refused while a QSO is unfinished — say so here, not only after Enter.
       const blocked = cmd === 'deleteLast' && hasContent(this.state.partial)
-      const what = cmd === 'wipe' ? t('logging.cmdWipe') : blocked ? t('logging.cmdBlocked') : t('logging.cmdDeleteLast')
+      const what =
+        cmd === 'wipe'
+          ? t('logging.cmdWipe')
+          : cmd === 'help'
+            ? t('logging.cmdHelp')
+            : blocked
+              ? t('logging.cmdBlocked')
+              : t('logging.cmdDeleteLast')
       this.previewEl.replaceChildren(fieldChip(this.line.trim(), what, blocked))
       return
     }
@@ -494,8 +582,40 @@ export class LoggingScreen implements Screen {
     this.previewEl.replaceChildren(...chips)
   }
 
+  /** What Enter will do with a keyer command, and whether it can't. */
+  private keyerCommandPreview(kc: KeyerCommand): { what: string; bad: boolean } {
+    const off = !this.keyer.connected
+    switch (kc.type) {
+      case 'run':
+        return { what: t('logging.cmdRun'), bad: false }
+      case 'sp':
+        return { what: t('logging.cmdSp'), bad: false }
+      case 'connect':
+        return this.keyer.link === 'off'
+          ? { what: t('logging.cmdConnect'), bad: false }
+          : { what: t('logging.cmdConnected'), bad: true }
+      case 'keyboard':
+        return off ? { what: t('logging.cmdSpeedOff'), bad: true } : { what: t('logging.cmdKeyboard'), bad: false }
+      case 'text':
+        return off ? { what: t('logging.cmdSpeedOff'), bad: true } : { what: t('logging.cmdText', { text: kc.text }), bad: false }
+      case 'speed':
+        if (!kc.inRange) return { what: t('logging.cmdSpeedRange'), bad: true }
+        return off ? { what: t('logging.cmdSpeedOff'), bad: true } : { what: t('logging.cmdSpeed', { wpm: kc.wpm }), bad: false }
+    }
+  }
+
   private renderStrip(): void {
     const stop = this.stopButtons()
+    // Keyboard mode: only STOP and the way out.
+    if (this.txMode) {
+      const end = this.suggestButton(t('logging.txEnd'), () => {
+        this.flushTx()
+        this.exitTx()
+        this.renderAll()
+      })
+      this.stripEl.replaceChildren(...stop, end, ...(this.notice ? [document.createTextNode(this.notice)] : []))
+      return
+    }
     if (this.notice) {
       this.stripEl.replaceChildren(...stop, document.createTextNode(this.notice))
       return
@@ -527,7 +647,9 @@ export class LoggingScreen implements Screen {
     if (this.keyerOn() && this.keyer.connected) {
       this.stripEl.replaceChildren(
         ...stop,
-        ...MACRO_BUTTONS.map(([slot, label]) => this.suggestButton(label, () => void this.sendMacro(slot), 'suggest suggest--macro')),
+        ...MACRO_BUTTONS.map(([slot, label]) =>
+          this.suggestButton(label ?? infoLabel(this.meta.profile), () => void this.sendMacro(slot), 'suggest suggest--macro'),
+        ),
       )
       return
     }

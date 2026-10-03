@@ -236,6 +236,11 @@ body {
   border: var(--border-w) solid var(--fg);
   cursor: pointer;
 }
+/* Keyboard mode (K ⏎): the badge reads TX, inverted. */
+.hdr-keyer--tx {
+  background: var(--fg);
+  color: var(--bg);
+}
 .hdr-keyer--off {
   color: var(--ghost);
   border-color: var(--ghost);
@@ -796,4 +801,18 @@ body {
 .update-notice a.btn {
   text-decoration: none;
   color: inherit;
+}
+
+/* CW keyboard mode: the input line is what goes out as CW, not a QSO. */
+.inputline--tx {
+  border-style: dashed;
+}
+.tx-prompt {
+  font-weight: 700;
+}
+.tx-sent {
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

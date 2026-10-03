@@ -45,6 +45,7 @@ export {
   clampWpm,
   DEFAULT_MACROS,
   MACRO_SLOTS,
+  infoLabel,
   SEND_MAX,
   WPM_MIN,
   WPM_MAX,

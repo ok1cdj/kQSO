@@ -3,7 +3,7 @@
 // the active storage backend, and About. Language follows
 // navigator.language with no in-app switch.
 
-import { LiveDb, WAVELOG_SETTINGS, apiBase, dbDate, userHeader, MACRO_SLOTS, WPM_MAX, WPM_MIN, withMacro, resetMacros } from '../../core/index'
+import { LiveDb, WAVELOG_SETTINGS, apiBase, dbDate, userHeader, MACRO_SLOTS, infoLabel, WPM_MAX, WPM_MIN, withMacro, resetMacros } from '../../core/index'
 import type { ProfileId, RunMode, WavelogStation } from '../../core/index'
 import { platformKind } from '../../platform/index'
 import type { KQSOPlatform } from '../../platform/index'
@@ -386,7 +386,7 @@ export class SettingsScreen implements Screen {
       const p = profile.value() as ProfileId
       fields.replaceChildren(
         ...MACRO_SLOTS.map((slot) => {
-          const f = fieldRow(slot, k.macroText(p, slot, mode))
+          const f = fieldRow(slot === 'INFO' ? infoLabel(p) : slot, k.macroText(p, slot, mode))
           f.input.addEventListener('change', () => void k.saveMacros(withMacro(k.macros, p, mode, slot, f.input.value.trim())))
           return f.row
         }),

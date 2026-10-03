@@ -78,6 +78,7 @@ const EN: readonly Section[] = [
     rows: [
       { text: 'A single letter alone on the line, confirmed with Enter. The preview shows what it will do before you press Enter. Next to other text it is ordinary input.' },
       { code: 'W ⏎', text: 'Discard the unfinished QSO (call, reports, locator… and its time). Band and mode stay.' },
+      { code: 'H ⏎', text: 'This help (same as the ? button).' },
       { code: 'D ⏎', text: 'Delete the last saved QSO — asks first and shows which one. Works only when nothing is being typed.' },
     ],
   },
@@ -106,12 +107,14 @@ const EN: readonly Section[] = [
   {
     title: 'CW keyer (Bluetooth)',
     rows: [
-      { text: 'Settings → CW keying (off by default) → Connect: the M5-ESP32-keyer over Bluetooth, in the Android app or Chrome / Edge. In CW the strip then offers the macros CQ EX TU MY AGN ? whenever it has nothing to suggest; the header shows RUN or S&P and the speed (✕ = not connected).' },
+      { text: 'Settings → CW keying (off by default) → Connect: the M5-ESP32-keyer over Bluetooth, in the Android app or Chrome / Edge. In CW the strip then offers the macros CQ EX TU MY REF/LOC/INFO ? whenever it has nothing to suggest; the header shows RUN or S&P and the speed (✕ = not connected).' },
       { text: 'Each profile has its own macros for RUN (I call CQ) and S&P (I answer a CQ), editable in Settings. While sending, STOP is first in the strip; Esc stops too.' },
       { text: 'Macro variables: {CALL} their call, {MYCALL} {MYLOC} {MYREF} from the log header, {RST} sent report, {NR} my next serial (001), {LOC} {REF} their locator / reference, {HI} greeting by local time — GM until noon, GA until 18:00, GE until midnight.' },
       { code: 'R ⏎ / S ⏎', text: 'RUN / S&P mode (only while CW keying is on).' },
       { code: 'S20 ⏎', text: 'Speed 20 WPM until the keyer disconnects; on connect the default speed from Settings is sent.' },
       { code: 'C ⏎', text: 'Connect the keyer again after it dropped (✕ next to RUN / S&P in the header). Tapping RUN / S&P does the same.' },
+      { code: 'K PSE QRS ⏎', text: 'Send the text once.' },
+      { code: 'K ⏎', text: 'CW keyboard: what you type goes out as CW, each word on Space (type ahead; Backspace fixes only the unsent word); the header shows TX. Nothing is logged. An empty Enter, END or Esc (with nothing on the air) ends it.' },
     ],
   },
   {
@@ -181,6 +184,7 @@ const CS: readonly Section[] = [
     rows: [
       { text: 'Jedno písmeno samotné na řádku, potvrzené Enterem. Náhled ukáže, co udělá, ještě před Enterem. Vedle dalšího textu je to obyčejný vstup.' },
       { code: 'W ⏎', text: 'Zahodí rozepsané QSO (volačku, reporty, locator… i jeho čas). Pásmo a mód zůstanou.' },
+      { code: 'H ⏎', text: 'Tato nápověda (jako tlačítko ?).' },
       { code: 'D ⏎', text: 'Smaže poslední zapsané QSO — nejdřív se zeptá a ukáže které. Jen když nic nepíšeš.' },
     ],
   },
@@ -209,12 +213,14 @@ const CS: readonly Section[] = [
   {
     title: 'CW klíčovač (Bluetooth)',
     rows: [
-      { text: 'Nastavení → CW klíčování (výchozí vypnuto) → Připojit: klíčovač M5-ESP32-keyer přes Bluetooth, v aplikaci pro Android nebo v Chromu / Edge. V CW pak lišta nabízí makra CQ EX TU MY AGN ?, kdykoli zrovna nic nenavrhuje; hlavička ukazuje RUN nebo S&P a rychlost (✕ = nepřipojeno).' },
+      { text: 'Nastavení → CW klíčování (výchozí vypnuto) → Připojit: klíčovač M5-ESP32-keyer přes Bluetooth, v aplikaci pro Android nebo v Chromu / Edge. V CW pak lišta nabízí makra CQ EX TU MY REF/LOC/INFO ?, kdykoli zrovna nic nenavrhuje; hlavička ukazuje RUN nebo S&P a rychlost (✕ = nepřipojeno).' },
       { text: 'Každý profil má vlastní makra pro RUN (dávám CQ) a S&P (odpovídám na CQ), upravíš je v Nastavení. Během vysílání je v liště na prvním místě STOP; zastaví i Esc.' },
       { text: 'Proměnné v makrech: {CALL} značka protistanice, {MYCALL} {MYLOC} {MYREF} z hlavičky logu, {RST} odesílaný report, {NR} moje další pořadové číslo (001), {LOC} {REF} lokátor / reference protistanice, {HI} pozdrav podle místního času — GM do poledne, GA do 18:00, GE do půlnoci.' },
       { code: 'R ⏎ / S ⏎', text: 'Režim RUN / S&P (jen se zapnutým CW klíčováním).' },
       { code: 'S20 ⏎', text: 'Rychlost 20 WPM do odpojení klíčovače; po připojení se pošle výchozí rychlost z Nastavení.' },
       { code: 'C ⏎', text: 'Znovu připojí klíčovač, když spadl (✕ u RUN / S&P v hlavičce). Totéž udělá klepnutí na RUN / S&P.' },
+      { code: 'K PSE QRS ⏎', text: 'Jednou odešle napsaný text.' },
+      { code: 'K ⏎', text: 'CW klávesnice: co píšeš, jde do éteru, každé slovo po mezeře (můžeš psát dopředu; Backspace opraví jen neodeslané slovo); hlavička ukazuje TX. Nic se nezapisuje do logu. Konec: prázdný Enter, KONEC nebo Esc (když se nevysílá).' },
     ],
   },
   {

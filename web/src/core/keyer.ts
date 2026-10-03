@@ -98,13 +98,16 @@ export class KeyerProtocol {
     })
   }
 
-  /** Queue text for sending, split into SEND lines of at most SEND_MAX characters. */
+  /** Queue text for sending, split into SEND lines of at most SEND_MAX characters.
+   *  The keyer's queue just appends, so a part that follows queued text starts with a
+   *  space (the next SEND line, a macro while the last one is on the air, a typed word). */
   async send(text: string): Promise<void> {
     for (const part of splitWords(text, SEND_MAX)) {
+      const sep = this.sending ? ' ' : ''
       // Sending from the write on: OK and DONE can arrive in one notification, and
       // DONE must not be overtaken by a late "sending = true".
       this.sending = true
-      const r = await this.command(`SEND ${part}`)
+      const r = await this.command(`SEND ${sep}${part}`)
       if (r !== 'OK') {
         this.sending = false
         throw new Error(r)
@@ -197,8 +200,12 @@ export function sanitize(text: string): { text: string; dropped: string[] } {
 
 // --- macros --------------------------------------------------------------------
 
-export type MacroSlot = 'CQ' | 'EXCH' | 'TU' | 'MYCALL' | 'AGN' | '?'
-export const MACRO_SLOTS: readonly MacroSlot[] = ['CQ', 'EXCH', 'TU', 'MYCALL', 'AGN', '?']
+// INFO = what the profile gives on request: my reference (activation), my locator
+// (VHF, satellite); in the general profile free text (name, QTH…), empty until set in
+// Settings. Its button label follows the profile (infoLabel).
+// No AGN slot: `?` asks for a repeat just as well.
+export type MacroSlot = 'CQ' | 'EXCH' | 'TU' | 'MYCALL' | 'INFO' | '?'
+export const MACRO_SLOTS: readonly MacroSlot[] = ['CQ', 'EXCH', 'TU', 'MYCALL', 'INFO', '?']
 export type RunMode = 'run' | 'sp'
 export type MacroSet = Readonly<Record<MacroSlot, string>>
 
@@ -221,21 +228,26 @@ export function greeting(now: Date): string {
   return h < 12 ? 'GM' : h >= 12 && h < 18 ? 'GA' : 'GE'
 }
 
+/** The INFO button / editor label for a profile. */
+export function infoLabel(profile: ProfileId): string {
+  return profile === 'aktivace' ? 'REF' : profile === 'obecny' ? 'INFO' : 'LOC'
+}
+
 const CQ_DEFAULT = 'CQ CQ DE {MYCALL} {MYCALL} K'
 
 const RUN: Readonly<Record<ProfileId, MacroSet>> = {
-  aktivace: { CQ: 'CQ CQ DE {MYCALL} {MYCALL} {MYREF} K', EXCH: '{CALL} {RST}', TU: 'TU {MYCALL}', MYCALL: '{MYCALL}', AGN: 'AGN?', '?': '?' },
-  vkv: { CQ: 'CQ TEST {MYCALL} {MYCALL} TEST', EXCH: '{CALL} {RST}{NR} {MYLOC} K', TU: 'TU {MYCALL} TEST', MYCALL: '{MYCALL}', AGN: 'AGN?', '?': '?' },
-  obecny: { CQ: CQ_DEFAULT, EXCH: '{CALL} {RST}', TU: 'TU {MYCALL}', MYCALL: '{MYCALL}', AGN: 'AGN?', '?': '?' },
-  sat: { CQ: CQ_DEFAULT, EXCH: '{CALL} UR {RST} {MYLOC}', TU: 'TU {MYCALL}', MYCALL: '{MYCALL}', AGN: 'AGN?', '?': '?' },
+  aktivace: { CQ: 'CQ CQ DE {MYCALL} {MYCALL} {MYREF} K', EXCH: '{CALL} {RST}', TU: 'TU {MYCALL}', MYCALL: '{MYCALL}', INFO: '{MYREF}', '?': '?' },
+  vkv: { CQ: 'CQ TEST {MYCALL} {MYCALL} TEST', EXCH: '{CALL} {RST}{NR} {MYLOC} K', TU: 'TU {MYCALL} TEST', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?' },
+  obecny: { CQ: CQ_DEFAULT, EXCH: '{CALL} {RST}', TU: 'TU {MYCALL}', MYCALL: '{MYCALL}', INFO: '', '?': '?' },
+  sat: { CQ: CQ_DEFAULT, EXCH: '{CALL} UR {RST} {MYLOC}', TU: 'TU {MYCALL}', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?' },
 }
 
 // S&P: I answer someone's CQ, so their call is not repeated; CQ = "my call".
 const SP: Readonly<Record<ProfileId, MacroSet>> = {
-  aktivace: { CQ: '{MYCALL}', EXCH: 'TU {RST}', TU: 'TU 73', MYCALL: '{MYCALL}', AGN: 'AGN?', '?': '?' },
-  vkv: { CQ: '{MYCALL}', EXCH: 'TU {RST}{NR} {MYLOC} K', TU: 'TU 73', MYCALL: '{MYCALL}', AGN: 'AGN?', '?': '?' },
-  obecny: { CQ: '{MYCALL}', EXCH: 'TU {RST}', TU: 'TU 73', MYCALL: '{MYCALL}', AGN: 'AGN?', '?': '?' },
-  sat: { CQ: '{MYCALL}', EXCH: 'TU UR {RST} {MYLOC}', TU: 'TU 73', MYCALL: '{MYCALL}', AGN: 'AGN?', '?': '?' },
+  aktivace: { CQ: '{MYCALL}', EXCH: 'TU {RST}', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '{MYREF}', '?': '?' },
+  vkv: { CQ: '{MYCALL}', EXCH: 'TU {RST}{NR} {MYLOC} K', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?' },
+  obecny: { CQ: '{MYCALL}', EXCH: 'TU {RST}', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '', '?': '?' },
+  sat: { CQ: '{MYCALL}', EXCH: 'TU UR {RST} {MYLOC}', TU: 'TU 73', MYCALL: '{MYCALL}', INFO: '{MYLOC}', '?': '?' },
 }
 
 export const DEFAULT_MACROS: Readonly<Record<ProfileId, Readonly<Record<RunMode, MacroSet>>>> = {

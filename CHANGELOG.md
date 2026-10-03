@@ -5,11 +5,12 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 ## [Unreleased]
 
 ### Added
-- **CW keyer over Bluetooth** (APK and web in Chrome / Edge): Settings → CW keying (off by default) connects the M5-ESP32-keyer. In CW the strip offers the macros CQ EX TU MY AGN ? when there is nothing to suggest, STOP is first while sending (Esc stops too). The header shows RUN or S&P with the speed, or ✕ when the keyer is not connected — tap it, or `C` on the line, to connect again. Macros per log profile × RUN / S&P, editable in Settings, with variables incl. `{HI}` (GM / GA / GE by local time). Default speed in Settings; `S20` on the line = 20 WPM until disconnect; `R` / `S` switch RUN / S&P.
+- **CW keyer over Bluetooth** (APK and web in Chrome / Edge): Settings → CW keying (off by default) connects the M5-ESP32-keyer. In CW the strip offers the macros CQ EX TU MY REF/LOC/INFO (my reference, my locator, or free text in the general profile) ? when there is nothing to suggest, STOP is first while sending (Esc stops too). The header shows RUN or S&P with the speed, or ✕ when the keyer is not connected — tap it, or `C` on the line, to connect again. Macros per log profile × RUN / S&P, editable in Settings, with variables incl. `{HI}` (GM / GA / GE by local time). Default speed in Settings; `S20` on the line = 20 WPM until disconnect; `R` / `S` switch RUN / S&P. Free text: `K PSE QRS` sends it once; `K` alone = CW keyboard mode (each typed word goes out on Space; an empty Enter or END leaves it).
 - Narrow phones: the logging header shows only ‹ for Logs, and the VHF contest serial without the TX label, so the header fits.
 - Satellite QSOs carry the uplink / downlink frequencies (ADIF `FREQ` / `FREQ_RX`, the transponder centre or the FM channel), so Wavelog and other logbooks get them on import. Older satellite QSOs get them filled in (from SAT_NAME + SAT_MODE) when the log is exported or pushed.
 - "What's new" after an update: the new version's highlights once on start (not after a fresh install), any time from Settings → About.
 - APK: a new version on GitHub shows a quiet line on the log list (Download / Hide), checked at most once a day; Settings → Check for updates turns it off. Links out of the app open in the browser.
+- `H` on the logging line opens the help.
 
 ### Fixed
 - APK: settings that are off by default (rain radar on the VHF map) behaved as on until switched once.

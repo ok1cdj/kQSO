@@ -181,6 +181,7 @@ const en = {
   'logging.recoverNo': 'discard',
   'logging.navLogs': 'Logs',
   'logging.cmdWipe': 'DISCARD QSO',
+  'logging.cmdHelp': 'HELP',
   'logging.cmdDeleteLast': 'DELETE LAST',
   'logging.cmdBlocked': 'FINISH OR W',
   'logging.wiped': 'Unfinished QSO discarded.',
@@ -191,6 +192,10 @@ const en = {
   'logging.cmdRun': 'RUN MODE',
   'logging.cmdSp': 'S&P MODE',
   'logging.cmdConnect': 'CONNECT KEYER',
+  'logging.cmdKeyboard': 'CW KEYBOARD MODE',
+  'logging.cmdText': 'SEND: {text}',
+  'logging.txHint': 'Space sends the word · empty Enter = end',
+  'logging.txEnd': 'END',
   'logging.cmdConnected': 'KEYER ALREADY CONNECTED',
   'logging.keyerReconnect': 'Connect keyer',
   'logging.cmdSpeed': 'SPEED {wpm} WPM',
@@ -198,6 +203,7 @@ const en = {
   'logging.cmdSpeedOff': 'KEYER NOT CONNECTED',
   'logging.keyerDropped': 'Not sent: {chars}',
   'logging.keyerError': 'Keyer: {what}',
+  'logging.macroEmpty': 'Macro {slot} is empty — fill it in under Settings → Macros.',
 
   'install.text': 'For offline use and data safety: Share → Add to Home Screen.',
 } as const
@@ -375,6 +381,7 @@ const cs: Record<keyof typeof en, string> = {
   'logging.recoverNo': 'zahodit',
   'logging.navLogs': 'Logy',
   'logging.cmdWipe': 'ZAHODIT QSO',
+  'logging.cmdHelp': 'NÁPOVĚDA',
   'logging.cmdDeleteLast': 'SMAZAT POSLEDNÍ',
   'logging.cmdBlocked': 'ZAPIŠ NEBO W',
   'logging.wiped': 'Rozepsané QSO zahozeno.',
@@ -385,6 +392,10 @@ const cs: Record<keyof typeof en, string> = {
   'logging.cmdRun': 'REŽIM RUN',
   'logging.cmdSp': 'REŽIM S&P',
   'logging.cmdConnect': 'PŘIPOJIT KLÍČOVAČ',
+  'logging.cmdKeyboard': 'REŽIM CW KLÁVESNICE',
+  'logging.cmdText': 'ODESLAT: {text}',
+  'logging.txHint': 'Mezera odešle slovo · prázdný Enter = konec',
+  'logging.txEnd': 'KONEC',
   'logging.cmdConnected': 'KLÍČOVAČ UŽ PŘIPOJEN',
   'logging.keyerReconnect': 'Připojit klíčovač',
   'logging.cmdSpeed': 'RYCHLOST {wpm} WPM',
@@ -392,6 +403,7 @@ const cs: Record<keyof typeof en, string> = {
   'logging.cmdSpeedOff': 'KLÍČOVAČ NEPŘIPOJEN',
   'logging.keyerDropped': 'Neodesláno: {chars}',
   'logging.keyerError': 'Klíčovač: {what}',
+  'logging.macroEmpty': 'Makro {slot} je prázdné — vyplň ho v Nastavení → Makra.',
 
   'install.text': 'Pro offline provoz a jistotu dat: Sdílet → Přidat na plochu.',
 }
