@@ -63,6 +63,8 @@ export interface KQSOPlatform {
   exportText(content: string, filename: string): Promise<void>
   shareLog(logId: string, filename: string): Promise<void>
   keepAwake(on: boolean): void
+  /** APK: dark system bars + window background behind them (dark theme). */
+  setDarkBars?(dark: boolean): void
 
   // Small persistent key/value store for app-wide preferences (operator call/grid
   // remembered for the next New Log, display mode, …). Not per-log; logs keep their

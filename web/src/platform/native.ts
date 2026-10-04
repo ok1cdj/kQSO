@@ -29,6 +29,7 @@ interface NativeBridge {
   writeCallDb(text: string): void
   shareLog(id: string, filename: string): void
   keepAwake(on: boolean): void
+  setDarkBars?(dark: boolean): void // absent in older APKs
   // CW keyer (app/…/KeyerBle.kt); answers come back through window.__kqsoKeyer.
   keyerConnect?(pick: boolean): void
   keyerDisconnect?(): void
@@ -214,6 +215,10 @@ class NativePlatform implements KQSOPlatform {
 
   keepAwake(on: boolean): void {
     this.raw.keepAwake(on)
+  }
+
+  setDarkBars(dark: boolean): void {
+    this.raw.setDarkBars?.(dark)
   }
 }
 

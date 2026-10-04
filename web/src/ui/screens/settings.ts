@@ -7,8 +7,8 @@ import { LiveDb, WAVELOG_SETTINGS, apiBase, dbDate, userHeader, MACRO_SLOTS, ESM
 import type { ProfileId, RunMode, WavelogStation } from '../../core/index'
 import { platformKind } from '../../platform/index'
 import type { KQSOPlatform } from '../../platform/index'
-import { currentDisplayMode, setDisplayMode } from '../../theme/mode'
-import type { DisplayMode } from '../../theme/mode'
+import { currentDisplayMode, currentThemeMode, setDisplayMode, setThemeMode } from '../../theme/mode'
+import type { DisplayMode, ThemeMode } from '../../theme/mode'
 import type { Screen } from '../app'
 import { el, button, fieldRow, switchOn, tilePicker } from '../dom'
 import { connect } from '../wavelog'
@@ -86,19 +86,32 @@ export class SettingsScreen implements Screen {
     )
   }
 
+  /** Standard / E-ink, and under it the standard-mode theme (hidden in e-ink, which is always black on white). */
   private displayModeSetting(): HTMLElement {
     const wrap = el('div', 'setting')
     wrap.append(el('span', 'field-label', t('settings.display')))
     const seg = el('div', 'segmented')
+    const themeSeg = el('div', 'segmented')
+    const showTheme = (): void => {
+      themeSeg.style.display = currentDisplayMode() === 'standard' ? '' : 'none'
+    }
 
     const mkBtn = (mode: DisplayMode, label: string): HTMLButtonElement => {
-      const b = button(label, () => void this.pick(mode, seg), 'btn')
+      const b = button(label, () => void this.pick(mode, seg).then(showTheme), 'btn')
       b.dataset.mode = mode
       b.setAttribute('aria-pressed', String(currentDisplayMode() === mode))
       return b
     }
+    const mkTheme = (theme: ThemeMode, label: string): HTMLButtonElement => {
+      const b = button(label, () => void this.pickTheme(theme, themeSeg), 'btn')
+      b.dataset.mode = theme
+      b.setAttribute('aria-pressed', String(currentThemeMode() === theme))
+      return b
+    }
     seg.append(mkBtn('standard', t('settings.standard')), mkBtn('eink', t('settings.eink')))
-    wrap.append(seg)
+    themeSeg.append(mkTheme('system', t('settings.themeSystem')), mkTheme('light', t('settings.themeLight')), mkTheme('dark', t('settings.themeDark')))
+    showTheme()
+    wrap.append(seg, themeSeg)
     return wrap
   }
 
@@ -106,6 +119,13 @@ export class SettingsScreen implements Screen {
     await setDisplayMode(this.platform, mode) // instant, no reload
     for (const b of Array.from(seg.querySelectorAll<HTMLButtonElement>('button'))) {
       b.setAttribute('aria-pressed', String(b.dataset.mode === mode))
+    }
+  }
+
+  private async pickTheme(theme: ThemeMode, seg: HTMLElement): Promise<void> {
+    await setThemeMode(this.platform, theme) // instant, no reload
+    for (const b of Array.from(seg.querySelectorAll<HTMLButtonElement>('button'))) {
+      b.setAttribute('aria-pressed', String(b.dataset.mode === theme))
     }
   }
 

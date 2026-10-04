@@ -93,6 +93,9 @@ class KQSOBridge(private val activity: MainActivity, private val keyer: KeyerBle
     @JavascriptInterface
     fun keepAwake(on: Boolean) = activity.setKeepScreenOn(on)
 
+    @JavascriptInterface
+    fun setDarkBars(dark: Boolean) = activity.runOnUiThread { activity.setDarkBars(dark) }
+
     // CW keyer (KeyerBle). Bridge calls come on a binder thread; BLE state lives on main.
     @JavascriptInterface
     fun keyerConnect(pick: Boolean) = activity.runOnUiThread { keyer.connect(pick) }

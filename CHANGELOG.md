@@ -11,6 +11,7 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 - "What's new" after an update: the new version's highlights once on start (not after a fresh install), any time from Settings → About.
 - APK: a new version on GitHub shows a quiet line on the log list (Download / Hide), checked at most once a day; Settings → Check for updates turns it off. Links out of the app open in the browser.
 - `H` on the logging line opens the help.
+- Theme switch: Settings → Display → System / Light / Dark (standard mode; e-ink stays black on white). The APK now has the dark theme too, and System follows the phone.
 
 ### Fixed
 - Reopening a log continues on the band and mode of its last QSO, not the log's default.
