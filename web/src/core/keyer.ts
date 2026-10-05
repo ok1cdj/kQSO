@@ -348,7 +348,7 @@ export interface EsmAfter {
 }
 
 /**
- * The macro Enter sends in ESM (docs/keyer.md, "Co odešle Enter"), or null for none.
+ * The macro Enter sends in ESM, or null for none.
  * Decided from what the reducer did, not from the text: the first callsign, a save,
  * a save refused for the missing number / locator.
  */

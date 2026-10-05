@@ -219,7 +219,7 @@ describe('INFO macro slot', () => {
   })
 })
 
-describe('esmMessage (docs/keyer.md, "Co odešle Enter")', () => {
+describe('esmMessage', () => {
   const idle = { lineEmpty: true, hadContent: false, hadCall: false }
   const typedCall = { lineEmpty: false, hadContent: false, hadCall: false }
   const typedMore = { lineEmpty: false, hadContent: true, hadCall: true }
