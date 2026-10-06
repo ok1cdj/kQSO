@@ -12,6 +12,13 @@ function applyTimeOverride(base: Date, hhmm: string): Date {
   return d
 }
 
+/** A received contest serial as logged: at least three digits (23 → 023), like the
+ *  serials we send. Padded only here, at the save — while typing, a bare 59 must stay
+ *  report-shaped so a following 001 can still make it the report (parse.ts). */
+export function padSerial(serial: string): string {
+  return /^\d{1,2}$/.test(serial) ? serial.padStart(3, '0') : serial
+}
+
 /** Exchange parts the profile requires before a QSO can be saved, still missing
  *  from the accumulator. VKV contest: the received number and the locator. */
 export function missingParts(partial: PartialQso, profile: LogProfile): ('NR' | 'LOC')[] {
@@ -57,7 +64,7 @@ export function buildQso(partial: PartialQso, sticky: StickyState, meta: LogMeta
   if (partial.theirRef !== undefined) qso.theirRef = partial.theirRef
   if (meta.myRef !== undefined) qso.myRef = meta.myRef
   if (partial.name !== undefined) qso.name = partial.name
-  if (partial.serial !== undefined) qso.serial = partial.serial
+  if (partial.serial !== undefined) qso.serial = padSerial(partial.serial)
   if (sticky.satName !== undefined) qso.satName = sticky.satName
   if (sticky.satMode !== undefined) qso.satMode = sticky.satMode
 

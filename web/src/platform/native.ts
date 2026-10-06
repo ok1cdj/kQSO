@@ -5,7 +5,7 @@
 
 import type { LogMeta } from '../core/model'
 import { readLogFile, writeLogHeader } from '../core/index'
-import type { KQSOPlatform, LogSummary } from './types'
+import type { KQSOPlatform, KeyerLinkState, KeyerTransport, LogSummary } from './types'
 
 /** The raw @JavascriptInterface surface. Pure file I/O keyed by log id (mirrors the OPFS worker). */
 interface NativeBridge {
@@ -29,22 +29,102 @@ interface NativeBridge {
   writeCallDb(text: string): void
   shareLog(id: string, filename: string): void
   keepAwake(on: boolean): void
+  setDarkBars?(dark: boolean): void // absent in older APKs
+  // CW keyer (app/…/KeyerBle.kt); answers come back through window.__kqsoKeyer.
+  keyerConnect?(pick: boolean): void
+  keyerDisconnect?(): void
+  keyerForget?(): void
+  keyerWrite?(chunk: string): void
+  keyerMtu?(): number
+}
+
+/** What the native side calls back (KeyerBle.js()). */
+interface NativeKeyerCallbacks {
+  state(s: KeyerLinkState, name: string): void
+  data(text: string): void
+  battery(pct: number): void
+  /** Answer to keyerConnect: tried = false when there was no keyer to try. */
+  done(tried: boolean, error: string | null): void
 }
 
 declare global {
   interface Window {
     KQSONative?: NativeBridge
+    __kqsoKeyer?: NativeKeyerCallbacks
+  }
+}
+
+/** The keyer over the APK's native BLE (KeyerBle.kt): the scan + chooser dialog, GATT
+ *  and the remembered keyer live in Kotlin; this only adapts calls and callbacks. */
+class NativeKeyer implements KeyerTransport {
+  private dataCb: (text: string) => void = () => {}
+  private stateCb: (s: KeyerLinkState, name?: string) => void = () => {}
+  private batteryCb: (pct: number) => void = () => {}
+  private pending: { resolve: (tried: boolean) => void; reject: (e: Error) => void } | undefined
+
+  constructor(private readonly raw: NativeBridge) {
+    window.__kqsoKeyer = {
+      state: (s, name) => this.stateCb(s, name || undefined),
+      data: (text) => this.dataCb(text),
+      battery: (pct) => this.batteryCb(pct),
+      done: (tried, error) => {
+        const p = this.pending
+        this.pending = undefined
+        if (!p) return
+        if (error === null) p.resolve(tried)
+        // A closed chooser is the same "nothing picked" as in Web Bluetooth.
+        else p.reject(error === 'cancelled' ? new DOMException(error, 'NotFoundError') : new Error(error))
+      },
+    }
+  }
+
+  get mtu(): number {
+    return this.raw.keyerMtu?.() ?? 20
+  }
+
+  connect(pick: boolean): Promise<boolean> {
+    this.pending?.reject(new DOMException('superseded', 'NotFoundError'))
+    return new Promise((resolve, reject) => {
+      this.pending = { resolve, reject }
+      this.raw.keyerConnect!(pick)
+    })
+  }
+
+  async disconnect(): Promise<void> {
+    this.raw.keyerDisconnect?.()
+  }
+
+  async forget(): Promise<void> {
+    this.raw.keyerForget?.()
+  }
+
+  write(chunk: string): void {
+    this.raw.keyerWrite?.(chunk)
+  }
+
+  onData(cb: (text: string) => void): void {
+    this.dataCb = cb
+  }
+
+  onState(cb: (s: KeyerLinkState, name?: string) => void): void {
+    this.stateCb = cb
+  }
+
+  onBattery(cb: (pct: number) => void): void {
+    this.batteryCb = cb
   }
 }
 
 class NativePlatform implements KQSOPlatform {
   readonly displayMode: 'eink' | 'standard'
   readonly nativeVersion: string
+  readonly keyer: KeyerTransport | undefined
 
   constructor(private readonly raw: NativeBridge) {
     const m = raw.displayMode()
     this.displayMode = m === 'standard' ? 'standard' : 'eink'
     this.nativeVersion = raw.appVersion()
+    this.keyer = raw.keyerConnect ? new NativeKeyer(raw) : undefined
   }
 
   private newId(name: string): string {
@@ -135,6 +215,10 @@ class NativePlatform implements KQSOPlatform {
 
   keepAwake(on: boolean): void {
     this.raw.keepAwake(on)
+  }
+
+  setDarkBars(dark: boolean): void {
+    this.raw.setDarkBars?.(dark)
   }
 }
 

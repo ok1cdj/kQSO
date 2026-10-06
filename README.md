@@ -10,8 +10,8 @@ Android APK (the same web app in a WebView shell).
 Target devices (all first-class): **Mudita Kompakt** (480×800 e-ink), iPad/tablet,
 desktop.
 
-- **Live web:** <https://kqso.ok1cdj.com/> (web 1.6.3; the old `ok1cdj.github.io/kQSO/` redirects there)
-- **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.6.3)
+- **Live web:** <https://kqso.ok1cdj.com/> (web 1.7; the old `ok1cdj.github.io/kQSO/` redirects there)
+- **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.7)
 - **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/ok1cdj)
@@ -78,6 +78,14 @@ QSO map: worked stations over the Maidenhead grid, your QTH as the crosshair
 - **Storage that survives:** every QSO is appended to the log file at once; an
   unfinished QSO is kept in a crash journal and offered back after a restart.
   Web: OPFS (persistent storage requested); APK: `.adi` files in app storage.
+- **CW keyer over Bluetooth (beta)** (APK, or web in Chrome / Edge; off by default): the
+  [M5-ESP32-keyer](https://github.com/ok1cdj/M5-ESP32-keyer) — in CW the strip
+  offers the macros CQ (DE in S&P) EX TU MY REF/LOC/INFO ?, STOP while sending (also Esc), RUN / S&P
+  (`R` / `S`) with own macros per log profile (editable in Settings), `S20` = 20 WPM
+  until disconnect, default speed in Settings, `C` = connect again, `K text` = send
+  text, `K` = CW keyboard mode, ESM (Enter sends the macros, as in N1MM; `E`).
+  Tested with the M5-ESP32-keyer v2; please report bugs on
+  [GitHub Issues](https://github.com/ok1cdj/kQSO/issues).
 - **E-ink / standard display modes** (the APK starts in e-ink), keep-screen-on while
   logging, EN / CS UI (by the system language).
 

@@ -30,14 +30,14 @@ describe("what's new", () => {
   })
 
   it('notes after the seen version up to the current one', () => {
-    expect(notesSince('1.6.3', '1.6.4').map((e) => e.version)).toEqual(['1.6.4'])
-    expect(notesSince('1.6.4', '1.6.4')).toEqual([])
-    expect(notesSince('1.6.2', '1.6.3')).toEqual([]) // 1.6.4 not installed yet
+    expect(notesSince('1.6.3', '1.7.0').map((e) => e.version)).toEqual(['1.7'])
+    expect(notesSince('1.7', '1.7.0')).toEqual([])
+    expect(notesSince('1.6.2', '1.6.3')).toEqual([]) // 1.7 not installed yet
   })
 
   it('baseline: saved wins; none saved → fresh install shows nothing, an update from 1.6.3 shows the new notes', () => {
     expect(seenBaseline('1.6.4', true, '1.6.5')).toBe('1.6.4')
-    expect(notesSince(seenBaseline(null, false, '1.6.4'), '1.6.4')).toEqual([])
-    expect(notesSince(seenBaseline(null, true, '1.6.4'), '1.6.4').map((e) => e.version)).toEqual(['1.6.4'])
+    expect(notesSince(seenBaseline(null, false, '1.7.0'), '1.7.0')).toEqual([])
+    expect(notesSince(seenBaseline(null, true, '1.7.0'), '1.7.0').map((e) => e.version)).toEqual(['1.7'])
   })
 })

@@ -57,3 +57,20 @@ describe('satellite frequencies', () => {
     expect(applyBand(sticky, '70cm').freq).toBeUndefined()
   })
 })
+
+describe('received serial', () => {
+  const vkv: LogMeta = { ...meta, profile: 'vkv', defaultSignal: { band: '2m', mode: 'SSB' } }
+
+  it('is saved with at least three digits (23 → 023), longer ones as typed', () => {
+    for (const [typed, saved] of [['23', '023'], ['5', '005'], ['123', '123'], ['1234', '1234'], ['007', '007']] as const) {
+      const q = buildQso({ call: 'OK1ABC', timeOn: T, serial: typed, grid: 'JO70' }, { band: '2m', mode: 'SSB' }, vkv)
+      expect(q?.serial).toBe(saved)
+    }
+  })
+
+  it('59 then 001 on two Enters still makes 59 the report', () => {
+    const a = parseLine('OK1ABC 59', { band: '2m', mode: 'SSB' }, { timeOn: T }, PROFILES.vkv)
+    const b = parseLine('001 JO70', a.sticky, a.partial, PROFILES.vkv)
+    expect(b.partial).toMatchObject({ reportRcvd: '59', serial: '001' })
+  })
+})

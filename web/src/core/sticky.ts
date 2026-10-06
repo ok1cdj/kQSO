@@ -1,11 +1,12 @@
 // Sticky-state seed and threading helpers. All pure; nothing mutated.
 
-import type { LogMeta, StickyState } from './model'
+import type { LogMeta, Qso, StickyState } from './model'
 import type { Satellite } from './satellites'
 
-/** Seed sticky band/mode from the log header's default signal. */
-export function initialSticky(meta: LogMeta): StickyState {
-  const s = meta.defaultSignal
+/** Seed sticky band/mode: from the last QSO when the log has one (reopening a log
+ *  carries on where it stopped), else from the log header's default signal. */
+export function initialSticky(meta: LogMeta, last?: Qso): StickyState {
+  const s = last?.signal ?? meta.defaultSignal
   const out: { -readonly [K in keyof StickyState]: StickyState[K] } = {
     band: s.band,
     mode: s.mode,

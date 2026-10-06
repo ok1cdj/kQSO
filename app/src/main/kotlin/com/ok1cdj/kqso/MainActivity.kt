@@ -3,6 +3,7 @@ package com.ok1cdj.kqso
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -34,6 +35,9 @@ import java.io.File
 class MainActivity : ComponentActivity() {
 
     private lateinit var webView: WebView
+    private lateinit var root: FrameLayout
+    private lateinit var keyer: KeyerBle
+    private var pendingPermission: ((Boolean) -> Unit)? = null
     private var pendingExport: String? = null
     private var pendingChooser: ValueCallback<Array<Uri>>? = null
 
@@ -56,6 +60,15 @@ class MainActivity : ComponentActivity() {
         // The callback must always be answered (null on cancel), or the input stays dead.
         pendingChooser?.onReceiveValue(uri?.let { arrayOf(it) })
         pendingChooser = null
+    }
+
+    // Bluetooth permissions for the CW keyer, asked on the first Connect.
+    private val requestPermissions = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        val cb = pendingPermission
+        pendingPermission = null
+        cb?.invoke(result.values.all { it })
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -81,7 +94,8 @@ class MainActivity : ComponentActivity() {
             settings.cacheMode = WebSettings.LOAD_NO_CACHE
             settings.allowFileAccess = false
             settings.allowContentAccess = false
-            addJavascriptInterface(KQSOBridge(this@MainActivity), "KQSONative")
+            keyer = KeyerBle(this@MainActivity)
+            addJavascriptInterface(KQSOBridge(this@MainActivity, keyer), "KQSONative")
             webViewClient = object : WebViewClient() {
                 override fun shouldInterceptRequest(
                     view: WebView,
@@ -144,7 +158,7 @@ class MainActivity : ComponentActivity() {
         // header sits under the status bar and its buttons can't be tapped. Pad a
         // container by the system bars / cutout (and the soft keyboard, for the form
         // fields); where the system isn't edge-to-edge (the Kompakt) the insets are 0.
-        val root = FrameLayout(this).apply {
+        root = FrameLayout(this).apply {
             setBackgroundColor(android.graphics.Color.WHITE)
             addView(webView, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
         }
@@ -157,8 +171,35 @@ class MainActivity : ComponentActivity() {
         setContentView(root)
         // Only after setContentView: before it there is no decor view and Android 12
         // (the Kompakt) throws an NPE here.
-        WindowCompat.getInsetsController(window, root).isAppearanceLightStatusBars = true // dark icons on white
+        setDarkBars(false) // dark icons on white until the page says otherwise
         webView.loadUrl("https://appassets.androidplatform.net/index.html")
+    }
+
+    override fun onDestroy() {
+        keyer.close()
+        super.onDestroy()
+    }
+
+    /** Dark page theme: the bars' background (the padded root) and their icons follow it. */
+    fun setDarkBars(dark: Boolean) {
+        root.setBackgroundColor(if (dark) 0xFF131313.toInt() else android.graphics.Color.WHITE)
+        WindowCompat.getInsetsController(window, root).apply {
+            isAppearanceLightStatusBars = !dark
+            isAppearanceLightNavigationBars = !dark
+        }
+    }
+
+    /** Ask for the BLE permissions (or answer at once when already granted). */
+    fun requestBlePermissions(cb: (Boolean) -> Unit) {
+        val perms = KeyerBle.blePermissions()
+        if (perms.all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }) return cb(true)
+        pendingPermission?.invoke(false)
+        pendingPermission = cb
+        requestPermissions.launch(perms)
+    }
+
+    fun evalJs(script: String) {
+        webView.post { webView.evaluateJavascript(script, null) }
     }
 
     fun setKeepScreenOn(on: Boolean) = runOnUiThread {

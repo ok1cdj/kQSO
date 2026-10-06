@@ -19,11 +19,12 @@ export interface ReduceResult {
   readonly clearInput: boolean // UI hint: empty the input line (phase 1)
   // A line command the UI must act on. 'deleteLastBlocked' = D typed while a
   // QSO is unfinished — refused so D never silently mixes with typed data.
-  readonly command?: 'wipe' | 'deleteLast' | 'deleteLastBlocked'
+  readonly command?: 'wipe' | 'deleteLast' | 'deleteLastBlocked' | 'help'
 }
 
-export function initialState(meta: LogMeta): CoreState {
-  return { sticky: initialSticky(meta), partial: {}, hasStarted: false }
+/** `last` = the log's last QSO, whose band / mode the new one starts from. */
+export function initialState(meta: LogMeta, last?: Qso): CoreState {
+  return { sticky: initialSticky(meta, last), partial: {}, hasStarted: false }
 }
 
 export function reduce(state: CoreState, ev: CoreEvent, meta: LogMeta): ReduceResult {
@@ -40,6 +41,8 @@ export function reduce(state: CoreState, ev: CoreEvent, meta: LogMeta): ReduceRe
   if (cmd) {
     const empty: CoreState = { sticky: state.sticky, partial: {}, hasStarted: false }
     if (cmd === 'wipe') return { state: empty, command: 'wipe', preview: [], clearInput: true }
+    // H opens the help; an unfinished QSO stays, the time the H stamped alone goes.
+    if (cmd === 'help') return { state: hasContent(state.partial) ? state : empty, command: 'help', preview: [], clearInput: true }
     if (hasContent(state.partial)) return { state, command: 'deleteLastBlocked', preview: [], clearInput: true }
     // Drop the time the D keystroke stamped; nothing else was typed.
     return { state: empty, command: 'deleteLast', preview: [], clearInput: true }

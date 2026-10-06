@@ -25,10 +25,11 @@ export function getPlatform(): KQSOPlatform {
 
 /** Which backend getPlatform() would use — for the About/settings screen. */
 export function platformKind(): 'native' | 'opfs' | 'memory' {
-  if (nativePlatform()) return 'native'
+  // Not nativePlatform(): a second instance would take over the keyer callbacks.
+  if (typeof window !== 'undefined' && window.KQSONative) return 'native'
   return opfsAvailable() ? 'opfs' : 'memory'
 }
 
-export type { KQSOPlatform, LogSummary } from './types'
+export type { KQSOPlatform, LogSummary, KeyerTransport, KeyerLinkState } from './types'
 export { MemoryPlatform } from './memory'
 export { WebPlatform, opfsAvailable } from './web/opfs'

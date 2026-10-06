@@ -100,6 +100,12 @@ body {
   cursor: pointer;
   transition: background var(--transition), color var(--transition);
 }
+/* Narrow phones (OnePlus 360 px): "‹ Logy" → "‹", the header middle needs the room. */
+@media (max-width: 400px) {
+  .hdr-nav-word {
+    display: none;
+  }
+}
 .hdr-nav:active {
   background: var(--fg);
   color: var(--bg);
@@ -199,6 +205,12 @@ body {
   color: var(--bg);
 }
 /* Prefilled locator/name suggestion — the single grey. */
+/* + LOC on the preview line (the keyer's macros keep the strip). */
+.suggest--inline {
+  flex: none;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.8rem;
+}
 .suggest--ghost {
   color: var(--ghost);
   border-color: var(--ghost);
@@ -219,6 +231,38 @@ body {
 }
 .hdr-az--guess {
   color: var(--ghost);
+}
+/* CW keyer: RUN / S&P in the header; dashed grey with ✕ while not connected (tap = connect). */
+.hdr-keyer {
+  font: inherit;
+  font-weight: 700;
+  background: var(--bg);
+  color: var(--fg);
+  padding: 0 0.3rem;
+  border: var(--border-w) solid var(--fg);
+  cursor: pointer;
+}
+/* Keyboard mode (K ⏎): the badge reads TX, inverted. */
+.hdr-keyer--tx {
+  background: var(--fg);
+  color: var(--bg);
+}
+.hdr-keyer--off {
+  color: var(--ghost);
+  border-color: var(--ghost);
+  border-style: dashed;
+}
+/* Keyer macros in the strip: six buttons must fit the 480 px Kompakt. */
+.suggest--macro {
+  padding: 0.5rem 0.1rem;
+  min-width: 0;
+}
+/* STOP while sending: inverse, first in the strip. */
+.suggest--stop {
+  flex: 1.4;
+  background: var(--fg);
+  color: var(--bg);
+  font-weight: 700;
 }
 /* Satellite (read-only) in the logging header. */
 .hdr-sat {
@@ -582,6 +626,28 @@ body {
 .segmented .btn {
   flex: 1;
 }
+/* Keyer settings: the part under the CW keying switch. */
+.keyer-settings,
+.keyer-macros,
+.keyer-macro-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.keyer-settings {
+  margin-top: 0.4rem;
+}
+.keyer-settings[hidden] {
+  display: none;
+}
+/* Default speed: − 22 WPM + */
+.keyer-speed {
+  align-items: center;
+}
+.keyer-wpm {
+  flex: 1.4;
+  text-align: center;
+}
 .segmented--wrap {
   flex-wrap: wrap;
 }
@@ -741,4 +807,18 @@ body {
 .update-notice a.btn {
   text-decoration: none;
   color: inherit;
+}
+
+/* CW keyboard mode: the input line is what goes out as CW, not a QSO. */
+.inputline--tx {
+  border-style: dashed;
+}
+.tx-prompt {
+  font-weight: 700;
+}
+.tx-sent {
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

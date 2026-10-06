@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Platform theme, no AppCompat/Material dependency. Light, no action bar. -->
-    <style name="Theme.KQSO" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Platform theme, no AppCompat/Material dependency. DayNight, so the WebView's
+         prefers-color-scheme follows the system (the "System" theme in Settings);
+         no action bar. -->
+    <style name="Theme.KQSO" parent="android:Theme.DeviceDefault.DayNight">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
 </resources>

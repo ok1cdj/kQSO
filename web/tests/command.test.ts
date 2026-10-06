@@ -27,6 +27,7 @@ function typeLines(lines: string[], start: CoreState = initialState(meta)) {
 describe('matchCommand', () => {
   it('a lone W or D is a command, any case, surrounding spaces ignored', () => {
     expect(matchCommand('W')).toBe('wipe')
+    expect(matchCommand('h')).toBe('help')
     expect(matchCommand(' w ')).toBe('wipe')
     expect(matchCommand('D')).toBe('deleteLast')
   })

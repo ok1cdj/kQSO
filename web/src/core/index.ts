@@ -28,10 +28,35 @@ export { classifyToken, classifyLine, isFullLocator } from './classify'
 export type { TokenContext } from './classify'
 export { initialSticky, applyBand, applyMode, applySatellite } from './sticky'
 export { parseLine } from './parse'
-export { matchCommand, hasContent } from './command'
-export type { LineCommand } from './command'
+export { matchCommand, matchKeyerCommand, hasContent } from './command'
+export type { LineCommand, KeyerCommand } from './command'
+export {
+  LineAssembler,
+  chunk,
+  KeyerProtocol,
+  asyncEvent,
+  sanitize,
+  expandMacro,
+  greeting,
+  macroFor,
+  withMacro,
+  resetMacros,
+  parseMacros,
+  clampWpm,
+  DEFAULT_MACROS,
+  MACRO_SLOTS,
+  ESM_ONLY_SLOTS,
+  esmMessage,
+  infoLabel,
+  cqLabel,
+  SEND_MAX,
+  WPM_MIN,
+  WPM_MAX,
+  WPM_DEFAULT,
+} from './keyer'
+export type { KeyerEvent, MacroSlot, RunMode, MacroSet, MacroContext, SavedMacros, EsmBefore, EsmAfter } from './keyer'
 export type { ParseResult } from './parse'
-export { buildQso, missingParts } from './qso'
+export { buildQso, missingParts, padSerial } from './qso'
 export { initialState, reduce } from './reducer'
 export type { CoreEvent, ReduceResult } from './reducer'
 

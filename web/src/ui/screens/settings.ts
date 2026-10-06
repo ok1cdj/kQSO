@@ -3,14 +3,14 @@
 // the active storage backend, and About. Language follows
 // navigator.language with no in-app switch.
 
-import { LiveDb, WAVELOG_SETTINGS, apiBase, dbDate, userHeader } from '../../core/index'
-import type { WavelogStation } from '../../core/index'
+import { LiveDb, WAVELOG_SETTINGS, apiBase, dbDate, userHeader, MACRO_SLOTS, ESM_ONLY_SLOTS, infoLabel, cqLabel, WPM_MAX, WPM_MIN, withMacro, resetMacros } from '../../core/index'
+import type { ProfileId, RunMode, WavelogStation } from '../../core/index'
 import { platformKind } from '../../platform/index'
 import type { KQSOPlatform } from '../../platform/index'
-import { currentDisplayMode, setDisplayMode } from '../../theme/mode'
-import type { DisplayMode } from '../../theme/mode'
+import { currentDisplayMode, currentThemeMode, setDisplayMode, setThemeMode } from '../../theme/mode'
+import type { DisplayMode, ThemeMode } from '../../theme/mode'
 import type { Screen } from '../app'
-import { el, button, fieldRow, switchOn } from '../dom'
+import { el, button, fieldRow, switchOn, tilePicker } from '../dom'
 import { connect } from '../wavelog'
 import { wavelogErrorText } from '../wavelog-text'
 import { t } from '../i18n'
@@ -18,6 +18,8 @@ import { BUNDLED_DB_SETTING, BUNDLED_IDS, bundledInfo } from '../bundled-db'
 import { MAP_LABELS_SETTING } from './map'
 import { RADAR_SETTING } from '../radar'
 import { STATS_SETTING, setStatsEnabled } from '../stats'
+import { KEYER_SETTINGS } from '../keyer'
+import type { KeyerController } from '../keyer'
 import { UPDATE_SETTINGS } from '../update'
 
 export interface SettingsNav {
@@ -38,11 +40,20 @@ const SET_LABEL = {
   awards: 'settings.dbSet_awards',
 } as const
 
+const PROFILE_TILES: ReadonlyArray<readonly [ProfileId, 'newlog.profileAktivace' | 'newlog.profileObecny' | 'newlog.profileVkv' | 'newlog.profileSat']> = [
+  ['aktivace', 'newlog.profileAktivace'],
+  ['obecny', 'newlog.profileObecny'],
+  ['vkv', 'newlog.profileVkv'],
+  ['sat', 'newlog.profileSat'],
+]
+
 export class SettingsScreen implements Screen {
   private readonly root = el('div', 'screen screen--list')
+  private unsubscribe: (() => void) | undefined
 
   constructor(
     private readonly platform: KQSOPlatform,
+    private readonly keyer: KeyerController,
     private readonly nav: SettingsNav,
   ) {}
 
@@ -51,7 +62,9 @@ export class SettingsScreen implements Screen {
     void this.render()
   }
 
-  unmount(): void {}
+  unmount(): void {
+    this.unsubscribe?.()
+  }
 
   private async render(): Promise<void> {
     const bar = el('div', 'bar')
@@ -66,25 +79,39 @@ export class SettingsScreen implements Screen {
       await this.wavelogSetting(),
       await this.mapLabelsSetting(),
       await this.radarSetting(),
+      ...(this.keyer.available ? [await this.keyerSetting()] : []),
       this.storageSetting(persisted),
       ...(this.platform.nativeVersion ? [await this.updateSetting()] : [await this.statsSetting()]),
       this.about(),
     )
   }
 
+  /** Standard / E-ink, and under it the standard-mode theme (hidden in e-ink, which is always black on white). */
   private displayModeSetting(): HTMLElement {
     const wrap = el('div', 'setting')
     wrap.append(el('span', 'field-label', t('settings.display')))
     const seg = el('div', 'segmented')
+    const themeSeg = el('div', 'segmented')
+    const showTheme = (): void => {
+      themeSeg.style.display = currentDisplayMode() === 'standard' ? '' : 'none'
+    }
 
     const mkBtn = (mode: DisplayMode, label: string): HTMLButtonElement => {
-      const b = button(label, () => void this.pick(mode, seg), 'btn')
+      const b = button(label, () => void this.pick(mode, seg).then(showTheme), 'btn')
       b.dataset.mode = mode
       b.setAttribute('aria-pressed', String(currentDisplayMode() === mode))
       return b
     }
+    const mkTheme = (theme: ThemeMode, label: string): HTMLButtonElement => {
+      const b = button(label, () => void this.pickTheme(theme, themeSeg), 'btn')
+      b.dataset.mode = theme
+      b.setAttribute('aria-pressed', String(currentThemeMode() === theme))
+      return b
+    }
     seg.append(mkBtn('standard', t('settings.standard')), mkBtn('eink', t('settings.eink')))
-    wrap.append(seg)
+    themeSeg.append(mkTheme('system', t('settings.themeSystem')), mkTheme('light', t('settings.themeLight')), mkTheme('dark', t('settings.themeDark')))
+    showTheme()
+    wrap.append(seg, themeSeg)
     return wrap
   }
 
@@ -92,6 +119,13 @@ export class SettingsScreen implements Screen {
     await setDisplayMode(this.platform, mode) // instant, no reload
     for (const b of Array.from(seg.querySelectorAll<HTMLButtonElement>('button'))) {
       b.setAttribute('aria-pressed', String(b.dataset.mode === mode))
+    }
+  }
+
+  private async pickTheme(theme: ThemeMode, seg: HTMLElement): Promise<void> {
+    await setThemeMode(this.platform, theme) // instant, no reload
+    for (const b of Array.from(seg.querySelectorAll<HTMLButtonElement>('button'))) {
+      b.setAttribute('aria-pressed', String(b.dataset.mode === theme))
     }
   }
 
@@ -277,6 +311,120 @@ export class SettingsScreen implements Screen {
     const wrap = el('div', 'setting')
     const seg = await this.yesNo(RADAR_SETTING, undefined, false)
     wrap.append(el('span', 'field-label', t('settings.radar')), seg, el('div', 'about', t('settings.radarHint')))
+    return wrap
+  }
+
+  /**
+   * CW keyer (Web Bluetooth now, APK later): the master switch "CW keying" (default
+   * off — then nothing else shows and no Bluetooth is touched), and when on the link,
+   * the default speed and the macro editor (profile × RUN / S&P).
+   */
+  private async keyerSetting(): Promise<HTMLElement> {
+    const k = this.keyer
+    const wrap = el('div', 'setting')
+    const body = el('div', 'keyer-settings')
+    body.hidden = !k.enabled
+    const seg = await this.yesNo(KEYER_SETTINGS.enabled, (on) => {
+      body.hidden = !on
+      void k.setEnabled(on, false) // yesNo has saved it
+    }, false)
+
+    const status = el('div', 'about')
+    const speedValue = el('b', 'keyer-wpm')
+    const paint = (): void => {
+      const n = k.notice
+      if (n?.type === 'connectFailed') {
+        status.textContent = t('settings.keyerFailed', { msg: n.message })
+        k.clearNotice()
+      } else if (k.link === 'on') {
+        status.textContent = [k.name ?? 'keyer', k.version, k.battery !== undefined ? `${k.battery} %` : undefined]
+          .filter((x) => x !== undefined)
+          .join(' · ')
+      } else if (k.link === 'connecting') {
+        status.textContent = t('settings.keyerConnecting', { name: k.name ?? 'keyer' })
+      } else {
+        status.textContent = k.name ? `${k.name} · ${t('settings.keyerOff')}` : t('settings.keyerOff')
+      }
+      speedValue.textContent = `${k.defaultWpm} WPM`
+    }
+    this.unsubscribe?.()
+    this.unsubscribe = k.subscribe(paint)
+    paint()
+
+    const link = el('div', 'segmented')
+    link.append(
+      button(t('settings.keyerConnect'), () => void k.connect(true), 'btn'),
+      button(t('settings.keyerDisconnect'), () => void k.disconnect(), 'btn'),
+      button(t('settings.keyerForget'), () => void k.forget(), 'btn'),
+    )
+
+    const speed = el('div', 'segmented keyer-speed')
+    speed.append(
+      button('−', () => void k.setDefaultWpm(Math.max(WPM_MIN, k.defaultWpm - 1)).then(paint), 'btn'),
+      speedValue,
+      button('+', () => void k.setDefaultWpm(Math.min(WPM_MAX, k.defaultWpm + 1)).then(paint), 'btn'),
+    )
+
+    const esm = await this.yesNo(KEYER_SETTINGS.esm, (on) => void k.setEsm(on, false), false) // yesNo has saved it
+
+    body.append(
+      el('span', 'field-label', t('settings.keyerSection')),
+      status,
+      link,
+      el('span', 'field-label', t('settings.keyerSpeed')),
+      speed,
+      el('div', 'about', t('settings.keyerSpeedHint')),
+      el('span', 'field-label', t('settings.keyerEsm')),
+      esm,
+      el('div', 'about', t('settings.keyerEsmHint')),
+      this.macroEditor(),
+    )
+    wrap.append(el('span', 'field-label', t('settings.keyer')), seg, el('div', 'about', t('settings.keyerHint')), body)
+    return wrap
+  }
+
+  /** Macro texts per profile × RUN / S&P; only edited slots are stored. */
+  private macroEditor(): HTMLElement {
+    const k = this.keyer
+    const wrap = el('div', 'keyer-macros')
+    let mode: RunMode = 'run'
+    const fields = el('div', 'keyer-macro-fields')
+    const profile = tilePicker(
+      t('settings.keyerMacros'),
+      PROFILE_TILES.map(([value, key]) => ({ value, title: t(key) })),
+      'vkv',
+      () => fill(),
+    )
+    const modes = el('div', 'segmented')
+    const mk = (m: RunMode, label: string): HTMLButtonElement => {
+      const b = button(label, () => {
+        mode = m
+        for (const x of Array.from(modes.querySelectorAll<HTMLButtonElement>('button'))) x.setAttribute('aria-pressed', String(x === b))
+        fill()
+      }, 'btn')
+      b.setAttribute('aria-pressed', String(m === mode))
+      return b
+    }
+    modes.append(mk('run', 'RUN'), mk('sp', 'S&P'))
+
+    const fill = (): void => {
+      const p = profile.value() as ProfileId
+      fields.replaceChildren(
+        ...MACRO_SLOTS.map((slot) => {
+          const label =
+            slot === 'INFO' ? infoLabel(p) : slot === 'CQ' ? cqLabel(mode) : ESM_ONLY_SLOTS.includes(slot) ? `${slot} · ESM` : slot
+          const f = fieldRow(label, k.macroText(p, slot, mode))
+          f.input.addEventListener('change', () => void k.saveMacros(withMacro(k.macros, p, mode, slot, f.input.value.trim())))
+          return f.row
+        }),
+      )
+    }
+    fill()
+
+    const reset = button(t('settings.keyerReset'), () => {
+      void k.saveMacros(resetMacros(k.macros, profile.value() as ProfileId, mode)).then(fill)
+    }, 'btn')
+    wrap.append(profile.row, modes, el('div', 'about', t('settings.keyerMacrosHint')), fields, reset)
     return wrap
   }
 

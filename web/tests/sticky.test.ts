@@ -38,3 +38,18 @@ describe('sticky state across lines', () => {
     expect(changed.sticky).toEqual({ band: '20m', mode: 'SSB', bandRx: '2m', modeRx: 'FM' })
   })
 })
+
+describe('reopening a log', () => {
+  it('starts from the last QSO band / mode, else from the log header', () => {
+    const last = {
+      call: 'OK1ABC',
+      timeOn: new Date('2026-10-03T10:00:00Z'),
+      signal: { band: '20m', mode: 'CW' },
+      report: { sent: '599', rcvd: '599' },
+      stationCall: 'OK1CDJ',
+      myGrid: 'JN79US',
+    }
+    expect(initialSticky(meta, last)).toEqual({ band: '20m', mode: 'CW' })
+    expect(initialSticky(meta)).toEqual({ band: '40m', mode: 'SSB' })
+  })
+})
