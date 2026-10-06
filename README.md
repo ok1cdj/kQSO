@@ -33,6 +33,24 @@ points, a locator filled in from the callsign database, `cw` with the keyer's ma
 a QSO entered piece by piece (call ⏎ `082` ⏎ locator ⏎ ⏎), a dupe, then the QSO list
 and the map.
 
+## Features
+
+- **One smart input line** with its own alphabetical keyboard (a hardware keyboard
+  works too); a preview under the line shows what will be saved.
+- **Log profiles:** activation (SOTA / GMA / POTA / WWFF / TOTA), general, VHF
+  contest (serials, locators, IARU R1 scoring, EDI export), satellite (one log per pass).
+- **Bands** 160 m to 76 GHz; microwaves can be typed in GHz (`24G`).
+- **Callsign database:** suggestions and locator prefill from a bundled set plus your
+  own worked stations; **DUPE** warning.
+- **QSO map** and **contest statistics**, offline; optional rain radar for rain scatter.
+- **Export** ADIF (and EDI per band), **push to your own Wavelog**.
+- **Crash-safe:** every QSO is written at once; an unfinished one comes back after a restart.
+- **CW keyer** (M5-ESP32-keyer) and **Icom IC-705** over Bluetooth (beta): macros,
+  ESM, band / mode / frequency from the radio, voice memories, transverters.
+- **E-ink and standard display**, light and dark theme, English and Czech.
+
+Details of each feature are [below](#feature-details).
+
 ## Screenshots
 
 <p>
@@ -43,19 +61,44 @@ and the map.
 
 Mudita Kompakt (e-ink, APK) · Android phone (dark mode, suggestions + parse preview)
 
-<img src="docs/screenshots/ipad-logging.png" width="800" alt="iPad: VHF contest logging, keyboard beside the recent QSOs">
+<img src="docs/screenshots/tablet-vhf-logging.png" width="800" alt="Android tablet: VHF contest in CW with the keyer macros, the recent QSOs and a locator suggestion">
 
-iPad, VHF contest: logging with the keyboard beside the recent QSOs
+Android tablet, VHF contest in CW: keyer macros, the recent QSOs beside the keyboard,
+a locator suggested from the callsign database
 
-<img src="docs/screenshots/ipad-qsolist.png" width="800" alt="iPad: VHF contest QSO list with points per QSO and the band score line">
+## How to log
 
-QSO list: points per QSO, score line per band (QSO · points · WWL · ODX)
+Type a whole QSO on one line; press Enter to fold parts into the QSO, Enter on an
+empty line to save it. Only the callsign is required.
 
-<img src="docs/screenshots/ipad-map.png" width="800" alt="iPad: QSO map with worked locators, the Maidenhead grid and your QTH">
+```
+40m ssb                    band + mode (sticky until changed)
+24G cw                     microwaves in GHz (→ 1.25cm), also 10G, 76G…
+OK1ABC                     callsign → saves with defaults
+OK2XYZ OK/ZC/001           worked station + SOTA reference (→ OK/ZC-001)
+OK2XYZ OKR/1001            lookout tower, TOTA (→ OKR-1001); POTA CZ/0001, WWFF OKFF/0001
+OK2XYZ OL/LI/001           GMA-only summit (→ OL/LI-001, MY_SIG=GMA)
+DL5ABC 55 JO60UN           received report + locator
+G8AHK/P PETR               name (General profile)
+1832 OK1ABC                HHMM first = manual UTC time
+OK1ABC ⏎ JN79US ⏎ ⏎        fill piece by piece, empty Enter saves
+W                          (alone) discard the unfinished QSO
+D                          (alone) delete the last saved QSO, after a confirm
+```
 
-QSO map: worked stations over the Maidenhead grid, your QTH as the crosshair
+The received report is a bare number, the sent report is `T57`; both default per
+mode (59 on SSB/FM, 599 on CW). In the VHF-contest profile a bare number is the
+serial (`58123` = report 58 + serial 123):
 
-## Features
+```
+2m ssb
+OK1ABC 007 JO60UN          serial + locator → preview shows QRB (points)
+```
+
+On a satellite log the exchange is report + locator (`9A5Y 59 JN86`); typed band
+tokens are ignored. See **Settings → How to log** in the app for the full grammar.
+
+## Feature details
 
 - **One input line, own 6×7 alphabetical keyboard** (no system keyboard; a hardware
   keyboard works too). A parse preview under the line shows what will be saved.
@@ -125,38 +168,6 @@ QSO map: worked stations over the Maidenhead grid, your QTH as the crosshair
   log data. "Weather data by RainViewer" is shown on the map. Off = no request.
 
 Out of scope: ADIF import (the flow is log → export → forget).
-
-## How to log
-
-Type a whole QSO on one line; press Enter to fold parts into the QSO, Enter on an
-empty line to save it. Only the callsign is required.
-
-```
-40m ssb                    band + mode (sticky until changed)
-24G cw                     microwaves in GHz (→ 1.25cm), also 10G, 76G…
-OK1ABC                     callsign → saves with defaults
-OK2XYZ OK/ZC/001           worked station + SOTA reference (→ OK/ZC-001)
-OK2XYZ OKR/1001            lookout tower, TOTA (→ OKR-1001); POTA CZ/0001, WWFF OKFF/0001
-OK2XYZ OL/LI/001           GMA-only summit (→ OL/LI-001, MY_SIG=GMA)
-DL5ABC 55 JO60UN           received report + locator
-G8AHK/P PETR               name (General profile)
-1832 OK1ABC                HHMM first = manual UTC time
-OK1ABC ⏎ JN79US ⏎ ⏎        fill piece by piece, empty Enter saves
-W                          (alone) discard the unfinished QSO
-D                          (alone) delete the last saved QSO, after a confirm
-```
-
-The received report is a bare number, the sent report is `T57`; both default per
-mode (59 on SSB/FM, 599 on CW). In the VHF-contest profile a bare number is the
-serial (`58123` = report 58 + serial 123):
-
-```
-2m ssb
-OK1ABC 007 JO60UN          serial + locator → preview shows QRB (points)
-```
-
-On a satellite log the exchange is report + locator (`9A5Y 59 JN86`); typed band
-tokens are ignored. See **Settings → How to log** in the app for the full grammar.
 
 ## Development
 
