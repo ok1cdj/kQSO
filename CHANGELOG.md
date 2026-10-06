@@ -2,7 +2,7 @@
 
 What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android APK share one version. Newest first.
 
-## [Unreleased]
+## [1.8] – 2026-10-06
 
 ### Added
 - **Icom IC-705 over Bluetooth LE (beta, APK)**: Settings → IC-705 (off by default) connects the radio. The logging header shows `705` (✕ = not connected, tap to connect). Band and mode follow the radio, QSOs get the exact frequency (ADIF `FREQ`, pushed to Wavelog too), and a typed band / mode (`40m`, `cw`) tunes the radio — a band to the radio's last frequency there (its band stacking register), the mode stays; `F28300` tunes to 28.300 MHz. A band the IC-705 doesn't work (23 cm and up, 4 m — e.g. a multi-band VHF contest) switches only the log and leaves the radio (and its CW / voice keying) alone; header `705 –`. Transverters: Settings → IC-705 → XVERT, per band the RF and IF frequency (3 cm 10368.000 = 145.000) — that band tunes the radio to the IF and logs the RF frequency (header `705 XV`, `F10368100` works too). In CW the macros, `K`, ESM and STOP send through the radio's own keyer (CI-V) — no need to switch CW keying on, that one is for the M5 keyer; speed, ESM and macros from its Settings apply; the radio must be in CW, else kQSO says so and sends nothing; without break-in only the sidetone sounds (practice). If the link drops while sending, the radio still finishes the part it has (up to 30 characters). In SSB / FM the strip offers T1–T4: the radio's voice TX memories (record e.g. a CQ on the radio), STOP or Esc stops them. Satellite logs are not affected (the bird sets band and frequency).
