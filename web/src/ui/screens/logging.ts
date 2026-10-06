@@ -103,6 +103,8 @@ export class LoggingScreen implements Screen {
   private unsubscribeKeyer: (() => void) | undefined
   private unsubscribeRig: (() => void) | undefined
   private rigShown = '' // what the header last showed from the radio (re-render on change only: e-ink)
+  private rigUp = false // the radio was driving this log at the last sync
+  private loaded = false // init() has read the log
 
   constructor(
     private readonly platform: KQSOPlatform,
@@ -158,6 +160,7 @@ export class LoggingScreen implements Screen {
       // Linear birds keep the last QSO's mode (SSB / CW); SSB for a new log.
       this.state = { ...this.state, sticky: applySatellite(this.state.sticky, sat, qsos.length > 0 ? this.state.sticky.mode : 'SSB') }
     }
+    this.loaded = true
     this.syncRig()
     this.platform.keepAwake(true)
     await this.offerRecovery()
@@ -474,6 +477,11 @@ export class LoggingScreen implements Screen {
   /** Radio's frequency / mode → sticky state. Without the radio, a FREQ it gave is dropped
    *  (band and mode stay as they were last). */
   private syncRig(): void {
+    // The radio just started driving this log: keep the log's band if the radio can't be
+    // there (VHF contest reopened on 23 cm) instead of dragging it to the radio's band.
+    const up = this.loaded && this.rigSets()
+    if (up && !this.rigUp) this.rig.adopt(this.state.sticky.band)
+    this.rigUp = up
     const s = this.state.sticky
     // Detached (the log on a band the radio doesn't work): only an F… frequency applies.
     if (this.rigSets() && this.rig.detached) {

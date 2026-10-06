@@ -82,6 +82,8 @@ export class RigController {
   /** The log is on a band the radio doesn't work (and no transverter): the radio is left
    *  alone until a radio band is typed or the radio itself goes to another band. */
   private away: { readonly band: string; readonly radioBand: string | undefined; readonly hz?: number } | undefined
+  /** adopt() waiting for the radio's first frequency. */
+  private adopting: string | undefined
   /** The protocol, for CW through the radio (KeyerController). */
   readonly proto: Ic705Protocol | undefined
 
@@ -170,6 +172,40 @@ export class RigController {
 
   private xvertFor(band: string): Xvert | undefined {
     return this.xvertOn ? this.xverts.find((x) => x.band === band && x.on) : undefined
+  }
+
+  /**
+   * The log opens (or the radio comes up) on `band`. On a radio band the log follows the
+   * radio as always; on a band the radio doesn't work it is detached, so reopening a VHF
+   * contest log that stopped on 23 cm stays on 23 cm; on a transverter band whose IF the
+   * radio is on, the transverter applies. The radio is never retuned here.
+   */
+  adopt(band: string): void {
+    if (!this.controls) return
+    if (radioBand(band)) {
+      // Another log (or this one) on a radio band: whatever the last one left is gone.
+      this.adopting = undefined
+      if (this.away || this.xv) {
+        this.away = undefined
+        this.xv = undefined
+        this.emit()
+      }
+      return
+    }
+    if (this.freqHz === undefined) {
+      this.adopting = band // decided on the first frequency
+      return
+    }
+    const rb = bandForFreq(this.freqHz)
+    const x = this.xvertFor(band)
+    if (x && rb === ifBand(x)) {
+      this.xv = x
+      this.away = undefined
+    } else {
+      this.away = { band, radioBand: rb }
+      this.xv = undefined
+    }
+    this.emit()
   }
 
   /** XVERT on / off (Settings). `save` = false when the caller stored it. */
@@ -397,6 +433,7 @@ export class RigController {
     if (name) this.name = name
     this.proto?.reset()
     this.ready = false // again after the handshake
+    this.adopting = undefined
     window.clearInterval(this.pollTimer)
     this.voiceRun++
     this.voicePlaying = false
@@ -439,6 +476,9 @@ export class RigController {
     }
     if (ev.type === 'freq') {
       this.freqHz = ev.hz
+      const pending = this.adopting
+      this.adopting = undefined
+      if (pending) this.adopt(pending)
       // The radio went to another band by itself: follow it again.
       const rb = bandForFreq(ev.hz)
       if (this.away && rb !== this.away.radioBand) this.away = undefined
