@@ -16,6 +16,23 @@ desktop.
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/ok1cdj)
 
+## How it logs
+
+<img src="docs/screenshots/demo-sota.gif" width="300" align="left" alt="Android phone: a SOTA activation on OE/SB-257 — four QSOs, a band change from 40 m to 20 m, a callsign suggestion, then the QSO list">
+
+**SOTA activation** (phone, OE/SB-257): a whole QSO on one line (`DD2TC 55 T57`),
+call + report, `20m` to change band, a call picked from the suggestions, and the
+QSO list at the end.
+
+<br clear="left">
+
+<img src="docs/screenshots/demo-vhf.gif" width="800" alt="Android tablet: IARU R1 VHF contest as OL0M — a full QSO with QRB, a locator from the callsign database, SSB to CW with the keyer macros, a QSO entered piece by piece, a dupe, then the QSO list and the map">
+
+**VHF contest** (tablet, OL0M, IARU R1 2024, sped up 1.25×): a full QSO with QRB and
+points, a locator filled in from the callsign database, `cw` with the keyer's macros,
+a QSO entered piece by piece (call ⏎ `082` ⏎ locator ⏎ ⏎), a dupe, then the QSO list
+and the map.
+
 ## Screenshots
 
 <p>
