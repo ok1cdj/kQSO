@@ -25,8 +25,8 @@ android {
         applicationId = "com.ok1cdj.kqso"
         minSdk = 30
         targetSdk = 37
-        versionCode = 12
-        versionName = "1.8"
+        versionCode = 13
+        versionName = "1.8.1"
     }
 
     buildFeatures {

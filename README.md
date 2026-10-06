@@ -10,8 +10,8 @@ Android APK (the same web app in a WebView shell).
 Target devices (all first-class): **Mudita Kompakt** (480×800 e-ink), iPad/tablet,
 desktop.
 
-- **Live web:** <https://kqso.ok1cdj.com/> (web 1.8; the old `ok1cdj.github.io/kQSO/` redirects there)
-- **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.8)
+- **Live web:** <https://kqso.ok1cdj.com/> (web 1.8.1; the old `ok1cdj.github.io/kQSO/` redirects there)
+- **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.8.1)
 - **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/ok1cdj)

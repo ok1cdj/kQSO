@@ -2,10 +2,11 @@
 
 What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android APK share one version. Newest first.
 
-## [Unreleased]
+## [1.8.1] – 2026-10-06
 
 ### Changed
 - APK: the new-version notice (GitHub) only shows when the app was installed from GitHub; installed from Google Play or an F-Droid repository, the store updates it and kQSO doesn't check.
+- README: demo GIFs of logging (SOTA activation on a phone, VHF contest on a tablet).
 - Repository: `LICENSE` (GPL-3.0), store descriptions and screenshots in `fastlane/metadata/android`, privacy policy at kqso.ok1cdj.com/privacy.html.
 
 ## [1.8] – 2026-10-06
