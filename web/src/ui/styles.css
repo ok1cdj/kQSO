@@ -465,6 +465,17 @@ body {
   background: var(--bg);
   color: var(--fg);
 }
+/* Transverter table (Settings → IC-705): band · RF MHz · IF MHz. */
+.xvert-row {
+  display: grid;
+  grid-template-columns: 6em 1fr 1fr;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0.25rem 0;
+}
+.xvert-row .field-input {
+  min-width: 0;
+}
 .form-actions {
   display: flex;
   gap: 0.5rem;
@@ -651,7 +662,8 @@ body {
 .segmented--wrap {
   flex-wrap: wrap;
 }
-.segmented .btn[aria-pressed='true'] {
+.segmented .btn[aria-pressed='true'],
+.xvert-row .btn[aria-pressed='true'] {
   background: var(--fg);
   color: var(--bg);
 }

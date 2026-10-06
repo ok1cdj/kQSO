@@ -23,6 +23,14 @@ export function hasContent(p: PartialQso): boolean {
   return Object.entries(p).some(([k, v]) => k !== 'timeOn' && v !== undefined)
 }
 
+/** F<kHz> — tune the radio there (F28300 = 28.300 MHz, F10368100 = 10368.100 MHz on a
+ *  transverter). The keyboard has no dot, so kHz. Returns Hz. A callsign never has only
+ *  digits after F. */
+export function matchTuneCommand(line: string): number | undefined {
+  const m = /^F(\d{3,8})$/.exec(line.trim().toUpperCase())
+  return m ? Number(m[1]) * 1000 : undefined
+}
+
 /** Keyer line commands (only while CW keying is on — otherwise R / S stay a name):
  *  R = RUN, S = S&P, S<n> = speed n WPM until disconnect, C = connect the keyer again,
  *  K = keyboard mode (typed words go out as CW), K <text> = send that text once,

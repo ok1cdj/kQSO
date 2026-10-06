@@ -87,9 +87,11 @@ QSO map: worked stations over the Maidenhead grid, your QTH as the crosshair
   Tested with the M5-ESP32-keyer v2; please report bugs on
   [GitHub Issues](https://github.com/ok1cdj/kQSO/issues).
 - **Icom IC-705 over Bluetooth LE (beta)** (APK only; off by default): band, mode and
-  the exact frequency (ADIF `FREQ`) follow the radio, a typed band / mode tunes it, and
+  the exact frequency (ADIF `FREQ`) follow the radio, a typed band / mode tunes it (`F28300` = 28.300 MHz; a band the radio doesn't
+  work switches only the log; transverters per band in Settings → XVERT), and
   CW macros go out through the radio's own keyer (CI-V), with the same strip as the
-  M5 keyer. First connection: radio MENU → SET → Bluetooth Set → Pairing Reception.
+  M5 keyer; in SSB / FM the strip offers T1–T4, the radio's voice TX memories (e.g. a
+  recorded CQ), with STOP. First connection: radio MENU → SET → Bluetooth Set → Pairing Reception.
   The radio must be in CW (else kQSO says so); with break-in off only the sidetone sounds.
   Safety: CW is handed over in parts of up to 30 characters; if the link drops while
   sending, the radio still finishes the part it has (the M5 keyer stops at once).

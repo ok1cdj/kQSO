@@ -158,6 +158,7 @@ export const CMD = {
   cw: 0x17,
   setting: 0x1a,
   tx: 0x1c,
+  voice: 0x28,
 } as const
 
 export const readFreq = (): Uint8Array => civFrame(CMD.readFreq)
@@ -168,6 +169,39 @@ export const setMode = (code: number): Uint8Array => civFrame(CMD.setMode, code)
 export const readTx = (): Uint8Array => civFrame(CMD.tx, 0x00)
 /** Menu 0131 "CI-V Transceive" on, so the radio reports its own changes. */
 export const transceiveOn = (): Uint8Array => civFrame(CMD.setting, 0x05, 0x01, 0x31, 0x01)
+// Band stacking register (1A 01): the radio's own last frequency and mode per band — what
+// its band key returns to. Band codes from the CI-V guide; 60 m and 4 m have none (GENE).
+const BAND_STACK: Readonly<Record<string, number>> = {
+  '160m': 0x01,
+  '80m': 0x02,
+  '40m': 0x03,
+  '30m': 0x04,
+  '20m': 0x05,
+  '17m': 0x06,
+  '15m': 0x07,
+  '12m': 0x08,
+  '10m': 0x09,
+  '6m': 0x10,
+  '2m': 0x13,
+  '70cm': 0x14,
+}
+
+/** Read the newest band stacking register (register 01) of a band, or undefined when
+ *  the radio has none for it. */
+export function readBandStack(band: string): Uint8Array | undefined {
+  const code = BAND_STACK[band]
+  return code === undefined ? undefined : civFrame(CMD.setting, 0x01, code, 0x01)
+}
+
+/** Reply data of readBandStack (01 <band> <register> <freq ×5> <mode> …) → frequency and
+ *  radio mode code. */
+export function parseBandStack(data: Uint8Array): { hz: number; code: number } | undefined {
+  if (data.length < 9 || data[0] !== 0x01) return undefined
+  return { hz: decodeFreq(data.slice(3, 8)), code: data[8]! }
+}
+
+/** Voice TX memory (28 00): 1–8 = transmit T1–T8, 0 = stop. Phone modes only. */
+export const playVoice = (n: number): Uint8Array => civFrame(CMD.voice, 0x00, n)
 export const sendCw = (text: string): Uint8Array => civFrame(CMD.cw, ...ascii(text))
 export const stopCw = (): Uint8Array => civFrame(CMD.cw, 0xff)
 

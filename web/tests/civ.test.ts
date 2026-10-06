@@ -15,6 +15,9 @@ import {
   setWpm,
   sendCw,
   stopCw,
+  playVoice,
+  readBandStack,
+  parseBandStack,
   cwChunks,
   cwDurationMs,
   CivCwOutput,
@@ -23,6 +26,8 @@ import type { RigEvent } from '../src/core/civ'
 import type { KeyerEvent } from '../src/core/keyer'
 import { bandForFreq, bandSpot } from '../src/core/dictionaries'
 import { applyRadio } from '../src/core/sticky'
+import { matchTuneCommand } from '../src/core/command'
+import { radioBand, XVERT_BANDS, parseMHz, parseXverts, toIf, toRf, ifBand } from '../src/core/xvert'
 
 // Through globalThis at call time, so vi.useFakeTimers() applies.
 const g = globalThis as unknown as { setTimeout(f: () => void, ms: number): unknown; clearTimeout(id: unknown): void }
@@ -110,6 +115,15 @@ describe('commands', () => {
     expect(hex(setFreq(14_074_000))).toBe('fe fe a4 e0 05 00 40 07 14 00 fd')
     expect(hex(stopCw())).toBe('fe fe a4 e0 17 ff fd')
     expect(hex(sendCw('CQ'))).toBe('fe fe a4 e0 17 43 51 fd')
+    expect(hex(playVoice(1))).toBe('fe fe a4 e0 28 00 01 fd')
+    expect(hex(playVoice(0))).toBe('fe fe a4 e0 28 00 00 fd')
+  })
+  it('band stacking register: newest register of a band', () => {
+    expect(hex(readBandStack('2m')!)).toBe('fe fe a4 e0 1a 01 13 01 fd')
+    expect(readBandStack('60m')).toBeUndefined()
+    // 01 <band 13> <reg 01> 144.174.000 CW, filter …
+    expect(parseBandStack(bytes(0x01, 0x13, 0x01, 0x00, 0x40, 0x17, 0x44, 0x01, 0x03, 0x01))).toEqual({ hz: 144_174_000, code: 0x03 })
+    expect(parseBandStack(bytes(0x01, 0x13))).toBeUndefined()
   })
   it('key speed 6–48 WPM → 0000–0255 BCD', () => {
     expect(hex(setWpm(6))).toBe('fe fe a4 e0 14 0c 00 00 fd')
@@ -253,5 +267,51 @@ describe('applyRadio', () => {
   it('outside the bands, or without the radio, FREQ goes', () => {
     expect(applyRadio({ ...s, freq: '7.1' }, 11_000_000, 'SSB')).toEqual({ band: '40m', mode: 'SSB' })
     expect(applyRadio({ ...s, freq: '7.1' }, undefined, undefined)).toEqual(s)
+  })
+})
+
+describe('matchTuneCommand', () => {
+  it('F<kHz> alone on the line', () => {
+    expect(matchTuneCommand('F28300')).toBe(28_300_000)
+    expect(matchTuneCommand('f144300 ')).toBe(144_300_000)
+    expect(matchTuneCommand('F1830')).toBe(1_830_000)
+    expect(matchTuneCommand('F10368100')).toBe(10_368_100_000)
+    expect(matchTuneCommand('F5ABC')).toBeUndefined()
+    expect(matchTuneCommand('F28300 59')).toBeUndefined()
+  })
+})
+
+describe('transverters', () => {
+  it('radio bands vs. the rest', () => {
+    expect(radioBand('2m')).toBe(true)
+    expect(radioBand('23cm')).toBe(false)
+    expect(radioBand('4m')).toBe(false)
+    expect(XVERT_BANDS).toContain('3cm')
+    expect(XVERT_BANDS).not.toContain('2m')
+  })
+  it('MHz input with dot or comma', () => {
+    expect(parseMHz('10368.000')).toBe(10_368_000_000)
+    expect(parseMHz('145,2')).toBe(145_200_000)
+    expect(parseMHz('abc')).toBeUndefined()
+  })
+  const x = { band: '3cm', rfHz: 10_368_000_000, ifHz: 145_000_000, on: true }
+  it('RF ↔ IF', () => {
+    expect(toIf(x, 10_368_150_000)).toBe(145_150_000)
+    expect(toRf(x, 144_950_000)).toBe(10_367_950_000)
+    expect(ifBand(x)).toBe('2m')
+  })
+  it('keeps only valid stored rows', () => {
+    const json = JSON.stringify([x, { band: '23cm', rfHz: 145_000_000, ifHz: 145_000_000, on: true }, { band: '13cm', rfHz: 2_320_000_000, ifHz: 1_240_000_000 }])
+    expect(parseXverts(json)).toEqual([x])
+    expect(parseXverts('nonsense')).toEqual([])
+    expect(parseXverts('[]')).toEqual([])
+    expect(parseXverts(JSON.stringify([{ band: '3cm', rfHz: 10_368_000_000, ifHz: 145_000_000 }]))).toEqual([{ ...x, on: false }])
+  })
+  it('defaults until edited: 145.000 IF, 4 m 70.000 on 28.000', () => {
+    const d = parseXverts(null)
+    expect(d.find((v) => v.band === '3cm')).toEqual({ ...x, on: false })
+    expect(d.find((v) => v.band === '4m')).toEqual({ band: '4m', rfHz: 70_000_000, ifHz: 28_000_000, on: false })
+    expect(d.every((v) => !v.on)).toBe(true)
+    expect(d.every((v) => parseXverts(JSON.stringify([v])).length === 1)).toBe(true)
   })
 })

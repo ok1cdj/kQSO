@@ -28,7 +28,7 @@ export { classifyToken, classifyLine, isFullLocator } from './classify'
 export type { TokenContext } from './classify'
 export { initialSticky, applyBand, applyMode, applySatellite, applyRadio } from './sticky'
 export { parseLine } from './parse'
-export { matchCommand, matchKeyerCommand, hasContent } from './command'
+export { matchCommand, matchKeyerCommand, matchTuneCommand, hasContent } from './command'
 export type { LineCommand, KeyerCommand } from './command'
 export {
   LineAssembler,
@@ -68,8 +68,14 @@ export {
   setFreq,
   setMode,
   transceiveOn,
+  playVoice,
+  readTx,
+  readBandStack,
+  parseBandStack,
 } from './civ'
 export type { RigEvent, Timers } from './civ'
+export { radioBand, XVERT_BANDS, parseMHz, parseXverts, toIf, toRf, ifBand } from './xvert'
+export type { Xvert } from './xvert'
 export { buildQso, missingParts, padSerial } from './qso'
 export { initialState, reduce } from './reducer'
 export type { CoreEvent, ReduceResult } from './reducer'

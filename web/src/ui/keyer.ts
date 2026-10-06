@@ -114,7 +114,7 @@ export class KeyerController {
 
   /** CW goes through the IC-705 (connected and switched on), not the M5 keyer. */
   get viaRig(): boolean {
-    return this.civ !== undefined && this.rig.controls
+    return this.civ !== undefined && this.rig.keys
   }
 
   private get out(): CwOutput | undefined {

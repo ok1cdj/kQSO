@@ -3,15 +3,40 @@
 // transceive), tuning from the logging line. CW through the radio is KeyerController's
 // (CivCwOutput over this protocol). Nothing happens until "IC-705" is switched on.
 
-import { Ic705Protocol, bandForFreq, bandSpot, civModeFor, modeFromCiv, readFreq, readMode, setFreq, setMode, transceiveOn } from '../core/index'
-import type { RigEvent, Timers } from '../core/index'
+import {
+  Ic705Protocol,
+  bandForFreq,
+  bandSpot,
+  civModeFor,
+  ifBand,
+  parseXverts,
+  radioBand,
+  toIf,
+  toRf,
+  modeFromCiv,
+  parseBandStack,
+  playVoice,
+  readBandStack,
+  readFreq,
+  readMode,
+  readTx,
+  setFreq,
+  setMode,
+  transceiveOn,
+} from '../core/index'
+import type { RigEvent, Timers, Xvert } from '../core/index'
 import type { KQSOPlatform, KeyerLinkState, RigTransport } from '../platform/index'
 import { switchOn } from './dom'
 
 export const RIG_SETTINGS = {
   enabled: 'rigEnabled', // '1' / '0', default off
   clientId: 'rigClientId', // random UUID: with the name, how the radio knows this install
+  xvert: 'rigXvert', // '1' / '0', default off — transverters on
+  xverts: 'rigXverts', // JSON Xvert[] (core/xvert.ts)
 } as const
+
+/** The IC-705 tunes 0.03–199.999 and 400–470 MHz. */
+const tunable = (hz: number): boolean => (hz >= 30_000 && hz < 200_000_000) || (hz >= 400_000_000 && hz <= 470_000_000)
 
 /** Name shown in the radio's paired device list (16 characters at most). */
 const RIG_CLIENT_NAME = 'kQSO'
@@ -19,10 +44,17 @@ const RIG_CLIENT_NAME = 'kQSO'
 export type RigNotice =
   | { readonly type: 'connectFailed'; readonly message: string }
   | { readonly type: 'tuneFailed' } // the radio refused a frequency / mode from the line
+  | { readonly type: 'voiceFailed'; readonly memory: number } // empty memory, or not a phone mode
 
 const RETRY_MS = 1500
 /** Keeps the radio's output flowing (Ic705Protocol: it sends only after a write). */
 const POLL_MS = 250
+/** Voice memory: when to start asking whether the radio is still transmitting, and how often. */
+const VOICE_FIRST_MS = 800
+const VOICE_POLL_MS = 300
+
+/** Voice TX memories offered in the strip (the radio has T1–T8). */
+export const VOICE_MEMORIES = [1, 2, 3, 4] as const
 
 export const browserTimers: Timers = {
   set: (fn, ms) => window.setTimeout(fn, ms),
@@ -39,12 +71,22 @@ export class RigController {
   freqHz: number | undefined
   private modeCode: number | undefined
   notice: RigNotice | undefined
+  /** A voice memory is on the air (STOP in the strip). */
+  voicePlaying = false
+  private voiceRun = 0 // bumped by every play / stop: an older watch sees it and quits
+  /** Transverters switched on, and their table. */
+  xvertOn = false
+  xverts: readonly Xvert[] = []
+  /** The log is on a transverter band: the radio sits on its IF. */
+  private xv: Xvert | undefined
+  /** The log is on a band the radio doesn't work (and no transverter): the radio is left
+   *  alone until a radio band is typed or the radio itself goes to another band. */
+  private away: { readonly band: string; readonly radioBand: string | undefined; readonly hz?: number } | undefined
   /** The protocol, for CW through the radio (KeyerController). */
   readonly proto: Ic705Protocol | undefined
 
   private readonly transport: RigTransport | undefined
   private readonly listeners = new Set<() => void>()
-  private readonly lastFreq = new Map<string, number>() // band → the radio's last frequency there
   private clientId = ''
   private pollTimer: number | undefined
   private wantLink = false
@@ -70,6 +112,8 @@ export class RigController {
     if (!this.available) return
     const p = this.platform
     this.enabled = switchOn(await p.getSetting(RIG_SETTINGS.enabled), false)
+    this.xvertOn = switchOn(await p.getSetting(RIG_SETTINGS.xvert), false)
+    this.xverts = parseXverts(await p.getSetting(RIG_SETTINGS.xverts))
     this.clientId = (await p.getSetting(RIG_SETTINGS.clientId)) ?? ''
     if (!this.clientId) {
       this.clientId = crypto.randomUUID().toUpperCase()
@@ -96,6 +140,50 @@ export class RigController {
   /** Band / mode / frequency come from the radio. */
   get controls(): boolean {
     return this.enabled && this.ready
+  }
+
+  /** The log is on a band the radio isn't on: don't take band / mode from it. */
+  get detached(): boolean {
+    return this.away !== undefined
+  }
+
+  /** CW and voice memories go through the radio: connected, and the log is on its band
+   *  (a VHF contest on 23 cm runs another rig — the IC-705 must not key). */
+  get keys(): boolean {
+    return this.controls && !this.detached
+  }
+
+  /** While detached by F…: the frequency typed (the log gets band + FREQ from it). */
+  get awayHz(): number | undefined {
+    return this.away?.hz
+  }
+
+  /** Frequency for the log: on a transverter band the RF one, else the radio's. */
+  get logFreqHz(): number | undefined {
+    return this.xv && this.freqHz !== undefined ? toRf(this.xv, this.freqHz) : this.freqHz
+  }
+
+  /** On a transverter band: its name (header). */
+  get xvertBand(): string | undefined {
+    return this.xv?.band
+  }
+
+  private xvertFor(band: string): Xvert | undefined {
+    return this.xvertOn ? this.xverts.find((x) => x.band === band && x.on) : undefined
+  }
+
+  /** XVERT on / off (Settings). `save` = false when the caller stored it. */
+  async setXvertOn(on: boolean, save = true): Promise<void> {
+    this.xvertOn = on
+    if (save) await this.platform.setSetting(RIG_SETTINGS.xvert, on ? '1' : '0')
+    if (!on) this.xv = undefined
+    this.emit()
+  }
+
+  async saveXverts(xs: readonly Xvert[]): Promise<void> {
+    this.xverts = xs
+    await this.platform.setSetting(RIG_SETTINGS.xverts, JSON.stringify(xs))
+    this.emit()
   }
 
   async setEnabled(on: boolean, save = true): Promise<void> {
@@ -144,22 +232,40 @@ export class RigController {
   }
 
   /**
-   * Band / mode typed on the logging line → the radio. A new band goes to the radio's
-   * last frequency there, else the usual spot for the mode; the radio's transceive then
+   * Band / mode typed on the logging line → the radio. The mode stays the log's (or the
+   * typed one) — a band change never switches it (a register can hold FM on 15 m, or
+   * USB-D on 28.074). A new band goes to the radio's last frequency there (its band
+   * stacking register), else to the usual spot for the mode. The radio's transceive then
    * reports what it really did.
+   *
+   * A transverter band tunes the radio to its IF; a band the radio doesn't work (VHF
+   * contest on 23 cm) leaves the radio alone — only the log switches (detached).
    */
   async tune(band: string | undefined, mode: string | undefined): Promise<void> {
     if (!this.controls || !this.proto) return
+    const want = mode ?? this.mode
+    if (band !== undefined) {
+      const x = this.xvertFor(band)
+      if (x) return this.go(x.ifHz, want, { xv: x })
+      if (!radioBand(band)) {
+        this.away = { band, radioBand: bandForFreq(this.freqHz ?? 0) }
+        this.xv = undefined
+        this.emit()
+        return
+      }
+      this.away = undefined
+      this.xv = undefined
+    }
+    if (this.away) return // a mode for the band the radio isn't on
     try {
       let hz = this.freqHz ?? 0
       if (band !== undefined && band !== bandForFreq(hz)) {
-        const to = this.lastFreq.get(band) ?? bandSpot(band, mode ?? this.mode ?? 'SSB')
+        const to = (await this.stacked(band))?.hz ?? bandSpot(band, want ?? 'SSB')
         if (to === undefined) throw new Error('band')
         await this.proto.command(setFreq(to))
         hz = to
         this.freqHz = to
       }
-      const want = mode ?? this.mode
       const code = want === undefined ? undefined : civModeFor(want, hz)
       if (code !== undefined && (mode !== undefined || band !== undefined) && code !== this.modeCode) {
         await this.proto.command(setMode(code))
@@ -172,8 +278,104 @@ export class RigController {
     this.emit()
   }
 
+  /** F28300 on the line: straight to that frequency; the mode stays (only LSB / USB
+   *  follow the 10 MHz rule). On a transverter band the radio goes to the IF; on a band
+   *  the radio doesn't work only the log takes it (band + FREQ). */
+  async tuneTo(hz: number): Promise<void> {
+    if (!this.controls || !this.proto) return
+    const band = bandForFreq(hz)
+    const x = band === undefined ? undefined : this.xvertFor(band)
+    if (x) return this.go(toIf(x, hz), this.mode, { xv: x })
+    if (band !== undefined && !radioBand(band)) {
+      this.away = { band, radioBand: bandForFreq(this.freqHz ?? 0), hz }
+      this.xv = undefined
+      this.emit()
+      return
+    }
+    if (!tunable(hz)) {
+      this.notice = { type: 'tuneFailed' }
+      this.emit()
+      return
+    }
+    return this.go(hz, this.mode, {})
+  }
+
+  /** Radio to `hz` in mode `want` (LSB / USB by the 10 MHz rule); the transverter state
+   *  is set once the radio took it, so a reply still on the old band can't undo it. */
+  private async go(hz: number, want: string | undefined, to: { xv?: Xvert }): Promise<void> {
+    if (!this.proto) return
+    try {
+      await this.proto.command(setFreq(hz))
+      this.freqHz = hz
+      this.xv = to.xv
+      this.away = undefined
+      const code = want === undefined ? undefined : civModeFor(want, hz)
+      if (code !== undefined && code !== this.modeCode) {
+        await this.proto.command(setMode(code))
+        this.modeCode = code
+      }
+    } catch {
+      this.notice = { type: 'tuneFailed' }
+      this.refresh()
+    }
+    this.emit()
+  }
+
+  /** The radio's newest band stacking register for `band`, if it has one there. */
+  private async stacked(band: string): Promise<{ hz: number; code: number } | undefined> {
+    const frame = readBandStack(band)
+    if (!frame || !this.proto) return undefined
+    try {
+      const r = parseBandStack(await this.proto.command(frame))
+      return r && bandForFreq(r.hz) === band ? r : undefined
+    } catch {
+      return undefined
+    }
+  }
+
+  /** Transmit voice memory T`n`. The radio doesn't say when it is done, so its TX state
+   *  is watched until it is back on receive (twice in a row). */
+  async playVoice(n: number): Promise<void> {
+    if (!this.controls || !this.proto) return
+    const run = ++this.voiceRun
+    try {
+      await this.proto.command(playVoice(n))
+    } catch {
+      this.notice = { type: 'voiceFailed', memory: n }
+      this.emit()
+      return
+    }
+    this.voicePlaying = true
+    this.emit()
+    await this.sleep(VOICE_FIRST_MS)
+    for (let rx = 0; run === this.voiceRun && this.ready; ) {
+      try {
+        const tx = await this.proto.command(readTx()) // 00 <00 rx | 01 tx>
+        rx = tx[1] === 0 ? rx + 1 : 0
+      } catch {
+        rx = 0
+      }
+      if (rx >= 2) break
+      await this.sleep(VOICE_POLL_MS)
+    }
+    if (run !== this.voiceRun) return
+    this.voicePlaying = false
+    this.emit()
+  }
+
+  async stopVoice(): Promise<void> {
+    this.voiceRun++
+    this.voicePlaying = false
+    this.emit()
+    await this.proto?.command(playVoice(0)).catch(() => {})
+  }
+
   clearNotice(): void {
     this.notice = undefined
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((r) => window.setTimeout(r, ms))
   }
 
   /** Read frequency and mode again (replies come in as events). */
@@ -196,6 +398,8 @@ export class RigController {
     this.proto?.reset()
     this.ready = false // again after the handshake
     window.clearInterval(this.pollTimer)
+    this.voiceRun++
+    this.voicePlaying = false
     if (s === 'on') {
       void this.start() // retried resets only after the handshake: a radio that drops us right away is not retried forever
     } else if (s === 'off') {
@@ -235,8 +439,10 @@ export class RigController {
     }
     if (ev.type === 'freq') {
       this.freqHz = ev.hz
-      const band = bandForFreq(ev.hz)
-      if (band) this.lastFreq.set(band, ev.hz)
+      // The radio went to another band by itself: follow it again.
+      const rb = bandForFreq(ev.hz)
+      if (this.away && rb !== this.away.radioBand) this.away = undefined
+      if (this.xv && rb !== ifBand(this.xv)) this.xv = undefined
     }
     if (ev.type === 'mode') this.modeCode = ev.code
     this.emit()
