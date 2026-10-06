@@ -1,8 +1,10 @@
 // APK only: is there a newer release on GitHub? Checked at most once a day from the
 // log list, silently (offline / rate limit = just no notice). The web app updates
 // itself through the service worker, so it never asks. Off in Settings = no request.
+// Not at all when a store installed the app: it updates it (and Play forbids pointing
+// at another download).
 
-import { announceUpdate, parseVersion } from '../core/index'
+import { announceUpdate, checksGitHub, parseVersion } from '../core/index'
 import type { KQSOPlatform } from '../platform/index'
 import { switchOn } from './dom'
 
@@ -17,10 +19,15 @@ const LATEST_API = 'https://api.github.com/repos/ok1cdj/kQSO/releases/latest'
 export const RELEASES_PAGE = 'https://github.com/ok1cdj/kQSO/releases/latest'
 const DAY_MS = 24 * 60 * 60 * 1000
 
+/** The APK came from GitHub (sideloaded): the only case the check runs and shows. */
+export function checksUpdates(platform: KQSOPlatform): boolean {
+  return checksGitHub(platform.nativeVersion, platform.installSource)
+}
+
 /** The newer version to announce, or undefined (not the APK, off, up to date, hidden). */
 export async function availableUpdate(platform: KQSOPlatform, now = Date.now()): Promise<string | undefined> {
   const installed = platform.nativeVersion
-  if (!installed || !switchOn(await platform.getSetting(UPDATE_SETTINGS.enabled), true)) return undefined
+  if (!installed || !checksUpdates(platform) || !switchOn(await platform.getSetting(UPDATE_SETTINGS.enabled), true)) return undefined
   let latest = await platform.getSetting(UPDATE_SETTINGS.latest)
   const checkedAt = Number(await platform.getSetting(UPDATE_SETTINGS.checkedAt)) || 0
   if (now - checkedAt > DAY_MS) {

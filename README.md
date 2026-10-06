@@ -10,11 +10,28 @@ Android APK (the same web app in a WebView shell).
 Target devices (all first-class): **Mudita Kompakt** (480×800 e-ink), iPad/tablet,
 desktop.
 
-- **Live web:** <https://kqso.ok1cdj.com/> (web 1.8; the old `ok1cdj.github.io/kQSO/` redirects there)
-- **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.8)
+- **Live web:** <https://kqso.ok1cdj.com/> (web 1.8.1; the old `ok1cdj.github.io/kQSO/` redirects there)
+- **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.8.1)
 - **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/ok1cdj)
+
+## How it logs
+
+<img src="docs/screenshots/demo-sota.gif" width="300" align="left" alt="Android phone: a SOTA activation on OE/SB-257 — four QSOs, a band change from 40 m to 20 m, a callsign suggestion, then the QSO list">
+
+**SOTA activation** (phone, OE/SB-257): a whole QSO on one line (`DD2TC 55 T57`),
+call + report, `20m` to change band, a call picked from the suggestions, and the
+QSO list at the end.
+
+<br clear="left">
+
+<img src="docs/screenshots/demo-vhf.gif" width="800" alt="Android tablet: IARU R1 VHF contest as OL0M — a full QSO with QRB, a locator from the callsign database, SSB to CW with the keyer macros, a QSO entered piece by piece, a dupe, then the QSO list and the map">
+
+**VHF contest** (tablet, OL0M, IARU R1 2024, sped up 1.25×): a full QSO with QRB and
+points, a locator filled in from the callsign database, `cw` with the keyer's macros,
+a QSO entered piece by piece (call ⏎ `082` ⏎ locator ⏎ ⏎), a dupe, then the QSO list
+and the map.
 
 ## Screenshots
 
@@ -189,7 +206,9 @@ export JAVA_HOME=/opt/android-studio/jbr
 - **Web:** push to `main` → GitHub Actions (`deploy.yml`: `npm ci`, typecheck, test,
   build) → `web/dist` deployed to GitHub Pages, custom domain `kqso.ok1cdj.com`
   (DNS: `CNAME kqso → ok1cdj.github.io`). The build uses base `/`.
-- **APK:** bump `versionCode` / `versionName` in `app/build.gradle.kts`, rename
+- **APK:** bump `versionCode` / `versionName` in `app/build.gradle.kts`, add the
+  store release notes `fastlane/metadata/android/{en-US,cs-CZ}/changelogs/<versionCode>.txt`
+  (≤ 500 characters; read by F-Droid clients / IzzyOnDroid), rename
   `## [Unreleased]` in [`CHANGELOG.md`](CHANGELOG.md) to `## [1.7] – date`, then push a
   `v*` tag (`git tag v1.7 && git push origin v1.7`) → `release.yml` builds the web,
   signs the release APK and attaches it to a GitHub Release as
@@ -220,4 +239,4 @@ keytool -genkeypair -v -keystore keystore/kqso.jks -alias kqso \
 
 ## License
 
-GPL-3.0
+GPL-3.0 — see [`LICENSE`](LICENSE). Privacy policy: <https://kqso.ok1cdj.com/privacy.html>

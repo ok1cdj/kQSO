@@ -1,0 +1,1 @@
+Icom IC-705 přes Bluetooth (beta): pásmo, mód a přesný kmitočet (FREQ) z rádia; napsané pásmo, mód nebo F28300 rádio přeladí. V CW jdou makra přes klíčovač rádia, v SSB / FM tlačítka T1–T4 odvysílají hlasové paměti. Transvertory pro jednotlivá pásma; pásmo, které rádio neumí, přepne jen deník. Nový log vyžaduje vlastní značku.

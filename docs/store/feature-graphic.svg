@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+  <!-- Google Play feature graphic: icon, name, tagline, the input line with its parse.
+       Render: rsvg-convert -w 1024 -h 500 -b white feature-graphic.svg -o featureGraphic.png -->
+  <rect width="1024" height="500" fill="#fff"/>
+
+  <!-- the app icon (web/public/kqso-icon.svg), 200 px -->
+  <g transform="translate(84 150) scale(0.390625)">
+    <rect width="512" height="512" rx="112" fill="#000"/>
+    <g transform="translate(-12 13)">
+      <circle cx="212" cy="236" r="98" fill="none" stroke="#fff" stroke-width="44"/>
+      <path d="M248 272 L330 354" stroke="#fff" stroke-width="44"/>
+      <rect x="360" y="324" width="84" height="38" fill="#fff"/>
+    </g>
+  </g>
+
+  <g font-family="Liberation Sans, DejaVu Sans, sans-serif" fill="#1a1a1a">
+    <text x="330" y="196" font-size="88" font-weight="700">kQSO</text>
+    <text x="332" y="242" font-size="30" fill="#555">Ham radio logger — one smart input line</text>
+  </g>
+
+  <!-- input line -->
+  <rect x="330" y="274" width="600" height="62" rx="8" fill="#fff" stroke="#1a1a1a" stroke-width="3"/>
+  <text x="350" y="316" font-family="Liberation Mono, DejaVu Sans Mono, monospace" font-size="32" fill="#1a1a1a">OK1ABC 59 JO60UN</text>
+  <rect x="680" y="290" width="4" height="32" fill="#1a1a1a"/>
+
+  <!-- parse preview chips, as the app labels them (logging.ts renderPreview) -->
+  <g font-family="Liberation Mono, DejaVu Sans Mono, monospace">
+    <rect x="330" y="352" width="160" height="40" rx="6" fill="#1a1a1a"/>
+    <text x="344" y="380" font-size="22" fill="#fff">OK1ABC <tspan font-size="14" fill="#ccc">CALL</tspan></text>
+    <rect x="502" y="352" width="94" height="40" rx="6" fill="#1a1a1a"/>
+    <text x="516" y="380" font-size="22" fill="#fff">59 <tspan font-size="14" fill="#ccc">RST</tspan></text>
+    <rect x="608" y="352" width="150" height="40" rx="6" fill="#1a1a1a"/>
+    <text x="622" y="380" font-size="22" fill="#fff">JO60UN <tspan font-size="14" fill="#ccc">LOC</tspan></text>
+  </g>
+</svg>

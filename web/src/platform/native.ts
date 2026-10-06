@@ -30,6 +30,7 @@ interface NativeBridge {
   shareLog(id: string, filename: string): void
   keepAwake(on: boolean): void
   setDarkBars?(dark: boolean): void // absent in older APKs
+  installSource?(): string // absent before 1.8.1; "" = sideloaded / unknown
   // BLE devices (app/…/BleLink.kt); answers come back through window.__kqsoKeyer / __kqsoRig.
   keyerConnect?(pick: boolean): void
   keyerDisconnect?(): void
@@ -193,6 +194,7 @@ class NativeRig implements RigTransport {
 class NativePlatform implements KQSOPlatform {
   readonly displayMode: 'eink' | 'standard'
   readonly nativeVersion: string
+  readonly installSource: string | undefined
   readonly keyer: KeyerTransport | undefined
   readonly rig: RigTransport | undefined
 
@@ -200,6 +202,7 @@ class NativePlatform implements KQSOPlatform {
     const m = raw.displayMode()
     this.displayMode = m === 'standard' ? 'standard' : 'eink'
     this.nativeVersion = raw.appVersion()
+    this.installSource = raw.installSource?.() || undefined
     this.keyer = raw.keyerConnect ? keyerLink(raw) : undefined
     this.rig = raw.rigConnect ? new NativeRig(raw) : undefined
   }
