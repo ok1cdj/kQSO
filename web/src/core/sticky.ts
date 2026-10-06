@@ -2,6 +2,8 @@
 
 import type { LogMeta, Qso, StickyState } from './model'
 import type { Satellite } from './satellites'
+import { bandForFreq } from './dictionaries'
+import { freqMHz } from './civ'
 
 /** Seed sticky band/mode: from the last QSO when the log has one (reopening a log
  *  carries on where it stopped), else from the log header's default signal. */
@@ -39,4 +41,14 @@ export function applySatellite(s: StickyState, sat: Satellite, mode: string): St
     freq: sat.upMHz, // FREQ = uplink centre
     freqRx: sat.downMHz, // FREQ_RX = downlink centre
   }
+}
+
+/** A connected radio's frequency (Hz) and mode (kQSO mode, undefined = one not logged):
+ *  band from the frequency, FREQ exact. Outside the known bands the band stays and
+ *  FREQ is dropped (it would contradict BAND); no frequency → FREQ dropped. */
+export function applyRadio(s: StickyState, hz: number | undefined, mode: string | undefined): StickyState {
+  const band = hz === undefined ? undefined : bandForFreq(hz)
+  const { freq: _drop, ...rest } = mode === undefined ? s : applyMode(s, mode)
+  if (band === undefined || hz === undefined) return rest
+  return { ...rest, band, freq: freqMHz(hz) }
 }

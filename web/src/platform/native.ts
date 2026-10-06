@@ -5,7 +5,7 @@
 
 import type { LogMeta } from '../core/model'
 import { readLogFile, writeLogHeader } from '../core/index'
-import type { KQSOPlatform, KeyerLinkState, KeyerTransport, LogSummary } from './types'
+import type { KQSOPlatform, KeyerLinkState, KeyerTransport, LogSummary, RigTransport } from './types'
 
 /** The raw @JavascriptInterface surface. Pure file I/O keyed by log id (mirrors the OPFS worker). */
 interface NativeBridge {
@@ -30,40 +30,58 @@ interface NativeBridge {
   shareLog(id: string, filename: string): void
   keepAwake(on: boolean): void
   setDarkBars?(dark: boolean): void // absent in older APKs
-  // CW keyer (app/…/KeyerBle.kt); answers come back through window.__kqsoKeyer.
+  // BLE devices (app/…/BleLink.kt); answers come back through window.__kqsoKeyer / __kqsoRig.
   keyerConnect?(pick: boolean): void
   keyerDisconnect?(): void
   keyerForget?(): void
   keyerWrite?(chunk: string): void
   keyerMtu?(): number
+  rigConnect?(pick: boolean): void // absent before the IC-705 APK
+  rigDisconnect?(): void
+  rigForget?(): void
+  rigWrite?(hex: string): void
+  rigMtu?(): number
 }
 
-/** What the native side calls back (KeyerBle.js()). */
-interface NativeKeyerCallbacks {
+/** What the native side calls back (BleLink.js()). */
+interface NativeLinkCallbacks {
   state(s: KeyerLinkState, name: string): void
-  data(text: string): void
+  data(text: string): void // the IC-705: lowercase hex
   battery(pct: number): void
-  /** Answer to keyerConnect: tried = false when there was no keyer to try. */
+  /** Answer to connect: tried = false when there was no device to try. */
   done(tried: boolean, error: string | null): void
 }
 
 declare global {
   interface Window {
     KQSONative?: NativeBridge
-    __kqsoKeyer?: NativeKeyerCallbacks
+    __kqsoKeyer?: NativeLinkCallbacks
+    __kqsoRig?: NativeLinkCallbacks
   }
 }
 
-/** The keyer over the APK's native BLE (KeyerBle.kt): the scan + chooser dialog, GATT
- *  and the remembered keyer live in Kotlin; this only adapts calls and callbacks. */
-class NativeKeyer implements KeyerTransport {
+/** The bridge calls of one BLE device. */
+interface LinkCalls {
+  connect(pick: boolean): void
+  disconnect(): void
+  forget(): void
+  write(chunk: string): void
+  mtu(): number
+}
+
+/** A BLE device over the APK's native side (BleLink.kt): the scan + chooser dialog, GATT
+ *  and the remembered device live in Kotlin; this only adapts calls and callbacks. */
+class NativeLink implements KeyerTransport {
   private dataCb: (text: string) => void = () => {}
   private stateCb: (s: KeyerLinkState, name?: string) => void = () => {}
   private batteryCb: (pct: number) => void = () => {}
   private pending: { resolve: (tried: boolean) => void; reject: (e: Error) => void } | undefined
 
-  constructor(private readonly raw: NativeBridge) {
-    window.__kqsoKeyer = {
+  constructor(
+    slot: '__kqsoKeyer' | '__kqsoRig',
+    private readonly calls: LinkCalls,
+  ) {
+    window[slot] = {
       state: (s, name) => this.stateCb(s, name || undefined),
       data: (text) => this.dataCb(text),
       battery: (pct) => this.batteryCb(pct),
@@ -79,27 +97,27 @@ class NativeKeyer implements KeyerTransport {
   }
 
   get mtu(): number {
-    return this.raw.keyerMtu?.() ?? 20
+    return this.calls.mtu()
   }
 
   connect(pick: boolean): Promise<boolean> {
     this.pending?.reject(new DOMException('superseded', 'NotFoundError'))
     return new Promise((resolve, reject) => {
       this.pending = { resolve, reject }
-      this.raw.keyerConnect!(pick)
+      this.calls.connect(pick)
     })
   }
 
   async disconnect(): Promise<void> {
-    this.raw.keyerDisconnect?.()
+    this.calls.disconnect()
   }
 
   async forget(): Promise<void> {
-    this.raw.keyerForget?.()
+    this.calls.forget()
   }
 
   write(chunk: string): void {
-    this.raw.keyerWrite?.(chunk)
+    this.calls.write(chunk)
   }
 
   onData(cb: (text: string) => void): void {
@@ -115,16 +133,75 @@ class NativeKeyer implements KeyerTransport {
   }
 }
 
+function keyerLink(raw: NativeBridge): NativeLink {
+  return new NativeLink('__kqsoKeyer', {
+    connect: (pick) => raw.keyerConnect!(pick),
+    disconnect: () => raw.keyerDisconnect?.(),
+    forget: () => raw.keyerForget?.(),
+    write: (chunk) => raw.keyerWrite?.(chunk),
+    mtu: () => raw.keyerMtu?.() ?? 20,
+  })
+}
+
+const toHex = (b: Uint8Array): string => Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('')
+const fromHex = (h: string): Uint8Array => Uint8Array.from(h.match(/../g) ?? [], (x) => parseInt(x, 16))
+
+/** The IC-705: the same native link, bytes as hex over the bridge (strings there are
+ *  UTF-8 text, which binary CI-V frames would not survive). */
+class NativeRig implements RigTransport {
+  private readonly link: NativeLink
+
+  constructor(raw: NativeBridge) {
+    this.link = new NativeLink('__kqsoRig', {
+      connect: (pick) => raw.rigConnect!(pick),
+      disconnect: () => raw.rigDisconnect?.(),
+      forget: () => raw.rigForget?.(),
+      write: (hex) => raw.rigWrite?.(hex),
+      mtu: () => raw.rigMtu?.() ?? 20,
+    })
+  }
+
+  get mtu(): number {
+    return this.link.mtu
+  }
+
+  connect(pick: boolean): Promise<boolean> {
+    return this.link.connect(pick)
+  }
+
+  disconnect(): Promise<void> {
+    return this.link.disconnect()
+  }
+
+  forget(): Promise<void> {
+    return this.link.forget()
+  }
+
+  write(bytes: Uint8Array): void {
+    this.link.write(toHex(bytes))
+  }
+
+  onData(cb: (bytes: Uint8Array) => void): void {
+    this.link.onData((hex) => cb(fromHex(hex)))
+  }
+
+  onState(cb: (s: KeyerLinkState, name?: string) => void): void {
+    this.link.onState(cb)
+  }
+}
+
 class NativePlatform implements KQSOPlatform {
   readonly displayMode: 'eink' | 'standard'
   readonly nativeVersion: string
   readonly keyer: KeyerTransport | undefined
+  readonly rig: RigTransport | undefined
 
   constructor(private readonly raw: NativeBridge) {
     const m = raw.displayMode()
     this.displayMode = m === 'standard' ? 'standard' : 'eink'
     this.nativeVersion = raw.appVersion()
-    this.keyer = raw.keyerConnect ? new NativeKeyer(raw) : undefined
+    this.keyer = raw.keyerConnect ? keyerLink(raw) : undefined
+    this.rig = raw.rigConnect ? new NativeRig(raw) : undefined
   }
 
   private newId(name: string): string {

@@ -59,6 +59,24 @@ export function asyncEvent(line: string): KeyerEvent | undefined {
   return undefined
 }
 
+/**
+ * Where CW goes: the keyer (KeyerProtocol, NUS text lines) or the IC-705's own keyer
+ * (CivCwOutput in core/civ.ts, CI-V 0x17). The UI and the macros don't know which.
+ * Events (done / stopped / error / wpm) come through the constructor's callback.
+ */
+export interface CwOutput {
+  /** True from an accepted send until done / stopped / disconnect. */
+  readonly sending: boolean
+  /** Current speed as last set or reported; undefined until known. */
+  readonly wpm: number | undefined
+  /** Queue sanitized text (sanitize()); text after queued text gets a space before it. */
+  send(text: string): Promise<void>
+  setWpm(n: number): Promise<void>
+  stop(): Promise<void>
+  /** Link gone: drop the queue, nothing is sending. */
+  reset(): void
+}
+
 interface Pending {
   readonly resolve: (line: string) => void
   readonly reject: (e: Error) => void
@@ -70,7 +88,7 @@ interface Pending {
  * arrive in between. Commands are written straight away (no waiting for the previous
  * response), so STOP is never stuck behind a SEND.
  */
-export class KeyerProtocol {
+export class KeyerProtocol implements CwOutput {
   private readonly pending: Pending[] = []
   private readonly lines = new LineAssembler()
   /** True from an accepted SEND until DONE / STOPPED / watchdog / disconnect. */
@@ -238,7 +256,8 @@ export function cqLabel(mode: RunMode): string {
 
 /** The INFO button / editor label for a profile. */
 export function infoLabel(profile: ProfileId): string {
-  return profile === 'aktivace' ? 'REF' : profile === 'obecny' ? 'INFO' : 'LOC'
+  // INF, not INFO: with STOP in the strip the macros only just fit a phone's width.
+  return profile === 'aktivace' ? 'REF' : profile === 'obecny' ? 'INF' : 'LOC'
 }
 
 const CQ_DEFAULT = 'CQ CQ DE {MYCALL} {MYCALL} K'

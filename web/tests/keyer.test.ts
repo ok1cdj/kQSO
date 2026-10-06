@@ -215,7 +215,7 @@ describe('INFO macro slot', () => {
     expect(DEFAULT_MACROS.obecny.run.INFO).toBe('') // free text, set by the operator
     expect(infoLabel('aktivace')).toBe('REF')
     expect(infoLabel('vkv')).toBe('LOC')
-    expect(infoLabel('obecny')).toBe('INFO')
+    expect(infoLabel('obecny')).toBe('INF')
   })
 })
 

@@ -10,8 +10,8 @@ Android APK (the same web app in a WebView shell).
 Target devices (all first-class): **Mudita Kompakt** (480×800 e-ink), iPad/tablet,
 desktop.
 
-- **Live web:** <https://kqso.ok1cdj.com/> (web 1.7; the old `ok1cdj.github.io/kQSO/` redirects there)
-- **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.7)
+- **Live web:** <https://kqso.ok1cdj.com/> (web 1.8; the old `ok1cdj.github.io/kQSO/` redirects there)
+- **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.8)
 - **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/ok1cdj)
@@ -80,12 +80,21 @@ QSO map: worked stations over the Maidenhead grid, your QTH as the crosshair
   Web: OPFS (persistent storage requested); APK: `.adi` files in app storage.
 - **CW keyer over Bluetooth (beta)** (APK, or web in Chrome / Edge; off by default): the
   [M5-ESP32-keyer](https://github.com/ok1cdj/M5-ESP32-keyer) — in CW the strip
-  offers the macros CQ (DE in S&P) EX TU MY REF/LOC/INFO ?, STOP while sending (also Esc), RUN / S&P
+  offers the macros CQ (DE in S&P) EX TU MY REF/LOC/INF ?, STOP while sending (also Esc), RUN / S&P
   (`R` / `S`) with own macros per log profile (editable in Settings), `S20` = 20 WPM
   until disconnect, default speed in Settings, `C` = connect again, `K text` = send
   text, `K` = CW keyboard mode, ESM (Enter sends the macros, as in N1MM; `E`).
   Tested with the M5-ESP32-keyer v2; please report bugs on
   [GitHub Issues](https://github.com/ok1cdj/kQSO/issues).
+- **Icom IC-705 over Bluetooth LE (beta)** (APK only; off by default): band, mode and
+  the exact frequency (ADIF `FREQ`) follow the radio, a typed band / mode tunes it (`F28300` = 28.300 MHz; a band the radio doesn't
+  work switches only the log; transverters per band in Settings → XVERT), and
+  CW macros go out through the radio's own keyer (CI-V), with the same strip as the
+  M5 keyer; in SSB / FM the strip offers T1–T4, the radio's voice TX memories (e.g. a
+  recorded CQ), with STOP. First connection: radio MENU → SET → Bluetooth Set → Pairing Reception.
+  The radio must be in CW (else kQSO says so); with break-in off only the sidetone sounds.
+  Safety: CW is handed over in parts of up to 30 characters; if the link drops while
+  sending, the radio still finishes the part it has (the M5 keyer stops at once).
 - **E-ink / standard display modes** (the APK starts in e-ink), keep-screen-on while
   logging, EN / CS UI (by the system language).
 

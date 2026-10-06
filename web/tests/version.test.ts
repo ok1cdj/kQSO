@@ -32,6 +32,8 @@ describe("what's new", () => {
   it('notes after the seen version up to the current one', () => {
     expect(notesSince('1.6.3', '1.7.0').map((e) => e.version)).toEqual(['1.7'])
     expect(notesSince('1.7', '1.7.0')).toEqual([])
+    expect(notesSince('1.7', '1.8.0').map((e) => e.version)).toEqual(['1.8'])
+    expect(notesSince('1.6.3', '1.8.0').map((e) => e.version)).toEqual(['1.8', '1.7'])
     expect(notesSince('1.6.2', '1.6.3')).toEqual([]) // 1.7 not installed yet
   })
 

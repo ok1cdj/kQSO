@@ -1,9 +1,12 @@
 // CW keyer controller, one for the whole app (the link survives screen changes).
 // Owns the KeyerProtocol over platform.keyer, the settings (on/off, default speed,
 // RUN/S&P, macros) and the reconnect. Screens subscribe and re-render on change.
+// CW goes out through a CwOutput: the IC-705's own keyer while the radio is connected
+// (CivCwOutput), else the M5 keyer — the screens and macros don't tell them apart.
 // Nothing happens — no Bluetooth at all — until "CW keying" is switched on.
 
 import {
+  CivCwOutput,
   KeyerProtocol,
   chunk,
   clampWpm,
@@ -12,9 +15,11 @@ import {
   sanitize,
   WPM_DEFAULT,
 } from '../core/index'
-import type { KeyerEvent, MacroSlot, ProfileId, RunMode, SavedMacros } from '../core/index'
+import type { CwOutput, KeyerEvent, MacroSlot, ProfileId, RunMode, SavedMacros } from '../core/index'
 import type { KQSOPlatform, KeyerLinkState, KeyerTransport } from '../platform/index'
 import { switchOn } from './dom'
+import { browserTimers } from './rig'
+import type { RigController } from './rig'
 
 export const KEYER_SETTINGS = {
   enabled: 'keyerEnabled', // '1' / '0', default off
@@ -34,6 +39,7 @@ const RETRY_MS = 1500
 export class KeyerController {
   readonly available: boolean
   enabled = false
+  /** The M5 keyer's own link (Settings); the logging screen wants outLink. */
   link: KeyerLinkState = 'off'
   name: string | undefined
   battery: number | undefined
@@ -46,14 +52,30 @@ export class KeyerController {
 
   private readonly transport: KeyerTransport | undefined
   private readonly proto: KeyerProtocol | undefined
+  private readonly civ: CivCwOutput | undefined
   private readonly listeners = new Set<() => void>()
   private wantLink = false // the operator wants to be connected (not after Odpojit / off)
   private retried = false // one quiet reconnect after an unexpected drop
 
-  constructor(private readonly platform: KQSOPlatform) {
+  constructor(
+    private readonly platform: KQSOPlatform,
+    private readonly rig: RigController,
+  ) {
     const tr = platform.keyer
     this.transport = tr
-    this.available = tr !== undefined
+    this.available = tr !== undefined || rig.available
+    if (rig.proto) {
+      this.civ = new CivCwOutput(rig.proto, browserTimers, (ev) => this.onEvent(ev))
+      let ready = false
+      rig.subscribe(() => {
+        if (rig.ready === ready) return
+        ready = rig.ready
+        this.civ!.reset()
+        // Radio up: the default speed, as for the keyer on every connect.
+        if (ready) void this.safe(() => this.civ!.setWpm(this.defaultWpm))
+        this.emit()
+      })
+    }
     if (!tr) return
     this.proto = new KeyerProtocol(
       (line) => {
@@ -90,21 +112,37 @@ export class KeyerController {
     return () => this.listeners.delete(cb)
   }
 
+  /** CW goes through the IC-705 (connected and switched on), not the M5 keyer. */
+  get viaRig(): boolean {
+    return this.civ !== undefined && this.rig.keys
+  }
+
+  private get out(): CwOutput | undefined {
+    return this.viaRig ? this.civ : this.proto
+  }
+
+  /** Link of whatever sends CW now: the radio when it does, else the keyer. */
+  get outLink(): KeyerLinkState {
+    return this.viaRig ? 'on' : this.link
+  }
+
   get connected(): boolean {
-    return this.link === 'on'
+    return this.outLink === 'on'
   }
 
   get sending(): boolean {
-    return this.proto?.sending ?? false
+    return this.out?.sending ?? false
   }
 
   get version(): string | undefined {
     return this.proto?.version
   }
 
-  /** Keying on and in CW: the logging screen shows the keyer (header, macros, commands). */
+  /** In CW with something to key: the IC-705 (no switch needed — connecting it is the
+   *  choice), or the M5 keyer with "CW keying" on. The logging screen then shows the
+   *  keyer (header, macros, commands). */
   activeFor(mode: string): boolean {
-    return this.available && this.enabled && mode === 'CW'
+    return mode === 'CW' && (this.viaRig || (this.transport !== undefined && this.enabled))
   }
 
   /** `save` = false when the caller (the Settings switch) stores the value itself —
@@ -126,7 +164,8 @@ export class KeyerController {
   /** From the logging screen (C ⏎, a tap on RUN / S&P): the remembered keyer, else the
    *  chooser — right away, while the key press / tap still counts as a user gesture. */
   async reconnect(): Promise<void> {
-    if (this.link !== 'off') return
+    if (this.outLink !== 'off') return
+    if (this.rig.enabled && this.rig.link === 'off') return this.rig.reconnect()
     const tr = this.transport
     await this.attempt(async () => {
       if (!(await tr!.connect(false))) await tr!.connect(true)
@@ -165,18 +204,18 @@ export class KeyerController {
   async setDefaultWpm(n: number): Promise<void> {
     this.defaultWpm = clampWpm(n)
     await this.platform.setSetting(KEYER_SETTINGS.wpm, String(this.defaultWpm))
-    if (this.connected) await this.safe(() => this.proto!.setWpm(this.defaultWpm))
+    if (this.connected) await this.safe(() => this.out!.setWpm(this.defaultWpm))
     this.emit()
   }
 
   /** S20: this speed until disconnect; the default stays. */
   async setSpeed(n: number): Promise<void> {
-    if (this.connected) await this.safe(() => this.proto!.setWpm(clampWpm(n)))
+    if (this.connected) await this.safe(() => this.out!.setWpm(clampWpm(n)))
     this.emit()
   }
 
   get wpm(): number | undefined {
-    return this.proto?.wpm
+    return this.out?.wpm
   }
 
   /** ESM on / off (E on the line, Settings). `save` = false when the caller stored it. */
@@ -205,7 +244,8 @@ export class KeyerController {
   async send(text: string): Promise<string[]> {
     const { text: clean, dropped } = sanitize(text)
     if (!this.connected || clean.length === 0) return dropped
-    const p = this.safe(() => this.proto!.send(clean))
+    const out = this.out!
+    const p = this.safe(() => out.send(clean))
     this.emit() // sending → STOP appears right away
     await p
     this.emit()
@@ -214,7 +254,7 @@ export class KeyerController {
 
   async stop(): Promise<void> {
     if (!this.connected) return
-    await this.safe(() => this.proto!.stop())
+    await this.safe(() => this.out!.stop())
     this.emit()
   }
 

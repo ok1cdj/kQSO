@@ -20,26 +20,46 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelUuid
+import android.util.Log
 import android.widget.ArrayAdapter
 import org.json.JSONObject
 import java.util.UUID
 
+/** What tells one BLE device kind from another; everything else in BleLink is shared. */
+class BleSpec(
+    val service: UUID,
+    val write: UUID,
+    val notify: UUID, // may equal write (IC-705: one characteristic both ways)
+    val battery: Boolean, // read + watch the Battery Service level
+    val writeType: Int, // BluetoothGattCharacteristic.WRITE_TYPE_*
+    val binary: Boolean, // bytes as hex strings to/from JS; else UTF-8 text
+    val matches: (name: String, services: List<ParcelUuid>?) -> Boolean, // chooser filter
+    val prefMac: String, // remembered device
+    val jsObject: String, // window.<jsObject>.{state,data,battery,done}
+    val searching: Int, // string resources
+    val choose: Int,
+    val none: Int,
+    val notDevice: Int,
+)
+
 /**
- * CW keyer (M5-ESP32-keyer) over BLE — the APK side of the web KeyerTransport
- * (web/src/platform/native.ts). Nordic UART: lines written to RX, notifications from TX;
- * Battery Service for the level. Only bytes move here, the line protocol is core/keyer.ts.
+ * One BLE device for the web side (web/src/platform/native.ts): connect, write, hand
+ * back what arrives. Only bytes move here — the protocols are in the web core (CW
+ * keyer: core/keyer.ts, IC-705 CI-V: core/civ.ts).
  *
- * Results go back to JS as window.__kqsoKeyer.{state,data,battery,done}(…):
+ * Results go back to JS as window.<jsObject>.{state,data,battery,done}(…):
  *  - state('off' | 'connecting' | 'on', name)
- *  - done(tried, error) answers each keyerConnect(): tried = false when there was no
- *    keyer to try (nothing remembered / no permission for a quiet reconnect),
+ *  - data(text) — UTF-8 text, or lowercase hex for a binary spec
+ *  - done(tried, error) answers each connect(): tried = false when there was no
+ *    device to try (nothing remembered / no permission for a quiet reconnect),
  *    error = null | 'cancelled' (chooser closed) | a message.
  *
  * Everything runs on the main thread (bridge calls and GATT callbacks are posted there),
- * so the state needs no locking. Android allows one GATT operation at a time → ops queue.
+ * so the state needs no locking. Android allows one GATT operation at a time per
+ * connection → ops queue; several BleLinks run side by side.
  */
 @SuppressLint("MissingPermission") // checked in hasPermissions() before any BLE call
-class KeyerBle(private val activity: MainActivity) {
+class BleLink(private val activity: MainActivity, private val spec: BleSpec) {
 
     private val main = Handler(Looper.getMainLooper())
     private val prefs = activity.getSharedPreferences("kqso", Context.MODE_PRIVATE)
@@ -49,7 +69,7 @@ class KeyerBle(private val activity: MainActivity) {
     private var gatt: BluetoothGatt? = null
     private var rx: BluetoothGattCharacteristic? = null
     private var name: String? = null
-    private var connectPending = false // a keyerConnect() still waiting for its done()
+    private var connectPending = false // a connect() still waiting for its done()
     private var payload = 20 // bytes per write: MTU − 3
 
     private val ops = ArrayDeque<() -> Boolean>() // each starts one GATT op; false = skip
@@ -59,17 +79,17 @@ class KeyerBle(private val activity: MainActivity) {
 
     fun connect(pick: Boolean) {
         if (gatt != null) return done(true, null) // already connecting / connected
-        if (adapter == null) return done(pick, activity.getString(R.string.keyer_no_bt))
+        if (adapter == null) return done(pick, activity.getString(R.string.ble_no_bt))
         if (!pick) {
-            val mac = prefs.getString(PREF_MAC, null)
-            // Quiet reconnect never asks for anything: no keyer or no permission → not tried.
+            val mac = prefs.getString(spec.prefMac, null)
+            // Quiet reconnect never asks for anything: no device or no permission → not tried.
             if (mac == null || !hasPermissions() || !adapter.isEnabled) return done(false, null)
             return open(adapter.getRemoteDevice(mac))
         }
         activity.requestBlePermissions { granted ->
             when {
-                !granted -> done(true, activity.getString(R.string.keyer_no_permission))
-                !adapter.isEnabled -> done(true, activity.getString(R.string.keyer_bt_off))
+                !granted -> done(true, activity.getString(R.string.ble_no_permission))
+                !adapter.isEnabled -> done(true, activity.getString(R.string.ble_bt_off))
                 else -> choose()
             }
         }
@@ -83,21 +103,23 @@ class KeyerBle(private val activity: MainActivity) {
     }
 
     fun forget() {
-        prefs.edit().remove(PREF_MAC).apply()
+        prefs.edit().remove(spec.prefMac).apply()
         disconnect()
     }
 
     fun write(chunk: String) {
-        val bytes = chunk.toByteArray(Charsets.UTF_8)
+        val bytes = if (spec.binary) fromHex(chunk) else chunk.toByteArray(Charsets.UTF_8)
+        if (BuildConfig.DEBUG) Log.d(TAG, "${spec.jsObject} → ${toHex(bytes)}")
         enqueue {
             val g = gatt
             val c = rx
             if (g == null || c == null) false
             else if (Build.VERSION.SDK_INT >= 33) {
-                g.writeCharacteristic(c, bytes, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT) == BluetoothGatt.GATT_SUCCESS
+                g.writeCharacteristic(c, bytes, spec.writeType) == BluetoothGatt.GATT_SUCCESS
             } else {
+                // Without response too, onCharacteristicWrite comes once the stack took it → order kept.
                 @Suppress("DEPRECATION")
-                c.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT // with response → order kept
+                c.writeType = spec.writeType
                 @Suppress("DEPRECATION")
                 c.value = bytes
                 @Suppress("DEPRECATION")
@@ -115,9 +137,9 @@ class KeyerBle(private val activity: MainActivity) {
 
     // --- chooser ----------------------------------------------------------------
 
-    /** Scan for keyers and list them live; a tap connects. Stops after SCAN_MS. */
+    /** Scan for matching devices and list them live; a tap connects. Stops after SCAN_MS. */
     private fun choose() {
-        val scanner = adapter?.bluetoothLeScanner ?: return done(true, activity.getString(R.string.keyer_bt_off))
+        val scanner = adapter?.bluetoothLeScanner ?: return done(true, activity.getString(R.string.ble_bt_off))
         val found = LinkedHashMap<String, BluetoothDevice>()
         val list = ArrayAdapter<String>(activity, android.R.layout.simple_list_item_1)
         var scanning = true
@@ -127,8 +149,7 @@ class KeyerBle(private val activity: MainActivity) {
             override fun onScanResult(callbackType: Int, r: ScanResult) {
                 val dev = r.device
                 val n = r.scanRecord?.deviceName ?: dev.name ?: return
-                val nus = r.scanRecord?.serviceUuids?.contains(ParcelUuid(NUS)) == true
-                if (!nus && !n.startsWith("keyer-")) return
+                if (!spec.matches(n, r.scanRecord?.serviceUuids)) return
                 if (found.put(dev.address, dev) == null) main.post { list.add(n) }
             }
         }
@@ -140,16 +161,16 @@ class KeyerBle(private val activity: MainActivity) {
         }
         val timeout = Runnable {
             stop()
-            dialog.setTitle(if (found.isEmpty()) R.string.keyer_none else R.string.keyer_choose)
+            dialog.setTitle(if (found.isEmpty()) spec.none else spec.choose)
         }
 
         dialog = AlertDialog.Builder(activity)
-            .setTitle(R.string.keyer_searching)
+            .setTitle(spec.searching)
             .setAdapter(list) { _, which ->
                 main.removeCallbacks(timeout)
                 stop()
                 val dev = found.values.elementAt(which)
-                prefs.edit().putString(PREF_MAC, dev.address).apply()
+                prefs.edit().putString(spec.prefMac, dev.address).apply()
                 open(dev)
             }
             .setNegativeButton(android.R.string.cancel) { d, _ -> d.cancel() }
@@ -161,7 +182,7 @@ class KeyerBle(private val activity: MainActivity) {
             .show()
 
         val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
-        scanner.startScan(null, settings, cb) // no filter: the name prefix can't be a ScanFilter
+        scanner.startScan(null, settings, cb) // no filter: a name prefix can't be a ScanFilter
         main.postDelayed(timeout, SCAN_MS)
     }
 
@@ -183,7 +204,7 @@ class KeyerBle(private val activity: MainActivity) {
         opBusy = false
         payload = 20
         state("off")
-        if (connectPending) done(true, error ?: activity.getString(R.string.keyer_failed))
+        if (connectPending) done(true, error ?: activity.getString(R.string.ble_failed))
     }
 
     private val callback = object : BluetoothGattCallback() {
@@ -193,7 +214,7 @@ class KeyerBle(private val activity: MainActivity) {
                 if (newState == BluetoothProfile.STATE_CONNECTED && status == BluetoothGatt.GATT_SUCCESS) {
                     if (!g.requestMtu(MTU)) g.discoverServices()
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED || status != BluetoothGatt.GATT_SUCCESS) {
-                    dropped(if (connectPending) activity.getString(R.string.keyer_failed_status, status) else null)
+                    dropped(if (connectPending) activity.getString(R.string.ble_failed_status, status) else null)
                 }
             }
         }
@@ -211,10 +232,12 @@ class KeyerBle(private val activity: MainActivity) {
         }
 
         override fun onDescriptorWrite(g: BluetoothGatt, d: BluetoothGattDescriptor, status: Int) {
+            if (BuildConfig.DEBUG) Log.d(TAG, "${spec.jsObject} CCCD status $status")
             main.post { if (g == gatt) next() }
         }
 
         override fun onCharacteristicWrite(g: BluetoothGatt, c: BluetoothGattCharacteristic, status: Int) {
+            if (BuildConfig.DEBUG) Log.d(TAG, "${spec.jsObject} write status $status")
             main.post { if (g == gatt) next() }
         }
 
@@ -241,24 +264,26 @@ class KeyerBle(private val activity: MainActivity) {
         }
     }
 
-    /** Services found: NUS check, notifications (TX, battery), battery read, then 'on'. */
+    /** Services found: service check, notifications (data, battery), battery read, then 'on'. */
     private fun setUp(g: BluetoothGatt, status: Int) {
         if (g != gatt) return
-        val nus = g.getService(NUS)
-        val tx = nus?.getCharacteristic(TX)
-        val rxc = nus?.getCharacteristic(RX)
+        val svc = g.getService(spec.service)
+        val tx = svc?.getCharacteristic(spec.notify)
+        val rxc = svc?.getCharacteristic(spec.write)
         if (status != BluetoothGatt.GATT_SUCCESS || tx == null || rxc == null) {
             g.disconnect()
-            dropped(activity.getString(R.string.keyer_not_keyer))
+            dropped(activity.getString(spec.notDevice))
             return
         }
         rx = rxc
         notify(g, tx)
-        g.getService(BATTERY)?.getCharacteristic(BATTERY_LEVEL)?.let { level ->
-            notify(g, level)
-            enqueue { g.readCharacteristic(level) }
+        if (spec.battery) {
+            g.getService(BATTERY)?.getCharacteristic(BATTERY_LEVEL)?.let { level ->
+                notify(g, level)
+                enqueue { g.readCharacteristic(level) }
+            }
         }
-        // Up once the queued setup is done: the first command can't overtake it anyway.
+        // Up once the queued setup is done: the first write can't overtake it anyway.
         enqueue {
             connectPending = false
             state("on")
@@ -269,8 +294,9 @@ class KeyerBle(private val activity: MainActivity) {
 
     private fun received(c: BluetoothGattCharacteristic, v: ByteArray?) {
         if (v == null || v.isEmpty()) return
+        if (BuildConfig.DEBUG) Log.d(TAG, "${spec.jsObject} ← ${toHex(v)}")
         when (c.uuid) {
-            TX -> js("data", JSONObject.quote(String(v, Charsets.UTF_8)))
+            spec.notify -> js("data", JSONObject.quote(if (spec.binary) toHex(v) else String(v, Charsets.UTF_8)))
             BATTERY_LEVEL -> js("battery", (v[0].toInt() and 0xFF).toString())
         }
     }
@@ -320,7 +346,7 @@ class KeyerBle(private val activity: MainActivity) {
     }
 
     private fun js(fn: String, vararg args: String) = activity.evalJs(
-        "window.__kqsoKeyer && window.__kqsoKeyer.$fn(${args.joinToString(",")})",
+        "window.${spec.jsObject} && window.${spec.jsObject}.$fn(${args.joinToString(",")})",
     )
 
     private fun hasPermissions(): Boolean = blePermissions().all {
@@ -328,19 +354,59 @@ class KeyerBle(private val activity: MainActivity) {
     }
 
     companion object {
-        private val NUS: UUID = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
-        private val RX: UUID = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e") // write
-        private val TX: UUID = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e") // notify
         private val BATTERY: UUID = UUID.fromString("0000180f-0000-1000-8000-00805f9b34fb")
         private val BATTERY_LEVEL: UUID = UUID.fromString("00002a19-0000-1000-8000-00805f9b34fb")
         private val CCCD: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
-        private const val PREF_MAC = "keyerMac"
         private const val MTU = 185
         private const val SCAN_MS = 10_000L
+        private const val TAG = "kqso-ble"
+
+        private val NUS: UUID = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
+        private val ICOM: UUID = UUID.fromString("14cf8001-1ec2-d408-1b04-2eb270f14203")
+        private val ICOM_DATA: UUID = UUID.fromString("14cf8002-1ec2-d408-1b04-2eb270f14203")
+
+        /** M5-ESP32-keyer: Nordic UART, lines written to RX, notifications from TX. */
+        val KEYER = BleSpec(
+            service = NUS,
+            write = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e"),
+            notify = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e"),
+            battery = true,
+            writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT, // with response
+            binary = false,
+            matches = { n, s -> s?.contains(ParcelUuid(NUS)) == true || n.startsWith("keyer-") },
+            prefMac = "keyerMac",
+            jsObject = "__kqsoKeyer",
+            searching = R.string.keyer_searching,
+            choose = R.string.keyer_choose,
+            none = R.string.keyer_none,
+            notDevice = R.string.keyer_not_keyer,
+        )
+
+        /** Icom IC-705: CI-V over Icom's BLE serial, one characteristic both ways. Writes
+         *  without response — with response the radio drops the link after the handshake. */
+        val IC705 = BleSpec(
+            service = ICOM,
+            write = ICOM_DATA,
+            notify = ICOM_DATA,
+            battery = false,
+            writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE,
+            binary = true,
+            matches = { n, s -> s?.contains(ParcelUuid(ICOM)) == true || n.startsWith("ICOM BT") },
+            prefMac = "rigMac",
+            jsObject = "__kqsoRig",
+            searching = R.string.rig_searching,
+            choose = R.string.rig_choose,
+            none = R.string.rig_none,
+            notDevice = R.string.rig_not_rig,
+        )
 
         /** Runtime permissions BLE needs on this Android version. */
         fun blePermissions(): Array<String> =
             if (Build.VERSION.SDK_INT >= 31) arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
             else arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+
+        private fun toHex(b: ByteArray): String = b.joinToString("") { "%02x".format(it.toInt() and 0xFF) }
+
+        private fun fromHex(s: String): ByteArray = ByteArray(s.length / 2) { i -> s.substring(2 * i, 2 * i + 2).toInt(16).toByte() }
     }
 }

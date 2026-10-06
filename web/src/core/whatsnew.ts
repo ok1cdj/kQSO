@@ -14,6 +14,17 @@ export interface WhatsNewEntry {
 /** Newest first. */
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    version: '1.8',
+    cs: [
+      'Icom IC-705 přes Bluetooth (beta, aplikace pro Android): Nastavení → IC-705. Pásmo, mód a přesný kmitočet (FREQ) bere kQSO z rádia, napsané pásmo / mód nebo F28300 rádio přeladí. V CW jdou makra přes klíčovač rádia, v SSB / FM tlačítka T1–T4 odvysílají hlasové paměti. Transvertory a pásma, která rádio neumí, viz nápověda (H).',
+      'Nový log vyžaduje vlastní značku.',
+    ],
+    en: [
+      'Icom IC-705 over Bluetooth (beta, Android app): Settings → IC-705. Band, mode and the exact frequency (FREQ) come from the radio; a typed band / mode or F28300 tunes it. In CW the macros go through the radio\'s keyer, in SSB / FM the T1–T4 buttons send its voice memories. Transverters and bands the radio doesn\'t work: see the help (H).',
+      'A new log needs your own callsign.',
+    ],
+  },
+  {
     version: '1.7',
     cs: [
       'CW klíčovač přes Bluetooth (beta): Nastavení → CW klíčování připojí M5-ESP32-keyer, v CW pak lišta nabízí makra (CQ, EX, TU …), RUN / S&P a ESM jako v N1MM. Podrobnosti v nápovědě (H). Chyby prosím hlaste na GitHub Issues.',

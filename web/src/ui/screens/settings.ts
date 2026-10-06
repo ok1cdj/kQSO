@@ -3,8 +3,8 @@
 // the active storage backend, and About. Language follows
 // navigator.language with no in-app switch.
 
-import { LiveDb, WAVELOG_SETTINGS, apiBase, dbDate, userHeader, MACRO_SLOTS, ESM_ONLY_SLOTS, infoLabel, cqLabel, WPM_MAX, WPM_MIN, withMacro, resetMacros } from '../../core/index'
-import type { ProfileId, RunMode, WavelogStation } from '../../core/index'
+import { LiveDb, WAVELOG_SETTINGS, apiBase, dbDate, userHeader, MACRO_SLOTS, ESM_ONLY_SLOTS, infoLabel, cqLabel, WPM_MAX, WPM_MIN, withMacro, resetMacros, XVERT_BANDS, parseMHz, bandForFreq, radioBand } from '../../core/index'
+import type { ProfileId, RunMode, WavelogStation, Xvert } from '../../core/index'
 import { platformKind } from '../../platform/index'
 import type { KQSOPlatform } from '../../platform/index'
 import { currentDisplayMode, currentThemeMode, setDisplayMode, setThemeMode } from '../../theme/mode'
@@ -20,6 +20,8 @@ import { RADAR_SETTING } from '../radar'
 import { STATS_SETTING, setStatsEnabled } from '../stats'
 import { KEYER_SETTINGS } from '../keyer'
 import type { KeyerController } from '../keyer'
+import { RIG_SETTINGS } from '../rig'
+import type { RigController } from '../rig'
 import { UPDATE_SETTINGS } from '../update'
 
 export interface SettingsNav {
@@ -50,10 +52,13 @@ const PROFILE_TILES: ReadonlyArray<readonly [ProfileId, 'newlog.profileAktivace'
 export class SettingsScreen implements Screen {
   private readonly root = el('div', 'screen screen--list')
   private unsubscribe: (() => void) | undefined
+  private unsubscribeRig: (() => void) | undefined
+  private unsubscribeRigCw: (() => void) | undefined
 
   constructor(
     private readonly platform: KQSOPlatform,
     private readonly keyer: KeyerController,
+    private readonly rig: RigController,
     private readonly nav: SettingsNav,
   ) {}
 
@@ -64,6 +69,8 @@ export class SettingsScreen implements Screen {
 
   unmount(): void {
     this.unsubscribe?.()
+    this.unsubscribeRig?.()
+    this.unsubscribeRigCw?.()
   }
 
   private async render(): Promise<void> {
@@ -79,6 +86,7 @@ export class SettingsScreen implements Screen {
       await this.wavelogSetting(),
       await this.mapLabelsSetting(),
       await this.radarSetting(),
+      ...(this.rig.available ? [await this.rigSetting()] : []),
       ...(this.keyer.available ? [await this.keyerSetting()] : []),
       this.storageSetting(persisted),
       ...(this.platform.nativeVersion ? [await this.updateSetting()] : [await this.statsSetting()]),
@@ -323,11 +331,20 @@ export class SettingsScreen implements Screen {
     const k = this.keyer
     const wrap = el('div', 'setting')
     const body = el('div', 'keyer-settings')
-    body.hidden = !k.enabled
+    // The switch is the M5 keyer's; speed, ESM and macros serve the IC-705 too.
+    const atom = el('div', 'keyer-settings')
+    const cw = el('div', 'keyer-settings')
+    const show = (): void => {
+      atom.hidden = !k.enabled
+      cw.hidden = !k.enabled && !this.rig.enabled
+    }
     const seg = await this.yesNo(KEYER_SETTINGS.enabled, (on) => {
-      body.hidden = !on
-      void k.setEnabled(on, false) // yesNo has saved it
+      void k.setEnabled(on, false).then(show) // yesNo has saved it
+      atom.hidden = !on
     }, false)
+    this.unsubscribeRigCw?.()
+    this.unsubscribeRigCw = this.rig.subscribe(show)
+    show()
 
     const status = el('div', 'about')
     const speedValue = el('b', 'keyer-wpm')
@@ -367,10 +384,8 @@ export class SettingsScreen implements Screen {
 
     const esm = await this.yesNo(KEYER_SETTINGS.esm, (on) => void k.setEsm(on, false), false) // yesNo has saved it
 
-    body.append(
-      el('span', 'field-label', t('settings.keyerSection')),
-      status,
-      link,
+    atom.append(el('span', 'field-label', t('settings.keyerSection')), status, link)
+    cw.append(
       el('span', 'field-label', t('settings.keyerSpeed')),
       speed,
       el('div', 'about', t('settings.keyerSpeedHint')),
@@ -379,7 +394,106 @@ export class SettingsScreen implements Screen {
       el('div', 'about', t('settings.keyerEsmHint')),
       this.macroEditor(),
     )
+    body.append(atom, cw)
     wrap.append(el('span', 'field-label', t('settings.keyer')), seg, el('div', 'about', t('settings.keyerHint')), body)
+    return wrap
+  }
+
+  /** IC-705 over BLE (APK): on / off, Connect / Disconnect / Forget, what the radio is on. */
+  private async rigSetting(): Promise<HTMLElement> {
+    const r = this.rig
+    const wrap = el('div', 'setting')
+    const body = el('div', 'keyer-settings')
+    body.hidden = !r.enabled
+    const seg = await this.yesNo(RIG_SETTINGS.enabled, (on) => {
+      body.hidden = !on
+      void r.setEnabled(on, false) // yesNo has saved it
+    }, false)
+
+    const status = el('div', 'about')
+    const name = (): string => r.name ?? 'IC-705'
+    const paint = (): void => {
+      const n = r.notice
+      if (n?.type === 'connectFailed') {
+        status.textContent = t('settings.rigFailed', { msg: n.message })
+        r.clearNotice()
+      } else if (r.controls) {
+        const f = r.freqHz !== undefined ? `${(r.freqHz / 1e6).toFixed(3)} MHz` : undefined
+        status.textContent = [name(), f, r.mode].filter((x) => x !== undefined).join(' · ')
+      } else if (r.link === 'on') {
+        status.textContent = t('settings.rigHandshake', { name: name() })
+      } else if (r.link === 'connecting') {
+        status.textContent = t('settings.rigConnecting', { name: name() })
+      } else {
+        status.textContent = r.name ? `${r.name} · ${t('settings.rigOff')}` : t('settings.rigOff')
+      }
+    }
+    this.unsubscribeRig?.()
+    this.unsubscribeRig = r.subscribe(paint)
+    paint()
+
+    const link = el('div', 'segmented')
+    link.append(
+      button(t('settings.keyerConnect'), () => void r.connect(true), 'btn'),
+      button(t('settings.keyerDisconnect'), () => void r.disconnect(), 'btn'),
+      button(t('settings.keyerForget'), () => void r.forget(), 'btn'),
+    )
+    body.append(status, link, await this.xvertSetting())
+    wrap.append(el('span', 'field-label', t('settings.rig')), seg, el('div', 'about', t('settings.rigHint')), body)
+    return wrap
+  }
+
+  /** Transverters: XVERT on / off, and per band the RF frequency that is which IF on the
+   *  radio (3cm 10368.000 = 145.000). A row is saved once both numbers make sense. */
+  private async xvertSetting(): Promise<HTMLElement> {
+    const r = this.rig
+    const wrap = el('div', 'keyer-settings')
+    const table = el('div', 'xvert-table')
+    table.hidden = !r.xvertOn
+    const seg = await this.yesNo(RIG_SETTINGS.xvert, (on) => {
+      table.hidden = !on
+      void r.setXvertOn(on, false) // yesNo has saved it
+    }, false)
+
+    const rows = XVERT_BANDS.map((band) => {
+      const x = r.xverts.find((v) => v.band === band)
+      const mhz = (hz: number | undefined): string => (hz === undefined ? '' : (hz / 1e6).toFixed(3))
+      const row = el('div', 'xvert-row')
+      // The band is the row's own switch: only a pressed one is used.
+      const on = button(band, () => {
+        on.setAttribute('aria-pressed', String(on.getAttribute('aria-pressed') !== 'true'))
+        void save()
+      }, 'btn')
+      on.setAttribute('aria-pressed', String(x?.on === true))
+      const rf = el('input', 'field-input')
+      const ifr = el('input', 'field-input')
+      for (const [input, value, ph] of [[rf, mhz(x?.rfHz), 'RF MHz'], [ifr, mhz(x?.ifHz), 'IF MHz']] as const) {
+        input.type = 'text'
+        input.inputMode = 'decimal'
+        input.autocomplete = 'off'
+        input.value = value
+        input.placeholder = ph
+        input.addEventListener('change', () => void save())
+      }
+      row.append(on, rf, ifr)
+      return { band, row, on, rf, ifr }
+    })
+
+    const save = async (): Promise<void> => {
+      const xs: Xvert[] = []
+      for (const { band, row, on, rf, ifr } of rows) {
+        const rfHz = parseMHz(rf.value)
+        const ifHz = parseMHz(ifr.value)
+        const empty = rf.value.trim() === '' && ifr.value.trim() === ''
+        const ok = rfHz !== undefined && ifHz !== undefined && bandForFreq(rfHz) === band && radioBand(bandForFreq(ifHz) ?? '')
+        row.classList.toggle('field--error', !empty && !ok)
+        if (ok) xs.push({ band, rfHz, ifHz, on: on.getAttribute('aria-pressed') === 'true' })
+      }
+      await r.saveXverts(xs)
+    }
+
+    table.append(...rows.map((x) => x.row), el('div', 'about', t('settings.xvertHint')))
+    wrap.append(el('span', 'field-label', t('settings.xvert')), seg, table)
     return wrap
   }
 

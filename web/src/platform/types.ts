@@ -39,6 +39,22 @@ export interface KeyerTransport {
   onBattery(cb: (pct: number) => void): void
 }
 
+/**
+ * BLE link to an Icom IC-705 (CI-V over Icom's BLE serial). Raw bytes both ways; the
+ * handshake and CI-V itself are core/civ.ts. APK only.
+ */
+export interface RigTransport {
+  /** As KeyerTransport.connect: `pick` = chooser, otherwise the remembered radio quietly. */
+  connect(pick: boolean): Promise<boolean>
+  disconnect(): Promise<void>
+  forget(): Promise<void>
+  /** One write of at most `mtu` bytes; writes go out in order. */
+  write(bytes: Uint8Array): void
+  readonly mtu: number
+  onData(cb: (bytes: Uint8Array) => void): void
+  onState(cb: (s: KeyerLinkState, name?: string) => void): void
+}
+
 export interface KQSOPlatform {
   /** Host-forced display mode; the web shim leaves it undefined. */
   readonly displayMode?: 'eink' | 'standard'
@@ -82,4 +98,7 @@ export interface KQSOPlatform {
 
   /** CW keyer over BLE; undefined where the host has no BLE (Safari, Firefox, memory). */
   readonly keyer?: KeyerTransport | undefined
+
+  /** IC-705 over BLE; APK only. */
+  readonly rig?: RigTransport | undefined
 }

@@ -19,6 +19,7 @@ import { WHATS_NEW } from '../core/index'
 import type { WhatsNewEntry } from '../core/index'
 import { trackScreen } from './stats'
 import { KeyerController } from './keyer'
+import { RigController } from './rig'
 
 export interface Screen {
   mount(root: HTMLElement): void | Promise<void>
@@ -27,13 +28,15 @@ export interface Screen {
 
 export class App {
   private readonly platform: KQSOPlatform = getPlatform()
-  // CW keyer: one link for the whole app, so it survives screen changes.
-  private readonly keyer = new KeyerController(this.platform)
+  // IC-705 and CW keyer: one link each for the whole app, so they survive screen changes.
+  private readonly rig = new RigController(this.platform)
+  private readonly keyer = new KeyerController(this.platform, this.rig)
   private root!: HTMLElement
   private current: Screen | null = null
 
   mount(root: HTMLElement): void {
     this.root = root
+    void this.rig.init()
     void this.keyer.init()
     void this.start()
   }
@@ -71,7 +74,7 @@ export class App {
 
   showSettings(): void {
     this.show(
-      new SettingsScreen(this.platform, this.keyer, {
+      new SettingsScreen(this.platform, this.keyer, this.rig, {
         back: () => this.showLogList(),
         openHelp: () => this.showHelp(() => this.showSettings()),
         openWhatsNew: () => this.showWhatsNew(WHATS_NEW, () => this.showSettings()),
@@ -92,7 +95,7 @@ export class App {
 
   showLogging(logId: string): void {
     this.show(
-      new LoggingScreen(this.platform, this.keyer, logId, {
+      new LoggingScreen(this.platform, this.keyer, this.rig, logId, {
         toLogList: () => this.showLogList(),
         toQsoList: () => this.showQsoList(logId),
         editQso: (index) => this.showQsoEdit(logId, index, () => this.showLogging(logId)),

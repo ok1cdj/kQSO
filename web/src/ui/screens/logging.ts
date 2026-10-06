@@ -13,6 +13,7 @@ import {
   writeLogFile,
   matchCommand,
   matchKeyerCommand,
+  matchTuneCommand,
   hasContent,
   esmMessage,
   expandMacro,
@@ -31,6 +32,7 @@ import {
   bearingDeg,
   defaultReport,
   applySatellite,
+  applyRadio,
   satelliteByLabel,
   SATELLITES,
   PROFILES,
@@ -45,6 +47,8 @@ import { alignColumns, allFit } from '../columns'
 import { createKeyboard } from '../keyboard'
 import type { KeyAction } from '../keys'
 import type { KeyerController } from '../keyer'
+import { VOICE_MEMORIES } from '../rig'
+import type { RigController } from '../rig'
 
 export interface LoggingNav {
   toLogList(): void
@@ -97,10 +101,15 @@ export class LoggingScreen implements Screen {
   private readonly onKeydown = (e: KeyboardEvent): void => this.onHardwareKey(e)
   private readonly onWideChange = (): void => this.renderStrip()
   private unsubscribeKeyer: (() => void) | undefined
+  private unsubscribeRig: (() => void) | undefined
+  private rigShown = '' // what the header last showed from the radio (re-render on change only: e-ink)
+  private rigUp = false // the radio was driving this log at the last sync
+  private loaded = false // init() has read the log
 
   constructor(
     private readonly platform: KQSOPlatform,
     private readonly keyer: KeyerController,
+    private readonly rig: RigController,
     private readonly logId: string,
     private readonly nav: LoggingNav,
   ) {}
@@ -117,6 +126,7 @@ export class LoggingScreen implements Screen {
     window.addEventListener('keydown', this.onKeydown)
     WIDE.addEventListener('change', this.onWideChange)
     this.unsubscribeKeyer = this.keyer.subscribe(() => this.onKeyerChange())
+    this.unsubscribeRig = this.rig.subscribe(() => this.onRigChange())
     void this.init()
   }
 
@@ -124,6 +134,7 @@ export class LoggingScreen implements Screen {
     window.removeEventListener('keydown', this.onKeydown)
     WIDE.removeEventListener('change', this.onWideChange)
     this.unsubscribeKeyer?.()
+    this.unsubscribeRig?.()
     this.exitTx()
     this.recentResize?.disconnect()
     this.platform.keepAwake(false)
@@ -149,6 +160,8 @@ export class LoggingScreen implements Screen {
       // Linear birds keep the last QSO's mode (SSB / CW); SSB for a new log.
       this.state = { ...this.state, sticky: applySatellite(this.state.sticky, sat, qsos.length > 0 ? this.state.sticky.mode : 'SSB') }
     }
+    this.loaded = true
+    this.syncRig()
     this.platform.keepAwake(true)
     await this.offerRecovery()
     this.renderRecent()
@@ -166,6 +179,11 @@ export class LoggingScreen implements Screen {
 
   private onHardwareKey(e: KeyboardEvent): void {
     const k = e.key
+    if (k === 'Escape' && this.rig.voicePlaying) {
+      e.preventDefault()
+      void this.rig.stopVoice()
+      return
+    }
     if (k === 'Escape' && this.keyerOn()) {
       e.preventDefault()
       // Esc = STOP; with nothing on the air it leaves keyboard mode.
@@ -216,6 +234,14 @@ export class LoggingScreen implements Screen {
   }
 
   private async commit(): Promise<void> {
+    // F28300: tune the IC-705 (only with the radio switched on — else F… is just input).
+    const hz = this.rig.enabled ? matchTuneCommand(this.line) : undefined
+    if (hz !== undefined) {
+      this.line = ''
+      await this.rig.tuneTo(hz)
+      this.renderAll()
+      return
+    }
     // Keyer commands (R / S / S20) only while CW keying is on — otherwise R / S stay a name.
     const kc = this.keyerOn() ? matchKeyerCommand(this.line) : undefined
     if (kc) {
@@ -225,9 +251,15 @@ export class LoggingScreen implements Screen {
     }
     const hadContent = hasContent(this.state.partial)
     const before = { lineEmpty: this.line.trim() === '', hadContent, hadCall: this.state.partial.call !== undefined }
+    const prev = this.state.sticky
     const r = reduce(this.state, { type: 'enter', line: this.line }, this.meta)
     this.state = r.state
     if (r.clearInput) this.line = ''
+    // Radio connected: a typed band / mode tunes it; its transceive then confirms.
+    const next = this.state.sticky
+    if (this.rigSets() && (next.band !== prev.band || next.mode !== prev.mode)) {
+      void this.rig.tune(next.band !== prev.band ? next.band : undefined, next.mode !== prev.mode ? next.mode : undefined)
+    }
 
     if (r.command) {
       await this.runCommand(r.command, hadContent)
@@ -435,11 +467,58 @@ export class LoggingScreen implements Screen {
     void this.sendKeyed(word)
   }
 
+  // --- IC-705 ---------------------------------------------------------
+
+  /** The radio sets band / mode / FREQ: connected, and not a satellite log (the bird does). */
+  private rigSets(): boolean {
+    return this.rig.controls && !PROFILES[this.meta.profile].fixedBand
+  }
+
+  /** Radio's frequency / mode → sticky state. Without the radio, a FREQ it gave is dropped
+   *  (band and mode stay as they were last). */
+  private syncRig(): void {
+    // The radio just started driving this log: keep the log's band if the radio can't be
+    // there (VHF contest reopened on 23 cm) instead of dragging it to the radio's band.
+    const up = this.loaded && this.rigSets()
+    if (up && !this.rigUp) this.rig.adopt(this.state.sticky.band)
+    this.rigUp = up
+    const s = this.state.sticky
+    // Detached (the log on a band the radio doesn't work): only an F… frequency applies.
+    if (this.rigSets() && this.rig.detached) {
+      const hz = this.rig.awayHz
+      if (hz !== undefined) this.state = { ...this.state, sticky: applyRadio(s, hz, undefined) }
+    } else if (this.rigSets()) this.state = { ...this.state, sticky: applyRadio(s, this.rig.logFreqHz, this.rig.mode) }
+    else if (s.freq !== undefined && !PROFILES[this.meta.profile].fixedBand) this.state = { ...this.state, sticky: applyRadio(s, undefined, undefined) }
+  }
+
+  private onRigChange(): void {
+    const n = this.rig.notice
+    let changed = false
+    if (n) {
+      this.notice =
+        n.type === 'tuneFailed'
+          ? t('logging.rigTuneFailed')
+          : n.type === 'voiceFailed'
+            ? t('logging.rigVoiceFailed', { n: n.memory })
+            : t('settings.rigFailed', { msg: n.message })
+      this.rig.clearNotice()
+      changed = true
+    }
+    this.syncRig()
+    // Every VFO step lands here; redraw only when something shown changes.
+    const s = this.state.sticky
+    const shown = `${this.rig.link}|${this.rig.ready}|${this.rig.detached}|${this.rig.xvertBand}|${this.rig.mode}|${this.rig.voicePlaying}|${s.band}|${s.mode}|${this.keyer.connected}`
+    if (shown !== this.rigShown) changed = true
+    this.rigShown = shown
+    if (changed) this.renderAll()
+  }
+
   private onKeyerChange(): void {
     const n = this.keyer.notice
     if (this.txMode && !this.keyer.connected) this.exitTx()
     if (n?.type === 'error') {
-      this.notice = t('logging.keyerError', { what: n.what })
+      const key = n.what === 'mode' ? 'logging.rigNotCw' : undefined
+      this.notice = key ? t(key) : t('logging.keyerError', { what: n.what })
       this.keyer.clearNotice()
     } else if (n?.type === 'connectFailed') {
       this.notice = t('settings.keyerFailed', { msg: n.message })
@@ -450,6 +529,7 @@ export class LoggingScreen implements Screen {
 
   /** STOP while the keyer is sending — always first in the strip, even before suggestions. */
   private stopButtons(): HTMLElement[] {
+    if (this.rig.voicePlaying) return [this.suggestButton('STOP', () => void this.rig.stopVoice(), 'suggest suggest--stop')]
     if (!this.keyerOn() || !this.keyer.connected || !this.keyer.sending) return []
     return [this.suggestButton('STOP', () => void this.keyer.stop(), 'suggest suggest--stop')]
   }
@@ -516,7 +596,7 @@ export class LoggingScreen implements Screen {
     // callsign database knows for the call, greyed like its + LOC suggestion.
     // CW keyer: RUN / S&P + speed, and whether the link is up (✕ = not connected, tap = connect).
     if (this.keyerOn()) {
-      const link = this.keyer.link
+      const link = this.keyer.outLink
       const wpm = this.keyer.wpm
       const state = link === 'off' ? ' ✕' : link === 'connecting' ? ' …' : wpm !== undefined ? ` ${wpm}` : ''
       // Keyboard mode: TX instead of RUN / S&P, inverted. ·ESM = Enter sends the macros.
@@ -524,6 +604,13 @@ export class LoggingScreen implements Screen {
       const label = `${what}${state}`
       const cls = link !== 'on' ? 'hdr-keyer hdr-keyer--off' : this.txMode ? 'hdr-keyer hdr-keyer--tx' : 'hdr-keyer'
       mid.append(button(label, () => void this.keyer.reconnect(), cls))
+    }
+    // IC-705: up (band / mode from the radio), connecting, or ✕ (tap = connect).
+    if (this.rig.enabled && !profile.fixedBand) {
+      // XV = the radio on a transverter's IF; – = the log on a band the radio doesn't work.
+      const up = this.rig.controls
+      const state = !up ? (this.rig.link === 'off' ? ' ✕' : ' …') : this.rig.detached ? ' –' : this.rig.xvertBand ? ' XV' : ''
+      mid.append(button(`705${state}`, () => void this.rig.reconnect(), up && !this.rig.detached ? 'hdr-keyer' : 'hdr-keyer hdr-keyer--off'))
     }
     if (profile.contest) {
       const known = p.grid === undefined && p.call !== undefined ? this.db.lookup(p.call)?.loc : undefined
@@ -578,6 +665,14 @@ export class LoggingScreen implements Screen {
       return
     }
     const profile = PROFILES[this.meta.profile]
+    const hz = this.rig.enabled ? matchTuneCommand(this.line) : undefined
+    if (hz !== undefined) {
+      const on = this.rig.controls
+      this.previewEl.replaceChildren(
+        fieldChip('F', on ? t('logging.cmdTune', { mhz: (hz / 1e6).toFixed(3) }) : t('logging.cmdRigOff'), !on),
+      )
+      return
+    }
     // Keyer R / S / S20: what Enter will do (only while CW keying is on).
     const kc = this.keyerOn() ? matchKeyerCommand(this.line) : undefined
     if (kc) {
@@ -620,7 +715,7 @@ export class LoggingScreen implements Screen {
       if (p.name) chips.push(fieldChip('NAME', p.name))
     }
     for (const t of tokens) if (t.cls.type === 'unknown') chips.push(unknownChip(t.raw))
-    const loc = this.macrosShown() ? this.locSuggestion() : undefined
+    const loc = this.macrosShown() || this.voiceShown() ? this.locSuggestion() : undefined
     if (loc) chips.push(this.suggestButton(`+ ${loc}`, () => this.fillGrid(loc), 'suggest suggest--ghost suggest--inline'))
     this.previewEl.replaceChildren(...chips)
   }
@@ -636,6 +731,12 @@ export class LoggingScreen implements Screen {
     return this.keyerOn() && this.keyer.connected
   }
 
+  /** The IC-705's voice memories own the strip: connected and in SSB / FM (the radio's mode). */
+  private voiceShown(): boolean {
+    const m = this.rig.mode
+    return this.rig.keys && (m === 'SSB' || m === 'FM')
+  }
+
   /** What Enter will do with a keyer command, and whether it can't. */
   private keyerCommandPreview(kc: KeyerCommand): { what: string; bad: boolean } {
     const off = !this.keyer.connected
@@ -645,7 +746,7 @@ export class LoggingScreen implements Screen {
       case 'sp':
         return { what: t('logging.cmdSp'), bad: false }
       case 'connect':
-        return this.keyer.link === 'off'
+        return this.keyer.outLink === 'off'
           ? { what: t('logging.cmdConnect'), bad: false }
           : { what: t('logging.cmdConnected'), bad: true }
       case 'esm':
@@ -695,7 +796,7 @@ export class LoggingScreen implements Screen {
     // Completed call with a known locator → prefill chip. With the keyer's macros in the
     // strip it moves to the preview line instead (renderPreview), the macros stay.
     const loc = this.locSuggestion()
-    if (loc && !this.macrosShown()) {
+    if (loc && !this.macrosShown() && !this.voiceShown()) {
       this.stripEl.replaceChildren(...stop, this.suggestButton(`+ ${loc}`, () => this.fillGrid(loc), 'suggest suggest--ghost'))
       return
     }
@@ -713,8 +814,16 @@ export class LoggingScreen implements Screen {
       )
       return
     }
+    // IC-705 in SSB / FM: its voice memories, as the macros in CW.
+    if (this.voiceShown()) {
+      this.stripEl.replaceChildren(
+        ...stop,
+        ...VOICE_MEMORIES.map((n) => this.suggestButton(`T${n}`, () => void this.rig.playVoice(n), 'suggest suggest--macro')),
+      )
+      return
+    }
     // CW keyer dropped: offer the reconnect where the macros were.
-    if (this.keyerOn() && this.keyer.link === 'off') {
+    if (this.keyerOn() && this.keyer.outLink === 'off') {
       this.stripEl.replaceChildren(this.suggestButton(t('logging.keyerReconnect'), () => void this.keyer.reconnect()))
       return
     }

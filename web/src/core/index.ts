@@ -19,16 +19,16 @@ export type {
 } from './model'
 export { PROFILES, defaultReport } from './model'
 
-export { BANDS, MODES, matchBand, matchMode } from './dictionaries'
+export { BANDS, MODES, matchBand, matchMode, bandForFreq, bandSpot } from './dictionaries'
 export { SATELLITES, satelliteByLabel, satelliteSignal, fillSatFrequencies } from './satellites'
 export type { Satellite } from './satellites'
 export { matchReference, parseReferenceInput } from './reference'
 export { tokenize } from './tokenize'
 export { classifyToken, classifyLine, isFullLocator } from './classify'
 export type { TokenContext } from './classify'
-export { initialSticky, applyBand, applyMode, applySatellite } from './sticky'
+export { initialSticky, applyBand, applyMode, applySatellite, applyRadio } from './sticky'
 export { parseLine } from './parse'
-export { matchCommand, matchKeyerCommand, hasContent } from './command'
+export { matchCommand, matchKeyerCommand, matchTuneCommand, hasContent } from './command'
 export type { LineCommand, KeyerCommand } from './command'
 export {
   LineAssembler,
@@ -54,8 +54,28 @@ export {
   WPM_MAX,
   WPM_DEFAULT,
 } from './keyer'
-export type { KeyerEvent, MacroSlot, RunMode, MacroSet, MacroContext, SavedMacros, EsmBefore, EsmAfter } from './keyer'
+export type { CwOutput, KeyerEvent, MacroSlot, RunMode, MacroSet, MacroContext, SavedMacros, EsmBefore, EsmAfter } from './keyer'
 export type { ParseResult } from './parse'
+export {
+  Ic705Protocol,
+  CivCwOutput,
+  CIV_MODE,
+  civModeFor,
+  modeFromCiv,
+  freqMHz,
+  readFreq,
+  readMode,
+  setFreq,
+  setMode,
+  transceiveOn,
+  playVoice,
+  readTx,
+  readBandStack,
+  parseBandStack,
+} from './civ'
+export type { RigEvent, Timers } from './civ'
+export { radioBand, XVERT_BANDS, parseMHz, parseXverts, toIf, toRf, ifBand } from './xvert'
+export type { Xvert } from './xvert'
 export { buildQso, missingParts, padSerial } from './qso'
 export { initialState, reduce } from './reducer'
 export type { CoreEvent, ReduceResult } from './reducer'
