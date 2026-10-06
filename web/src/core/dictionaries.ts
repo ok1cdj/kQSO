@@ -39,6 +39,60 @@ const BAND_ALIASES: Readonly<Record<string, string>> = {
   '76g': '4mm',
 }
 
+/** Band edges in Hz (ADIF band table), for a radio's frequency → band. */
+const BAND_EDGES: readonly (readonly [string, number, number])[] = [
+  ['160m', 1_800_000, 2_000_000],
+  ['80m', 3_500_000, 4_000_000],
+  ['60m', 5_060_000, 5_450_000],
+  ['40m', 7_000_000, 7_300_000],
+  ['30m', 10_100_000, 10_150_000],
+  ['20m', 14_000_000, 14_350_000],
+  ['17m', 18_068_000, 18_168_000],
+  ['15m', 21_000_000, 21_450_000],
+  ['12m', 24_890_000, 24_990_000],
+  ['10m', 28_000_000, 29_700_000],
+  ['6m', 50_000_000, 54_000_000],
+  ['4m', 70_000_000, 71_000_000],
+  ['2m', 144_000_000, 148_000_000],
+  ['70cm', 420_000_000, 450_000_000],
+  ['23cm', 1_240_000_000, 1_300_000_000],
+  ['13cm', 2_300_000_000, 2_450_000_000],
+  ['9cm', 3_300_000_000, 3_500_000_000],
+  ['6cm', 5_650_000_000, 5_925_000_000],
+  ['3cm', 10_000_000_000, 10_500_000_000],
+  ['1.25cm', 24_000_000_000, 24_250_000_000],
+  ['6mm', 47_000_000_000, 47_200_000_000],
+  ['4mm', 75_500_000_000, 81_000_000_000],
+]
+
+/** Band for a frequency in Hz, or undefined outside the amateur bands we know. */
+export function bandForFreq(hz: number): string | undefined {
+  return BAND_EDGES.find(([, lo, hi]) => hz >= lo && hz <= hi)?.[0]
+}
+
+/** Where typing a band tunes a radio when it has no frequency of its own for that band
+ *  yet: the usual CW / SSB / FM spot (Hz), or undefined (not an HF–UHF band, no FM there). */
+const BAND_SPOTS: Readonly<Record<string, Partial<Record<string, number>>>> = {
+  '160m': { CW: 1_830_000, SSB: 1_843_000 },
+  '80m': { CW: 3_530_000, SSB: 3_700_000 },
+  '60m': { CW: 5_352_000, SSB: 5_360_000 },
+  '40m': { CW: 7_020_000, SSB: 7_100_000 },
+  '30m': { CW: 10_115_000 },
+  '20m': { CW: 14_030_000, SSB: 14_200_000 },
+  '17m': { CW: 18_080_000, SSB: 18_130_000 },
+  '15m': { CW: 21_030_000, SSB: 21_250_000 },
+  '12m': { CW: 24_900_000, SSB: 24_950_000 },
+  '10m': { CW: 28_030_000, SSB: 28_500_000, FM: 29_600_000 },
+  '6m': { CW: 50_090_000, SSB: 50_150_000, FM: 51_510_000 },
+  '4m': { CW: 70_050_000, SSB: 70_200_000, FM: 70_450_000 },
+  '2m': { CW: 144_050_000, SSB: 144_300_000, FM: 145_500_000 },
+  '70cm': { CW: 432_050_000, SSB: 432_200_000, FM: 433_500_000 },
+}
+
+export function bandSpot(band: string, mode: string): number | undefined {
+  return BAND_SPOTS[band]?.[mode]
+}
+
 /** Modes recognized as sticky tokens, canonical uppercase form. */
 export const MODES: readonly string[] = ['CW', 'SSB', 'FM']
 

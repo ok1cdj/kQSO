@@ -36,8 +36,9 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var webView: WebView
     private lateinit var root: FrameLayout
-    private lateinit var keyer: KeyerBle
-    private var pendingPermission: ((Boolean) -> Unit)? = null
+    private lateinit var keyer: BleLink
+    private lateinit var rig: BleLink
+    private val pendingPermission = mutableListOf<(Boolean) -> Unit>()
     private var pendingExport: String? = null
     private var pendingChooser: ValueCallback<Array<Uri>>? = null
 
@@ -62,13 +63,15 @@ class MainActivity : ComponentActivity() {
         pendingChooser = null
     }
 
-    // Bluetooth permissions for the CW keyer, asked on the first Connect.
+    // Bluetooth permissions for the keyer / IC-705, asked on the first Connect. Both may
+    // ask at once (quiet reconnects at start-up), so every waiting caller gets the answer.
     private val requestPermissions = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
-        val cb = pendingPermission
-        pendingPermission = null
-        cb?.invoke(result.values.all { it })
+        val cbs = pendingPermission.toList()
+        pendingPermission.clear()
+        val granted = result.values.all { it }
+        cbs.forEach { it(granted) }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -94,8 +97,9 @@ class MainActivity : ComponentActivity() {
             settings.cacheMode = WebSettings.LOAD_NO_CACHE
             settings.allowFileAccess = false
             settings.allowContentAccess = false
-            keyer = KeyerBle(this@MainActivity)
-            addJavascriptInterface(KQSOBridge(this@MainActivity, keyer), "KQSONative")
+            keyer = BleLink(this@MainActivity, BleLink.KEYER)
+            rig = BleLink(this@MainActivity, BleLink.IC705)
+            addJavascriptInterface(KQSOBridge(this@MainActivity, keyer, rig), "KQSONative")
             webViewClient = object : WebViewClient() {
                 override fun shouldInterceptRequest(
                     view: WebView,
@@ -177,6 +181,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         keyer.close()
+        rig.close()
         super.onDestroy()
     }
 
@@ -191,11 +196,10 @@ class MainActivity : ComponentActivity() {
 
     /** Ask for the BLE permissions (or answer at once when already granted). */
     fun requestBlePermissions(cb: (Boolean) -> Unit) {
-        val perms = KeyerBle.blePermissions()
+        val perms = BleLink.blePermissions()
         if (perms.all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }) return cb(true)
-        pendingPermission?.invoke(false)
-        pendingPermission = cb
-        requestPermissions.launch(perms)
+        pendingPermission.add(cb)
+        if (pendingPermission.size == 1) requestPermissions.launch(perms) // one dialog for all
     }
 
     fun evalJs(script: String) {

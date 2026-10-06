@@ -11,7 +11,7 @@ import java.io.File
  * synchronous methods into the async KQSOPlatform. Logs are real .adi files in
  * app storage (reachable via ADB), so there is no WebKit-style eviction.
  */
-class KQSOBridge(private val activity: MainActivity, private val keyer: KeyerBle) {
+class KQSOBridge(private val activity: MainActivity, private val keyer: BleLink, private val rig: BleLink) {
 
     private val ctx: Context = activity.applicationContext
     private val logsDir: File = File(ctx.filesDir, "logs").apply { mkdirs() }
@@ -96,7 +96,7 @@ class KQSOBridge(private val activity: MainActivity, private val keyer: KeyerBle
     @JavascriptInterface
     fun setDarkBars(dark: Boolean) = activity.runOnUiThread { activity.setDarkBars(dark) }
 
-    // CW keyer (KeyerBle). Bridge calls come on a binder thread; BLE state lives on main.
+    // CW keyer (BleLink.KEYER). Bridge calls come on a binder thread; BLE state lives on main.
     @JavascriptInterface
     fun keyerConnect(pick: Boolean) = activity.runOnUiThread { keyer.connect(pick) }
 
@@ -111,4 +111,20 @@ class KQSOBridge(private val activity: MainActivity, private val keyer: KeyerBle
 
     @JavascriptInterface
     fun keyerMtu(): Int = keyer.mtu()
+
+    // IC-705 (BleLink.IC705): CI-V bytes as hex strings both ways.
+    @JavascriptInterface
+    fun rigConnect(pick: Boolean) = activity.runOnUiThread { rig.connect(pick) }
+
+    @JavascriptInterface
+    fun rigDisconnect() = activity.runOnUiThread { rig.disconnect() }
+
+    @JavascriptInterface
+    fun rigForget() = activity.runOnUiThread { rig.forget() }
+
+    @JavascriptInterface
+    fun rigWrite(hex: String) = activity.runOnUiThread { rig.write(hex) }
+
+    @JavascriptInterface
+    fun rigMtu(): Int = rig.mtu()
 }

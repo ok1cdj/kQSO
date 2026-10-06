@@ -83,6 +83,8 @@ export class NewLogScreen implements Screen {
     const profile = tilePicker(t('newlog.profile'), PROFILE_TILES(), prev.profile, () => onProfile())
     const myCall = fieldRow(t('newlog.myCall'), rememberedCall)
     const myGrid = fieldRow(t('newlog.myGrid'), rememberedGrid)
+    // Every profile needs the own call: ADIF STATION_CALLSIGN, {MYCALL} in the CW macros.
+    const callError = fieldError(myCall, t('newlog.myCallRequired'))
     // VKV contest can't score QRB without the own locator — block Create until it's valid.
     const gridError = fieldError(myGrid, t('newlog.myGridRequired'))
     const myRef = fieldRow(t('newlog.myRef'), '', { placeholder: t('newlog.myRefPlaceholder') })
@@ -118,6 +120,10 @@ export class NewLogScreen implements Screen {
     actions.append(
       button(t('newlog.create'), () => {
         const meta = collect()
+        if (meta.myCall === '') {
+          callError.show()
+          return
+        }
         if (PROFILES[meta.profile].requiresGrid && !isFullLocator(meta.myGrid)) {
           gridError.show()
           return

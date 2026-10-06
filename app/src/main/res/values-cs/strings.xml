@@ -1,13 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- CW klíčovač (KeyerBle) -->
+    <!-- CW klíčovač (BleLink.KEYER) -->
     <string name="keyer_searching">Hledám klíčovač…</string>
     <string name="keyer_choose">Vyber klíčovač</string>
     <string name="keyer_none">Klíčovač nenalezen — je zapnutý?</string>
-    <string name="keyer_no_bt">Zařízení nemá Bluetooth</string>
-    <string name="keyer_bt_off">Bluetooth je vypnutý</string>
-    <string name="keyer_no_permission">Oprávnění pro Bluetooth nepovoleno</string>
     <string name="keyer_not_keyer">Zařízení není klíčovač (chybí UART služba)</string>
-    <string name="keyer_failed">spojení ztraceno</string>
-    <string name="keyer_failed_status">připojení selhalo (status %1$d)</string>
+    <!-- BLE spojení (BleLink), obě zařízení -->
+    <string name="ble_no_bt">Zařízení nemá Bluetooth</string>
+    <string name="ble_bt_off">Bluetooth je vypnutý</string>
+    <string name="ble_no_permission">Oprávnění pro Bluetooth nepovoleno</string>
+    <string name="ble_failed">spojení ztraceno</string>
+    <string name="ble_failed_status">připojení selhalo (status %1$d)</string>
+    <!-- IC-705 -->
+    <string name="rig_searching">Hledám IC-705… (na rádiu Bluetooth Set → Pairing Reception)</string>
+    <string name="rig_choose">Vyber IC-705</string>
+    <string name="rig_none">IC-705 nenalezen — má zapnutý Bluetooth a Pairing Reception?</string>
+    <string name="rig_not_rig">Zařízení není IC-705 (chybí sériová služba Icom)</string>
 </resources>

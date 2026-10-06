@@ -31,6 +31,7 @@ import {
   bearingDeg,
   defaultReport,
   applySatellite,
+  applyRadio,
   satelliteByLabel,
   SATELLITES,
   PROFILES,
@@ -45,6 +46,7 @@ import { alignColumns, allFit } from '../columns'
 import { createKeyboard } from '../keyboard'
 import type { KeyAction } from '../keys'
 import type { KeyerController } from '../keyer'
+import type { RigController } from '../rig'
 
 export interface LoggingNav {
   toLogList(): void
@@ -97,10 +99,13 @@ export class LoggingScreen implements Screen {
   private readonly onKeydown = (e: KeyboardEvent): void => this.onHardwareKey(e)
   private readonly onWideChange = (): void => this.renderStrip()
   private unsubscribeKeyer: (() => void) | undefined
+  private unsubscribeRig: (() => void) | undefined
+  private rigShown = '' // what the header last showed from the radio (re-render on change only: e-ink)
 
   constructor(
     private readonly platform: KQSOPlatform,
     private readonly keyer: KeyerController,
+    private readonly rig: RigController,
     private readonly logId: string,
     private readonly nav: LoggingNav,
   ) {}
@@ -117,6 +122,7 @@ export class LoggingScreen implements Screen {
     window.addEventListener('keydown', this.onKeydown)
     WIDE.addEventListener('change', this.onWideChange)
     this.unsubscribeKeyer = this.keyer.subscribe(() => this.onKeyerChange())
+    this.unsubscribeRig = this.rig.subscribe(() => this.onRigChange())
     void this.init()
   }
 
@@ -124,6 +130,7 @@ export class LoggingScreen implements Screen {
     window.removeEventListener('keydown', this.onKeydown)
     WIDE.removeEventListener('change', this.onWideChange)
     this.unsubscribeKeyer?.()
+    this.unsubscribeRig?.()
     this.exitTx()
     this.recentResize?.disconnect()
     this.platform.keepAwake(false)
@@ -149,6 +156,7 @@ export class LoggingScreen implements Screen {
       // Linear birds keep the last QSO's mode (SSB / CW); SSB for a new log.
       this.state = { ...this.state, sticky: applySatellite(this.state.sticky, sat, qsos.length > 0 ? this.state.sticky.mode : 'SSB') }
     }
+    this.syncRig()
     this.platform.keepAwake(true)
     await this.offerRecovery()
     this.renderRecent()
@@ -225,9 +233,15 @@ export class LoggingScreen implements Screen {
     }
     const hadContent = hasContent(this.state.partial)
     const before = { lineEmpty: this.line.trim() === '', hadContent, hadCall: this.state.partial.call !== undefined }
+    const prev = this.state.sticky
     const r = reduce(this.state, { type: 'enter', line: this.line }, this.meta)
     this.state = r.state
     if (r.clearInput) this.line = ''
+    // Radio connected: a typed band / mode tunes it; its transceive then confirms.
+    const next = this.state.sticky
+    if (this.rigSets() && (next.band !== prev.band || next.mode !== prev.mode)) {
+      void this.rig.tune(next.band !== prev.band ? next.band : undefined, next.mode !== prev.mode ? next.mode : undefined)
+    }
 
     if (r.command) {
       await this.runCommand(r.command, hadContent)
@@ -435,11 +449,44 @@ export class LoggingScreen implements Screen {
     void this.sendKeyed(word)
   }
 
+  // --- IC-705 ---------------------------------------------------------
+
+  /** The radio sets band / mode / FREQ: connected, and not a satellite log (the bird does). */
+  private rigSets(): boolean {
+    return this.rig.controls && !PROFILES[this.meta.profile].fixedBand
+  }
+
+  /** Radio's frequency / mode → sticky state. Without the radio, a FREQ it gave is dropped
+   *  (band and mode stay as they were last). */
+  private syncRig(): void {
+    const s = this.state.sticky
+    if (this.rigSets()) this.state = { ...this.state, sticky: applyRadio(s, this.rig.freqHz, this.rig.mode) }
+    else if (s.freq !== undefined && !PROFILES[this.meta.profile].fixedBand) this.state = { ...this.state, sticky: applyRadio(s, undefined, undefined) }
+  }
+
+  private onRigChange(): void {
+    const n = this.rig.notice
+    let changed = false
+    if (n) {
+      this.notice = n.type === 'tuneFailed' ? t('logging.rigTuneFailed') : t('settings.rigFailed', { msg: n.message })
+      this.rig.clearNotice()
+      changed = true
+    }
+    this.syncRig()
+    // Every VFO step lands here; redraw only when something shown changes.
+    const s = this.state.sticky
+    const shown = `${this.rig.link}|${this.rig.ready}|${s.band}|${s.mode}|${this.keyer.connected}`
+    if (shown !== this.rigShown) changed = true
+    this.rigShown = shown
+    if (changed) this.renderAll()
+  }
+
   private onKeyerChange(): void {
     const n = this.keyer.notice
     if (this.txMode && !this.keyer.connected) this.exitTx()
     if (n?.type === 'error') {
-      this.notice = t('logging.keyerError', { what: n.what })
+      const key = n.what === 'mode' ? 'logging.rigNotCw' : undefined
+      this.notice = key ? t(key) : t('logging.keyerError', { what: n.what })
       this.keyer.clearNotice()
     } else if (n?.type === 'connectFailed') {
       this.notice = t('settings.keyerFailed', { msg: n.message })
@@ -516,7 +563,7 @@ export class LoggingScreen implements Screen {
     // callsign database knows for the call, greyed like its + LOC suggestion.
     // CW keyer: RUN / S&P + speed, and whether the link is up (✕ = not connected, tap = connect).
     if (this.keyerOn()) {
-      const link = this.keyer.link
+      const link = this.keyer.outLink
       const wpm = this.keyer.wpm
       const state = link === 'off' ? ' ✕' : link === 'connecting' ? ' …' : wpm !== undefined ? ` ${wpm}` : ''
       // Keyboard mode: TX instead of RUN / S&P, inverted. ·ESM = Enter sends the macros.
@@ -524,6 +571,12 @@ export class LoggingScreen implements Screen {
       const label = `${what}${state}`
       const cls = link !== 'on' ? 'hdr-keyer hdr-keyer--off' : this.txMode ? 'hdr-keyer hdr-keyer--tx' : 'hdr-keyer'
       mid.append(button(label, () => void this.keyer.reconnect(), cls))
+    }
+    // IC-705: up (band / mode from the radio), connecting, or ✕ (tap = connect).
+    if (this.rig.enabled && !profile.fixedBand) {
+      const up = this.rig.controls
+      const label = `705${up ? '' : this.rig.link === 'off' ? ' ✕' : ' …'}`
+      mid.append(button(label, () => void this.rig.reconnect(), up ? 'hdr-keyer' : 'hdr-keyer hdr-keyer--off'))
     }
     if (profile.contest) {
       const known = p.grid === undefined && p.call !== undefined ? this.db.lookup(p.call)?.loc : undefined
@@ -645,7 +698,7 @@ export class LoggingScreen implements Screen {
       case 'sp':
         return { what: t('logging.cmdSp'), bad: false }
       case 'connect':
-        return this.keyer.link === 'off'
+        return this.keyer.outLink === 'off'
           ? { what: t('logging.cmdConnect'), bad: false }
           : { what: t('logging.cmdConnected'), bad: true }
       case 'esm':
@@ -714,7 +767,7 @@ export class LoggingScreen implements Screen {
       return
     }
     // CW keyer dropped: offer the reconnect where the macros were.
-    if (this.keyerOn() && this.keyer.link === 'off') {
+    if (this.keyerOn() && this.keyer.outLink === 'off') {
       this.stripEl.replaceChildren(this.suggestButton(t('logging.keyerReconnect'), () => void this.keyer.reconnect()))
       return
     }
