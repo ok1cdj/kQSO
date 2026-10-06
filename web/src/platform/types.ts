@@ -62,6 +62,10 @@ export interface KQSOPlatform {
   /** Native shell (APK) version, shown in About; undefined in the browser. */
   readonly nativeVersion?: string
 
+  /** APK: the installing app (com.android.vending, org.fdroid.fdroid …); undefined
+   *  when sideloaded (GitHub APK), unknown, or in the browser. */
+  readonly installSource?: string | undefined
+
   listLogs(): Promise<LogSummary[]>
   createLog(meta: LogMeta): Promise<string> // returns the new log id
   appendQso(logId: string, adifRecord: string): Promise<void> // append one record, never rewrite

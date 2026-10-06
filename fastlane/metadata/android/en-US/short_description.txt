@@ -1,0 +1,1 @@
+Ham radio logger with one smart input line — works offline

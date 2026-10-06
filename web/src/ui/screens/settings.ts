@@ -22,7 +22,7 @@ import { KEYER_SETTINGS } from '../keyer'
 import type { KeyerController } from '../keyer'
 import { RIG_SETTINGS } from '../rig'
 import type { RigController } from '../rig'
-import { UPDATE_SETTINGS } from '../update'
+import { UPDATE_SETTINGS, checksUpdates } from '../update'
 
 export interface SettingsNav {
   back(): void
@@ -89,7 +89,11 @@ export class SettingsScreen implements Screen {
       ...(this.rig.available ? [await this.rigSetting()] : []),
       ...(this.keyer.available ? [await this.keyerSetting()] : []),
       this.storageSetting(persisted),
-      ...(this.platform.nativeVersion ? [await this.updateSetting()] : [await this.statsSetting()]),
+      ...(this.platform.nativeVersion
+        ? checksUpdates(this.platform)
+          ? [await this.updateSetting()]
+          : []
+        : [await this.statsSetting()]),
       this.about(),
     )
   }

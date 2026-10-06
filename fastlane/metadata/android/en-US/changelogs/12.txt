@@ -1,0 +1,1 @@
+Icom IC-705 over Bluetooth (beta): band, mode and exact frequency (FREQ) from the radio; a typed band, mode or F28300 tunes it. In CW the macros go through the radio's keyer, in SSB / FM the T1–T4 buttons send its voice memories. Transverters per band; a band the radio doesn't work switches only the log. A new log needs your callsign.

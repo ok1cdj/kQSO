@@ -32,6 +32,15 @@ class KQSOBridge(private val activity: MainActivity, private val keyer: BleLink,
     @JavascriptInterface
     fun isPersisted(): Boolean = true // real files in app storage
 
+    /** Who installed the app (com.android.vending = Play, org.fdroid.fdroid …), "" when
+     *  sideloaded or unknown. A store updates the app itself, so no GitHub check then. */
+    @JavascriptInterface
+    fun installSource(): String = try {
+        ctx.packageManager.getInstallSourceInfo(ctx.packageName).installingPackageName ?: ""
+    } catch (_: Exception) {
+        ""
+    }
+
     @JavascriptInterface
     fun list(): String {
         val ids = logsDir.listFiles { f -> f.name.endsWith(".adi") }

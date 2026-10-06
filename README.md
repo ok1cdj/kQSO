@@ -189,7 +189,9 @@ export JAVA_HOME=/opt/android-studio/jbr
 - **Web:** push to `main` → GitHub Actions (`deploy.yml`: `npm ci`, typecheck, test,
   build) → `web/dist` deployed to GitHub Pages, custom domain `kqso.ok1cdj.com`
   (DNS: `CNAME kqso → ok1cdj.github.io`). The build uses base `/`.
-- **APK:** bump `versionCode` / `versionName` in `app/build.gradle.kts`, rename
+- **APK:** bump `versionCode` / `versionName` in `app/build.gradle.kts`, add the
+  store release notes `fastlane/metadata/android/{en-US,cs-CZ}/changelogs/<versionCode>.txt`
+  (≤ 500 characters; read by F-Droid clients / IzzyOnDroid), rename
   `## [Unreleased]` in [`CHANGELOG.md`](CHANGELOG.md) to `## [1.7] – date`, then push a
   `v*` tag (`git tag v1.7 && git push origin v1.7`) → `release.yml` builds the web,
   signs the release APK and attaches it to a GitHub Release as
@@ -220,4 +222,4 @@ keytool -genkeypair -v -keystore keystore/kqso.jks -alias kqso \
 
 ## License
 
-GPL-3.0
+GPL-3.0 — see [`LICENSE`](LICENSE). Privacy policy: <https://kqso.ok1cdj.com/privacy.html>

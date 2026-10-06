@@ -23,3 +23,13 @@ export function announceUpdate(installed: string, latest: string | null, dismiss
   if (!latest || compareVersions(latest, installed) <= 0 || latest === dismissed) return undefined
   return latest
 }
+
+/** Installers that update the app themselves: Play, F-Droid, Droid-ify, Neo Store. */
+const STORES: ReadonlySet<string> = new Set(['com.android.vending', 'org.fdroid.fdroid', 'com.looker.droidify', 'com.machiav3lli.fdroid'])
+
+/** Whether the APK should look for a new version on GitHub: only one installed from
+ *  GitHub (sideloaded). A store updates it itself, and Play forbids pointing elsewhere.
+ *  `nativeVersion` undefined = the web app (never). */
+export function checksGitHub(nativeVersion: string | undefined, installSource: string | undefined): boolean {
+  return nativeVersion !== undefined && !STORES.has(installSource ?? '')
+}
