@@ -107,7 +107,7 @@ const EN: readonly Section[] = [
   {
     title: 'CW keyer (Bluetooth, beta)',
     rows: [
-      { text: 'Settings → CW keying (off by default) → Connect: the M5-ESP32-keyer over Bluetooth, in the Android app or Chrome / Edge. In CW the strip then offers the macros CQ (DE in S&P) EX TU MY REF/LOC/INF ? whenever it has nothing to suggest; the header shows RUN or S&P and the speed (✕ = not connected). Beta, tested with the M5-ESP32-keyer v2: please report bugs on GitHub Issues (github.com/ok1cdj/kQSO/issues).' },
+      { text: 'Settings → CW keying (off by default) → Connect: the M5-ESP32-keyer over Bluetooth, in the Android / iOS app or Chrome / Edge. In CW the strip then offers the macros CQ (DE in S&P) EX TU MY REF/LOC/INF ? whenever it has nothing to suggest; the header shows RUN or S&P and the speed (✕ = not connected). Beta, tested with the M5-ESP32-keyer v2: please report bugs on GitHub Issues (github.com/ok1cdj/kQSO/issues).' },
       { text: 'Each profile has its own macros for RUN (I call CQ) and S&P (I answer a CQ), editable in Settings. While sending, STOP is first in the strip; Esc stops too.' },
       { text: 'Macro variables: {CALL} their call, {MYCALL} {MYLOC} {MYREF} from the log header, {RST} sent report, {NR} my next serial (001), {LOC} {REF} their locator / reference, {HI} greeting by local time — GM until noon, GA until 18:00, GE until midnight.' },
       { code: 'R ⏎ / S ⏎', text: 'RUN / S&P mode (only while CW keying is on).' },
@@ -121,7 +121,7 @@ const EN: readonly Section[] = [
   {
     title: 'IC-705 (Bluetooth, beta)',
     rows: [
-      { text: 'Settings → IC-705 → Connect (Android app; first time open Pairing Reception on the radio: MENU → SET → Bluetooth Set). The header shows 705 (✕ = not connected, tap = connect). Band, mode and the exact frequency (ADIF FREQ) come from the radio.' },
+      { text: 'Settings → IC-705 → Connect (Android / iOS app; first time open Pairing Reception on the radio: MENU → SET → Bluetooth Set). The header shows 705 (✕ = not connected, tap = connect). Band, mode and the exact frequency (ADIF FREQ) come from the radio.' },
       { code: '40m ⏎ / cw ⏎', text: 'Tunes the radio: a band goes to the radio\'s last frequency there, the mode stays.' },
       { code: 'F28300 ⏎', text: 'Tunes the radio to 28.300 MHz (kHz, no dot); the mode stays.' },
       { code: '23cm ⏎', text: 'A band the radio doesn\'t work: only the log switches, the radio is left alone and doesn\'t key (header 705 –) until you type a radio band or change band on the radio. With a transverter (Settings → IC-705 → XVERT) the radio goes to its IF and the log gets the RF frequency (header 705 XV).' },
@@ -224,7 +224,7 @@ const CS: readonly Section[] = [
   {
     title: 'CW klíčovač (Bluetooth, beta)',
     rows: [
-      { text: 'Nastavení → CW klíčování (výchozí vypnuto) → Připojit: klíčovač M5-ESP32-keyer přes Bluetooth, v aplikaci pro Android nebo v Chromu / Edge. V CW pak lišta nabízí makra CQ (v S&P DE) EX TU MY REF/LOC/INF ?, kdykoli zrovna nic nenavrhuje; hlavička ukazuje RUN nebo S&P a rychlost (✕ = nepřipojeno). Beta, vyzkoušeno s M5-ESP32-keyer v2: chyby prosím hlaste na GitHub Issues (github.com/ok1cdj/kQSO/issues).' },
+      { text: 'Nastavení → CW klíčování (výchozí vypnuto) → Připojit: klíčovač M5-ESP32-keyer přes Bluetooth, v aplikaci pro Android a iOS nebo v Chromu / Edge. V CW pak lišta nabízí makra CQ (v S&P DE) EX TU MY REF/LOC/INF ?, kdykoli zrovna nic nenavrhuje; hlavička ukazuje RUN nebo S&P a rychlost (✕ = nepřipojeno). Beta, vyzkoušeno s M5-ESP32-keyer v2: chyby prosím hlaste na GitHub Issues (github.com/ok1cdj/kQSO/issues).' },
       { text: 'Každý profil má vlastní makra pro RUN (dávám CQ) a S&P (odpovídám na CQ), upravíš je v Nastavení. Během vysílání je v liště na prvním místě STOP; zastaví i Esc.' },
       { text: 'Proměnné v makrech: {CALL} značka protistanice, {MYCALL} {MYLOC} {MYREF} z hlavičky logu, {RST} odesílaný report, {NR} moje další pořadové číslo (001), {LOC} {REF} lokátor / reference protistanice, {HI} pozdrav podle místního času — GM do poledne, GA do 18:00, GE do půlnoci.' },
       { code: 'R ⏎ / S ⏎', text: 'Režim RUN / S&P (jen se zapnutým CW klíčováním).' },
@@ -238,7 +238,7 @@ const CS: readonly Section[] = [
   {
     title: 'IC-705 (Bluetooth, beta)',
     rows: [
-      { text: 'Nastavení → IC-705 → Připojit (aplikace pro Android; poprvé na rádiu otevři Pairing Reception: MENU → SET → Bluetooth Set). Hlavička ukazuje 705 (✕ = nepřipojeno, klepnutí = připojit). Pásmo, mód a přesný kmitočet (ADIF FREQ) bere kQSO z rádia.' },
+      { text: 'Nastavení → IC-705 → Připojit (aplikace pro Android a iOS; poprvé na rádiu otevři Pairing Reception: MENU → SET → Bluetooth Set). Hlavička ukazuje 705 (✕ = nepřipojeno, klepnutí = připojit). Pásmo, mód a přesný kmitočet (ADIF FREQ) bere kQSO z rádia.' },
       { code: '40m ⏎ / cw ⏎', text: 'Přeladí rádio: pásmo na poslední kmitočet rádia na tom pásmu, mód zůstane.' },
       { code: 'F28300 ⏎', text: 'Přeladí rádio na 28,300 MHz (v kHz, bez tečky); mód zůstane.' },
       { code: '23cm ⏎', text: 'Pásmo, které rádio neumí: přepne se jen deník, rádio zůstane, jak je, a neklíčuje (hlavička 705 –), dokud nenapíšeš pásmo rádia nebo nepřepneš pásmo na rádiu. S transvertorem (Nastavení → IC-705 → XVERT) jde rádio na mezifrekvenci a do deníku kmitočet RF (hlavička 705 XV).' },

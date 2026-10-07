@@ -1,5 +1,5 @@
 // The single boundary between the app and its host. Two implementations,
-// one API: the OPFS web shim and the Android KQSONative bridge.
+// one API: the OPFS web shim and the native bridge (Android KQSONative, iOS platform/ios.ts).
 // NOTHING outside src/platform/ may touch storage — that is what keeps the APK shell cheap.
 //
 // DOM-free on purpose: this type is imported by both DOM and WebWorker programs and

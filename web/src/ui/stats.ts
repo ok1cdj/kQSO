@@ -1,9 +1,10 @@
 // Anonymous usage statistics for the WEB build only (Umami on stats.ok1cdj.com).
 // Sent with a plain fetch to Umami's collect API — no third-party script in the
-// bundle (no runtime deps / CDN). Never in the APK, never in dev, never
+// bundle (no runtime deps / CDN). Never in the apps (Android, iOS), never in dev, never
 // offline-queued; only screen names and a few action names, NEVER log content
 // (no calls, locators, QSOs). Switchable in Settings.
 
+import { inNativeShell } from '../platform/index'
 import type { KQSOPlatform } from '../platform/index'
 
 const ENDPOINT = 'https://stats.ok1cdj.com/api/send'
@@ -18,12 +19,12 @@ let current = '/' // last screen, so an event is attributed to where it happened
 
 /** Read the switch once at start-up. Off inside the APK and in dev builds. */
 export async function initStats(platform: KQSOPlatform): Promise<void> {
-  enabled = import.meta.env.PROD && !window.KQSONative && (await platform.getSetting(STATS_SETTING)) !== '0'
+  enabled = import.meta.env.PROD && !inNativeShell() && (await platform.getSetting(STATS_SETTING)) !== '0'
 }
 
 /** The Settings switch — takes effect immediately. */
 export function setStatsEnabled(on: boolean): void {
-  enabled = on && import.meta.env.PROD && !window.KQSONative
+  enabled = on && import.meta.env.PROD && !inNativeShell()
 }
 
 /** A screen view, e.g. "logging" → /logging. */

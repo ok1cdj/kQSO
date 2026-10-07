@@ -3,7 +3,7 @@
 // here and never knows the difference.
 
 import { MemoryPlatform } from './memory'
-import { nativePlatform } from './native'
+import { inNativeShell, nativePlatform } from './native'
 import { WebPlatform, opfsAvailable } from './web/opfs'
 import type { KQSOPlatform } from './types'
 
@@ -26,10 +26,11 @@ export function getPlatform(): KQSOPlatform {
 /** Which backend getPlatform() would use — for the About/settings screen. */
 export function platformKind(): 'native' | 'opfs' | 'memory' {
   // Not nativePlatform(): a second instance would take over the keyer callbacks.
-  if (typeof window !== 'undefined' && window.KQSONative) return 'native'
+  if (inNativeShell()) return 'native'
   return opfsAvailable() ? 'opfs' : 'memory'
 }
 
 export type { KQSOPlatform, LogSummary, KeyerTransport, RigTransport, KeyerLinkState } from './types'
 export { MemoryPlatform } from './memory'
+export { inNativeShell } from './native'
 export { WebPlatform, opfsAvailable } from './web/opfs'

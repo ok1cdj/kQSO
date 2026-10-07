@@ -24,12 +24,13 @@ export function announceUpdate(installed: string, latest: string | null, dismiss
   return latest
 }
 
-/** The Google Play Store as the installing app. */
-const PLAY = 'com.android.vending'
+/** Installs a store keeps up to date: Google Play (its package as the installer) and
+ *  the iOS app ('ios': App Store / TestFlight). */
+const STORE_INSTALLS: ReadonlySet<string> = new Set(['com.android.vending', 'ios'])
 
-/** Whether the APK should look for a new version on GitHub: not when Google Play
- *  installed it — Play updates it itself and forbids pointing at another download.
+/** Whether the app should look for a new version on GitHub: only an APK installed from
+ *  GitHub — a store updates the app itself and forbids pointing at another download.
  *  `nativeVersion` undefined = the web app (never). */
 export function checksGitHub(nativeVersion: string | undefined, installSource: string | undefined): boolean {
-  return nativeVersion !== undefined && installSource !== PLAY
+  return nativeVersion !== undefined && !STORE_INSTALLS.has(installSource ?? '')
 }
