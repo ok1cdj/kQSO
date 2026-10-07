@@ -4,14 +4,15 @@
 
 A ham radio logger with a single, smart input line. One line recognizes what you
 type — callsign, band/mode, report, serial, locator, award reference — so you can
-log a QSO with almost no taps. It runs as a web app (offline PWA) and as an
-Android APK (the same web app in a WebView shell).
+log a QSO with almost no taps. It runs as a web app (offline PWA), as an
+Android app and as an iOS app for iPhone and iPad (the same web app in a native shell).
 
 Target devices (all first-class): **Mudita Kompakt** (480×800 e-ink), iPad/tablet,
 desktop.
 
-- **Live web:** <https://kqso.ok1cdj.com/> (web 1.8.1; the old `ok1cdj.github.io/kQSO/` redirects there)
-- **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.8.1)
+- **Live web:** <https://kqso.ok1cdj.com/> (web 1.8.2; the old `ok1cdj.github.io/kQSO/` redirects there)
+- **Android:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.8.2), Google Play
+- **iOS (iPhone, iPad):** App Store (in review)
 - **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/ok1cdj)

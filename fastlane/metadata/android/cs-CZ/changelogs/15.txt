@@ -1,0 +1,1 @@
+Nastavení píše „aplikace“ místo „APK“. ADIF: bez prázdného MY_GRIDSQUARE, když log nemá vlastní lokátor. kQSO je nově i pro iPhone a iPad.

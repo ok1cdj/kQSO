@@ -1,0 +1,1 @@
+Settings say "app" instead of "APK". ADIF: no empty MY_GRIDSQUARE when the log has no own locator. kQSO is now also available for iPhone and iPad.

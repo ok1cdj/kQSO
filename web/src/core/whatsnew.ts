@@ -14,6 +14,11 @@ export interface WhatsNewEntry {
 /** Newest first. */
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    version: '1.8.2',
+    cs: ['kQSO je i pro iPhone a iPad: stejné logování, soubory ADIF v aplikaci Soubory, klíčovač a IC-705 přes Bluetooth.'],
+    en: ['kQSO for iPhone and iPad: the same logging, ADIF files in the Files app, the CW keyer and the IC-705 over Bluetooth.'],
+  },
+  {
     version: '1.8',
     cs: [
       'Icom IC-705 přes Bluetooth (beta, aplikace pro Android): Nastavení → IC-705. Pásmo, mód a přesný kmitočet (FREQ) bere kQSO z rádia, napsané pásmo / mód nebo F28300 rádio přeladí. V CW jdou makra přes klíčovač rádia, v SSB / FM tlačítka T1–T4 odvysílají hlasové paměti. Transvertory a pásma, která rádio neumí, viz nápověda (H).',

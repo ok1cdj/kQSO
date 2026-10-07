@@ -1,10 +1,14 @@
 # Changelog
 
-What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android APK share one version. Newest first.
+What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android app and the iOS app share one version. Newest first.
 
-## [Unreleased]
+## [1.8.2] – 2026-10-07
+
+### Added
+- **iOS app (iPhone, iPad)**: the same kQSO as on Android — logs as ADIF files (also in the Files app), export and share through the share sheet, the CW keyer and the Icom IC-705 over Bluetooth. Distributed through TestFlight / the App Store.
 
 ### Changed
+- Settings: "app" instead of "APK" for the storage and the version.
 - APK: only Google Play counts as a store that updates the app (the GitHub new-version check stays off for it); F-Droid clients are no longer singled out.
 - Store descriptions in `fastlane/metadata/android` are plain text (Google Play).
 - ADIF: a QSO in a log without your own locator no longer gets an empty `MY_GRIDSQUARE` field.
