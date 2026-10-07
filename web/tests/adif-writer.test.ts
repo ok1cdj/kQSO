@@ -25,6 +25,11 @@ describe('writeField / writeHeader', () => {
 })
 
 describe('writeQso against reference output', () => {
+  it('no own locator: MY_GRIDSQUARE left out, not written empty', () => {
+    const qso: Qso = { ...BASE, call: 'OK2XYZ', myGrid: '' }
+    expect(writeQso(qso)).toBe(HEAD.replace(' <MY_GRIDSQUARE:6>JN79US', '') + ' <EOR>')
+  })
+
   it('Aktivace SOTA — SOTA_REF + MY_SOTA_REF', () => {
     const qso: Qso = {
       ...BASE,
