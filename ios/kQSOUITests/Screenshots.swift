@@ -20,7 +20,17 @@ final class Screenshots: XCTestCase {
 
         // 1. The log list.
         let vhf = button(beginningWith: "IARU R1 VHF 2024")
-        XCTAssert(vhf.waitForExistence(timeout: 30), "log list not shown")
+        if !vhf.waitForExistence(timeout: 30) {
+            // What the test sees, for the CI log and the result bundle.
+            shot("0-failed-start")
+            print(app.debugDescription)
+            let tree = XCTAttachment(string: app.debugDescription)
+            tree.name = "0-tree"
+            tree.lifetime = .keepAlways
+            add(tree)
+            XCTFail("log list not shown")
+            return
+        }
         shot("1-logs")
 
         // 2. VHF contest: a whole QSO on one line, before Enter — the parse preview with

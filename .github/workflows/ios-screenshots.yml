@@ -82,7 +82,7 @@ jobs:
             xcrun simctl spawn "$UDID" defaults write com.ok1cdj.kqso whatsNewSeen -string "$VERSION"
             xcodebuild -project ios/kQSO.xcodeproj -scheme kQSO -derivedDataPath build/dd \
               -destination "id=$UDID" -only-testing:kQSOUITests/Screenshots \
-              -resultBundlePath "build/$NAME.xcresult" CODE_SIGNING_ALLOWED=NO test-without-building
+              -resultBundlePath "build/$NAME.xcresult" CODE_SIGNING_ALLOWED=NO test-without-building || FAILED=1
             xcrun xcresulttool export attachments --path "build/$NAME.xcresult" --output-path "shots/$NAME"
             # Name the files after the attachments (1-logs.png …).
             python3 - "shots/$NAME" <<'PY'
@@ -90,12 +90,15 @@ jobs:
           d = sys.argv[1]
           for test in json.load(open(os.path.join(d, 'manifest.json'))):
               for a in test.get('attachments', []):
-                  name = a.get('suggestedHumanReadableName', a['exportedFileName']).split('_0_')[0]
-                  os.rename(os.path.join(d, a['exportedFileName']), os.path.join(d, name + '.png'))
+                  src = a['exportedFileName']
+                  name = a.get('suggestedHumanReadableName', src).split('_0_')[0]
+                  ext = os.path.splitext(src)[1] or '.png'
+                  os.rename(os.path.join(d, src), os.path.join(d, name + ext))
           PY
             xcrun simctl shutdown "$UDID"
           done
           ls -R shots
+          [ -z "$FAILED" ]
 
       - uses: actions/upload-artifact@v4
         if: always()
