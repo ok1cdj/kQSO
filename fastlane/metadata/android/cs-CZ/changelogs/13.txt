@@ -1,1 +1,1 @@
-Upozornění na novou verzi se ukáže jen u aplikace nainstalované z GitHubu; z Google Play nebo repozitáře F-Droid ji aktualizuje obchod.
+Upozornění na novou verzi se ukáže jen u aplikace nainstalované z GitHubu; z Google Play ji aktualizuje Play.

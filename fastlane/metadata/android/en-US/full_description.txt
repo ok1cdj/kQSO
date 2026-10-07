@@ -1,29 +1,23 @@
 kQSO is a ham radio logger with a single, smart input line. Type a whole QSO on one line — callsign, band and mode, report, serial, locator, award reference — and kQSO recognizes each part by its shape. A preview under the line shows what will be saved. Logs are plain ADIF files on your device; everything works offline.
 
-<b>Log profiles</b>
-<ul>
-<li><b>Activation</b> — SOTA, GMA, POTA, WWFF, TOTA lookout towers; your reference is set with the log, the other station's reference is logged for S2S.</li>
-<li><b>General</b> — adds the name.</li>
-<li><b>VHF contest</b> — serials, 6-character locator, IARU R1 scoring (points per km), score per band, EDI (REG1TEST) export per band.</li>
-<li><b>Satellite</b> — one log per pass; the satellite sets uplink / downlink band and frequency.</li>
-</ul>
+Log profiles
+• Activation — SOTA, GMA, POTA, WWFF, TOTA lookout towers; your reference is set with the log, the other station's reference is logged for S2S.
+• General — adds the name.
+• VHF contest — serials, 6-character locator, IARU R1 scoring (points per km), score per band, EDI (REG1TEST) export per band.
+• Satellite — one log per pass; the satellite sets uplink / downlink band and frequency.
 
-<b>Logging</b>
-<ul>
-<li>Bands 160 m to 76 GHz, microwaves typed in GHz (24G, 10G …).</li>
-<li>Callsign suggestions and locator prefill from a bundled database and your own worked stations.</li>
-<li>Dupe warning (call + band + mode; contest per band; satellite per bird).</li>
-<li>QSO map of worked locators over the Maidenhead grid, offline.</li>
-<li>Rain radar on the VHF contest map (optional, off by default).</li>
-<li>ADIF export, push to your own Wavelog (API v2).</li>
-<li>Crash-safe: every QSO is written at once, an unfinished one is offered back after a restart.</li>
-</ul>
+Logging
+• Bands 160 m to 76 GHz, microwaves typed in GHz (24G, 10G …).
+• Callsign suggestions and locator prefill from a bundled database and your own worked stations.
+• Dupe warning (call + band + mode; contest per band; satellite per bird).
+• QSO map of worked locators over the Maidenhead grid, offline.
+• Rain radar on the VHF contest map (optional, off by default).
+• ADIF export, push to your own Wavelog (API v2).
+• Crash-safe: every QSO is written at once, an unfinished one is offered back after a restart.
 
-<b>Radios and keyers (beta)</b>
-<ul>
-<li><b>Icom IC-705 over Bluetooth</b>: band, mode and exact frequency from the radio, a typed band or F28300 tunes it, CW macros through the radio's keyer, voice memories T1–T4 in SSB / FM, transverters per band.</li>
-<li><b>CW keyer</b> M5-ESP32-keyer over Bluetooth: macros per profile, RUN / S&amp;P, N1MM-style ESM, CW keyboard.</li>
-</ul>
+Radios and keyers (beta)
+• Icom IC-705 over Bluetooth: band, mode and exact frequency from the radio, a typed band or F28300 tunes it, CW macros through the radio's keyer, voice memories T1–T4 in SSB / FM, transverters per band.
+• CW keyer M5-ESP32-keyer over Bluetooth: macros per profile, RUN / S&P, N1MM-style ESM, CW keyboard.
 
 Own alphabetical keyboard (a hardware keyboard works too), standard and e-ink display modes, light and dark theme, English and Czech.
 

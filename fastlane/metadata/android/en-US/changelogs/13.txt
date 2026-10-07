@@ -1,1 +1,1 @@
-The new-version notice now shows only when the app was installed from GitHub; installed from Google Play or an F-Droid repository, the store keeps it up to date.
+The new-version notice now shows only when the app was installed from GitHub; installed from Google Play, Play keeps it up to date.

@@ -2,6 +2,12 @@
 
 What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android APK share one version. Newest first.
 
+## [Unreleased]
+
+### Changed
+- APK: only Google Play counts as a store that updates the app (the GitHub new-version check stays off for it); F-Droid clients are no longer singled out.
+- Store descriptions in `fastlane/metadata/android` are plain text (Google Play).
+
 ## [1.8.1] – 2026-10-06
 
 ### Changed

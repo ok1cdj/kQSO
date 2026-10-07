@@ -219,7 +219,7 @@ export JAVA_HOME=/opt/android-studio/jbr
   (DNS: `CNAME kqso → ok1cdj.github.io`). The build uses base `/`.
 - **APK:** bump `versionCode` / `versionName` in `app/build.gradle.kts`, add the
   store release notes `fastlane/metadata/android/{en-US,cs-CZ}/changelogs/<versionCode>.txt`
-  (≤ 500 characters; read by F-Droid clients / IzzyOnDroid), rename
+  (≤ 500 characters, the Google Play release notes), rename
   `## [Unreleased]` in [`CHANGELOG.md`](CHANGELOG.md) to `## [1.7] – date`, then push a
   `v*` tag (`git tag v1.7 && git push origin v1.7`) → `release.yml` builds the web,
   signs the release APK and attaches it to a GitHub Release as

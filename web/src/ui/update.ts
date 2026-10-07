@@ -1,7 +1,7 @@
 // APK only: is there a newer release on GitHub? Checked at most once a day from the
 // log list, silently (offline / rate limit = just no notice). The web app updates
 // itself through the service worker, so it never asks. Off in Settings = no request.
-// Not at all when a store installed the app: it updates it (and Play forbids pointing
+// Not at all when Google Play installed the app: Play updates it (and forbids pointing
 // at another download).
 
 import { announceUpdate, checksGitHub, parseVersion } from '../core/index'

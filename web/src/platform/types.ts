@@ -62,7 +62,7 @@ export interface KQSOPlatform {
   /** Native shell (APK) version, shown in About; undefined in the browser. */
   readonly nativeVersion?: string
 
-  /** APK: the installing app (com.android.vending, org.fdroid.fdroid …); undefined
+  /** APK: the installing app (com.android.vending = Google Play); undefined
    *  when sideloaded (GitHub APK), unknown, or in the browser. */
   readonly installSource?: string | undefined
 
