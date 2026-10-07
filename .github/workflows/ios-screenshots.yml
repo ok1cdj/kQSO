@@ -3,9 +3,17 @@ name: iOS screenshots
 # App Store screenshots from the Simulator: iPhone 6.9" and iPad 13" (the sizes App
 # Store Connect asks for). The UI test ios/kQSOUITests/Screenshots.swift drives the
 # app on two demo logs (web/scripts/demo-logs.ts); the PNGs come out as an artifact.
-# Run by hand: Actions -> iOS screenshots -> Run workflow.
+# Run by hand (Actions -> iOS screenshots -> Run workflow), or by a push to `ios` that
+# changes the screenshot test, the demo data or this workflow.
 on:
   workflow_dispatch:
+  push:
+    branches: ['ios']
+    paths:
+      - 'ios/kQSOUITests/**'
+      - 'ios/screenshots/**'
+      - 'web/scripts/demo-logs.ts'
+      - '.github/workflows/ios-screenshots.yml'
 
 jobs:
   screenshots:
