@@ -17,3 +17,8 @@ keystore/
 
 # Scratch inputs (source lists, icon drafts)
 tmp/
+
+# iOS (XcodeGen generates the project; CI copies web/dist into kQSO/web)
+ios/kQSO.xcodeproj/
+ios/kQSO/web/
+ios/build/
