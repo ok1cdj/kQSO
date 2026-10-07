@@ -1,0 +1,98 @@
+name: iOS screenshots
+
+# App Store screenshots from the Simulator: iPhone 6.9" and iPad 13" (the sizes App
+# Store Connect asks for). The UI test ios/kQSOUITests/Screenshots.swift drives the
+# app on two demo logs (web/scripts/demo-logs.ts); the PNGs come out as an artifact.
+# Run by hand: Actions -> iOS screenshots -> Run workflow.
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+          sudo xcode-select -s "$X/Contents/Developer"
+          xcodebuild -version
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Web bundle and demo logs
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+          npx vite-node scripts/demo-logs.ts -- "$RUNNER_TEMP/demo"
+
+      - name: Generate the Xcode project
+        run: |
+          rm -rf ios/kQSO/web && cp -R web/dist ios/kQSO/web
+          brew install xcodegen
+          cd ios && xcodegen generate
+
+      - name: Build for testing
+        run: |
+          xcodebuild -project ios/kQSO.xcodeproj -scheme kQSO -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/dd CODE_SIGNING_ALLOWED=NO build-for-testing
+
+      - name: Screenshots
+        run: |
+          VERSION=$(node -p "require('./web/package.json').version")
+          APP=build/dd/Build/Products/Debug-iphonesimulator/kQSO.app
+          xcrun simctl list devices available
+          # The newest iPhone "Pro Max" (6.9") and iPad Pro 13-inch on this Xcode.
+          pick() {
+            xcrun simctl list devices available -j | python3 -c "
+          import json, re, sys
+          want = sys.argv[1]
+          devs = [d for r, ds in json.load(sys.stdin)['devices'].items() if 'iOS' in r for d in ds]
+          hits = [d for d in devs if re.search(want, d['name'])]
+          print(hits[-1]['udid'] if hits else '')" "$1"
+          }
+          for spec in "iphone:iPhone [0-9]+ Pro Max" "ipad:iPad Pro 13-inch"; do
+            NAME=${spec%%:*}
+            UDID=$(pick "${spec#*:}")
+            if [ -z "$UDID" ]; then echo "::error::no simulator for ${spec#*:}"; exit 1; fi
+            xcrun simctl boot "$UDID" || true
+            xcrun simctl bootstatus "$UDID" -b
+            xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 --wifiBars 3 --cellularMode active --cellularBars 4
+            xcrun simctl install "$UDID" "$APP"
+            DATA=$(xcrun simctl get_app_container "$UDID" com.ok1cdj.kqso data)
+            mkdir -p "$DATA/Documents/logs"
+            cp "$RUNNER_TEMP"/demo/*.adi "$DATA/Documents/logs/"
+            # No "what's new" window over the first screenshot.
+            xcrun simctl spawn "$UDID" defaults write com.ok1cdj.kqso whatsNewSeen -string "$VERSION"
+            xcodebuild -project ios/kQSO.xcodeproj -scheme kQSO -derivedDataPath build/dd \
+              -destination "id=$UDID" -only-testing:kQSOUITests/Screenshots \
+              -resultBundlePath "build/$NAME.xcresult" CODE_SIGNING_ALLOWED=NO test-without-building
+            xcrun xcresulttool export attachments --path "build/$NAME.xcresult" --output-path "shots/$NAME"
+            # Name the files after the attachments (1-logs.png …).
+            python3 - "shots/$NAME" <<'PY'
+          import json, os, sys
+          d = sys.argv[1]
+          for test in json.load(open(os.path.join(d, 'manifest.json'))):
+              for a in test.get('attachments', []):
+                  name = a.get('suggestedHumanReadableName', a['exportedFileName']).split('_0_')[0]
+                  os.rename(os.path.join(d, a['exportedFileName']), os.path.join(d, name + '.png'))
+          PY
+            xcrun simctl shutdown "$UDID"
+          done
+          ls -R shots
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-screenshots
+          path: |
+            shots
+            build/*.xcresult

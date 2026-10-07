@@ -32,3 +32,18 @@ targets:
         INFOPLIST_FILE: kQSO/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: NO
+    scheme:
+      testTargets:
+        - kQSOUITests
+  # App Store screenshots in the Simulator (.github/workflows/ios-screenshots.yml).
+  kQSOUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: kQSOUITests
+    dependencies:
+      - target: kQSO
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ok1cdj.kqso.uitests
+        GENERATE_INFOPLIST_FILE: YES
