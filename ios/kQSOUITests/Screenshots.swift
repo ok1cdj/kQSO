@@ -20,7 +20,7 @@ final class Screenshots: XCTestCase {
 
         // 1. The log list.
         let vhf = button(beginningWith: "IARU R1 VHF 2024")
-        if !vhf.waitForExistence(timeout: 30) {
+        if !vhf.waitForExistence(timeout: 90) { // a fresh Simulator can be slow to start WebKit
             // What the test sees, for the CI log and the result bundle.
             shot("0-failed-start")
             print(app.debugDescription)

@@ -97,6 +97,10 @@ jobs:
           PY
             xcrun simctl shutdown "$UDID"
           done
+          # iPad shots are taken in landscape but saved as portrait + an orientation tag;
+          # store them upright (2752x2064), without metadata or alpha, as App Store wants.
+          brew install imagemagick
+          for f in shots/*/*.png; do magick "$f" -auto-orient -strip -alpha off -define png:color-type=2 "$f"; done
           ls -R shots
           [ -z "$FAILED" ]
 
