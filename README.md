@@ -10,6 +10,7 @@ Android app and as an iOS app for iPhone and iPad (the same web app in a native 
 Target devices (all first-class): **Mudita Kompakt** (480×800 e-ink), iPad/tablet,
 desktop.
 
+- **Live web:** <https://kqso.ok1cdj.com/> (web 1.8.2; the old `ok1cdj.github.io/kQSO/` redirects there)
 - **Android:** [Google Play](https://play.google.com/store/apps/details?id=com.ok1cdj.kqso), or the APK from [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.8.2) — the same signature, so either updates the other
 - **iOS (iPhone, iPad):** App Store (in review)
 - **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
