@@ -11,8 +11,10 @@ Target devices (all first-class): **Mudita Kompakt** (480×800 e-ink), iPad/tabl
 desktop.
 
 - **Live web:** <https://kqso.ok1cdj.com/> (web 1.8.1; the old `ok1cdj.github.io/kQSO/` redirects there)
-- **APK:** [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.8.1)
+- **Android:** [Google Play](https://play.google.com/store/apps/details?id=com.ok1cdj.kqso), or the APK from [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.8.1) — the same signature, so either updates the other
 - **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
+
+<a href="https://play.google.com/store/apps/details?id=com.ok1cdj.kqso"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80"></a>
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/ok1cdj)
 
