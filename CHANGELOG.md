@@ -10,7 +10,7 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 ### Changed
 - Settings: "app" instead of "APK" for the storage and the version.
 - APK: only Google Play counts as a store that updates the app (the GitHub new-version check stays off for it); F-Droid clients are no longer singled out.
-- Store descriptions in `fastlane/metadata/android` are plain text (Google Play).
+- Store descriptions in `fastlane/metadata/android` match the Google Play listing (HTML formatting, which Play accepts).
 - ADIF: a QSO in a log without your own locator no longer gets an empty `MY_GRIDSQUARE` field.
 
 ## [1.8.1] – 2026-10-06
