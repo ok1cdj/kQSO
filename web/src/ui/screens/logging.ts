@@ -713,10 +713,18 @@ export class LoggingScreen implements Screen {
       if (qrb !== undefined) chips.push(fieldChip('QRB', `${qrb} km`))
       if (p.theirRef) chips.push(fieldChip('REF', p.theirRef.value))
       if (p.name) chips.push(fieldChip('NAME', p.name))
+    } else if (p.grid !== undefined) {
+      // VHF contest: the locator heard first; the QSO waits for the call.
+      chips.push(fieldChip('CALL', '—', true), fieldChip('LOC', p.grid))
+      const qrb = profile.contest ? qsoPoints(this.meta.myGrid, p.grid) : undefined
+      if (qrb !== undefined) chips.push(fieldChip('QRB', `${qrb} km`))
     }
     for (const t of tokens) if (t.cls.type === 'unknown') chips.push(unknownChip(t.raw))
-    const loc = this.macrosShown() || this.voiceShown() ? this.locSuggestion() : undefined
+    // With the macros / voice memories in the strip, the database's suggestions go here.
+    const inline = this.macrosShown() || this.voiceShown()
+    const loc = inline ? this.locSuggestion() : undefined
     if (loc) chips.push(this.suggestButton(`+ ${loc}`, () => this.fillGrid(loc), 'suggest suggest--ghost suggest--inline'))
+    if (inline) for (const b of this.callsAtLocator('suggest suggest--inline')) chips.push(b)
     this.previewEl.replaceChildren(...chips)
   }
 
@@ -724,6 +732,17 @@ export class LoggingScreen implements Screen {
   private locSuggestion(): string | undefined {
     const call = this.state.partial.call
     return call && this.state.partial.grid === undefined ? this.db.lookup(call)?.loc : undefined
+  }
+
+  /** Locator entered before the call (VHF contest): buttons for the calls the database
+   *  knows there, a tap fills the call in. Worked ones inverted, as in the strip. */
+  private callsAtLocator(cls: string): HTMLElement[] {
+    const { call, grid } = this.state.partial
+    if (call !== undefined || grid === undefined || this.line.trim().length >= 2) return []
+    return this.db.byLocator(grid, 3).map(({ call: c }) => {
+      const worked = isDupe(this.qsos, c, this.state.sticky.band, this.dupeMode())
+      return this.suggestButton(c, () => this.fillCall(c), worked ? `${cls} suggest--worked` : cls)
+    })
   }
 
   /** The keyer's macro buttons own the strip (CW keying on, keyer connected). */
@@ -792,6 +811,12 @@ export class LoggingScreen implements Screen {
         )
         return
       }
+    }
+    // Locator before the call (VHF contest) → the calls known there.
+    const atLoc = this.macrosShown() || this.voiceShown() ? [] : this.callsAtLocator('suggest')
+    if (atLoc.length > 0) {
+      this.stripEl.replaceChildren(...stop, ...atLoc)
+      return
     }
     // Completed call with a known locator → prefill chip. With the keyer's macros in the
     // strip it moves to the preview line instead (renderPreview), the macros stay.

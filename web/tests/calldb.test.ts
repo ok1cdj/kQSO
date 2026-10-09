@@ -132,6 +132,17 @@ describe('combineSources — base + live', () => {
     expect(db.search('XY', 3).map((e) => e.call)).toEqual(['OK2XYZ'])
   })
 
+  it('byLocator: calls at a locator heard before the call; own locator wins over bundled', () => {
+    const live = new LiveDb()
+    const db = combineSources(base, live)
+    expect(db.byLocator('jo70aa', 3).map((e) => e.call)).toEqual(['OK1AAA'])
+    live.record('OK1AAA', 'JO70BB', '20260924') // moved: no longer at JO70AA
+    live.record('OK2XYZ', 'JO70AA', '20260924')
+    expect(db.byLocator('JO70AA', 3).map((e) => e.call)).toEqual(['OK2XYZ'])
+    expect(db.byLocator('JO70BB', 3).map((e) => e.call)).toEqual(['OK1AAA'])
+    expect(emptySuggestions.byLocator('JO70AA', 3)).toEqual([])
+  })
+
   it('no base and an empty live layer: nothing, no crash', () => {
     const db = combineSources(null, new LiveDb())
     expect(db.search('OK', 3)).toEqual([])

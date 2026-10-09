@@ -5,6 +5,7 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 ## [1.8.2] – 2026-10-07
 
 ### Added
+- VHF contest: a full locator heard before the call (`JO70VA` ⏎) is taken as the locator — QRB and azimuth at once, and the strip offers the calls the callsign database knows at that locator; the call completes the QSO later. Before, it was taken as a callsign.
 - **iOS app (iPhone, iPad)**: the same kQSO as on Android — logs as ADIF files (also in the Files app), export and share through the share sheet, the CW keyer and the Icom IC-705 over Bluetooth. Distributed through TestFlight / the App Store.
 
 ### Changed
