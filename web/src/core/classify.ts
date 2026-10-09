@@ -8,7 +8,7 @@ import { matchReference } from './reference'
 /** Positional context threaded left→right across a line. */
 export interface TokenContext {
   readonly isFirstToken: boolean // time only as the first token
-  readonly callSeen: boolean // number & locator only AFTER a callsign
+  readonly callSeen: boolean // number & locator only AFTER a callsign (VKV: a full locator anywhere)
   readonly profile: LogProfile // name (#9); serial vs report (#7)
 }
 
@@ -56,7 +56,10 @@ export function classifyToken(raw: string, ctx: TokenContext): TokenClass {
   // falls through to the locator rule below (locator recognized only
   // after the callsign). Any other call-shaped token is a new call that replaces
   // the earlier one — the way to fix a mistyped call (OK1ND ↵ OK1NP ↵).
-  if (CALL.test(raw) && !(ctx.callSeen && isLocatorShaped(raw))) return { type: 'call', value: raw }
+  // VHF contest: a full locator is a locator even before the call — the locator is
+  // often heard first and the call only at the end of the QSO.
+  const locatorFirst = ctx.profile.requiresGrid && isFullLocator(raw)
+  if (CALL.test(raw) && !(ctx.callSeen && isLocatorShaped(raw)) && !locatorFirst) return { type: 'call', value: raw }
 
   // #6 explicit TX report override (T56)
   if (REPORT_SENT.test(raw)) return { type: 'reportSent', value: raw.slice(1) }
@@ -70,8 +73,8 @@ export function classifyToken(raw: string, ctx: TokenContext): TokenClass {
     if (raw.length <= max) return { type: 'number', value: raw }
   }
 
-  // #8 locator — only after the callsign (defeats JN79US)
-  if (ctx.callSeen && isLocatorShaped(raw)) {
+  // #8 locator — only after the callsign (defeats JN79US); VHF contest: a full one anywhere
+  if ((ctx.callSeen && isLocatorShaped(raw)) || locatorFirst) {
     return { type: 'locator', value: raw }
   }
 

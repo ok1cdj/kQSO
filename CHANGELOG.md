@@ -4,6 +4,9 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com) and the Android
 
 ## [Unreleased]
 
+### Added
+- VHF contest: a full locator heard before the call (`JO70VA` ⏎) is taken as the locator — QRB and azimuth at once, and the strip offers the calls the callsign database knows at that locator; the call completes the QSO later. Before, it was taken as a callsign.
+
 ### Changed
 - APK: only Google Play counts as a store that updates the app (the GitHub new-version check stays off for it); F-Droid clients are no longer singled out.
 - Store descriptions in `fastlane/metadata/android` are plain text (Google Play).

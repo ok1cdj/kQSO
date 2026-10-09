@@ -188,6 +188,25 @@ export function combineSources(base: ReadonlyMap<string, Entry> | null, live: Li
         .slice(0, limit)
         .map((h) => h.e)
     },
+    byLocator(loc, limit) {
+      const l = loc.toUpperCase()
+      // A call's locator is the live one when known (it moves), else the bundled one.
+      const hits = new Map<string, { e: Entry; own: number; bundled: number }>()
+      for (const e of live.entries()) hits.set(e.call, { e, own: e.count, bundled: 0 })
+      if (base)
+        for (const e of base.values()) {
+          const h = hits.get(e.call)
+          if (h) {
+            h.bundled = e.count
+            if (h.e.loc === undefined && e.loc !== undefined) h.e = { ...h.e, loc: e.loc }
+          } else hits.set(e.call, { e, own: 0, bundled: e.count })
+        }
+      return [...hits.values()]
+        .filter((h) => h.e.loc?.toUpperCase() === l)
+        .sort((a, b) => b.own - a.own || b.bundled - a.bundled || (a.e.call < b.e.call ? -1 : 1))
+        .slice(0, limit)
+        .map((h) => h.e)
+    },
   }
 }
 
