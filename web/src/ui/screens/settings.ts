@@ -19,6 +19,7 @@ import { MAP_LABELS_SETTING } from './map'
 import { RADAR_SETTING } from '../radar'
 import { STATS_SETTING, setStatsEnabled } from '../stats'
 import { KEYER_SETTINGS } from '../keyer'
+import { keyerGuideLink } from '../keyer-guide'
 import type { KeyerController } from '../keyer'
 import { RIG_SETTINGS } from '../rig'
 import type { RigController } from '../rig'
@@ -399,6 +400,8 @@ export class SettingsScreen implements Screen {
     const esm = await this.yesNo(KEYER_SETTINGS.esm, (on) => void k.setEsm(on, false), false) // yesNo has saved it
 
     atom.append(status, link)
+    const guide = el('div', 'about')
+    guide.append(keyerGuideLink(t('settings.keyerGuide')))
     cw.append(
       el('span', 'field-label', t('settings.keyerSpeed')),
       speed,
@@ -411,6 +414,7 @@ export class SettingsScreen implements Screen {
     body.append(cw)
     wrap.append(
       el('span', 'field-label', t('settings.keyerDevice')),
+      guide,
       atom,
       el('span', 'field-label', t('settings.keyer')),
       seg,

@@ -5,6 +5,7 @@
 import type { Screen } from '../app'
 import { el, button } from '../dom'
 import { lang, t } from '../i18n'
+import { keyerGuideLink } from '../keyer-guide'
 
 export interface HelpNav {
   back(): void
@@ -13,6 +14,8 @@ export interface HelpNav {
 interface Row {
   readonly code?: string
   readonly text: string
+  /** The text is a link to the keyer's build guide. */
+  readonly guide?: boolean
 }
 interface Section {
   readonly title: string
@@ -116,6 +119,7 @@ const EN: readonly Section[] = [
       { code: 'E ⏎', text: 'ESM on / off (header RUN·ESM): Enter sends the macros as in N1MM. RUN: empty ⏎ = CQ, call ⏎ = EXCH, filling in ⏎ = nothing, empty ⏎ = TU + save. S&P: empty ⏎ = my call, call ⏎ = my call, empty ⏎ = EXCH + save. VHF contest: an empty ⏎ without the number / locator asks NR ? / LOC ? / NR LOC ? and keeps the QSO open.' },
       { code: 'K PSE QRS ⏎', text: 'Send the text once.' },
       { code: 'K ⏎', text: 'CW keyboard: what you type goes out as CW, each word on Space (type ahead; Backspace fixes only the unsent word); the header shows TX. Nothing is logged. An empty Enter, END or Esc (with nothing on the air) ends it.' },
+      { text: 'Build the keyer: parts, schematics, firmware →', guide: true },
     ],
   },
   {
@@ -128,6 +132,7 @@ const EN: readonly Section[] = [
       { code: 'F28300 ⏎', text: 'Tunes the radio to 28.300 MHz (kHz, no dot); the mode stays.' },
       { code: '23cm ⏎', text: 'A band the radio doesn\'t work: kQSO doesn\'t try to tune it — only the log switches and QSOs are logged on it; the radio stays connected, is left alone and doesn\'t key (header 705 –) until you type a radio band or change band on the radio. The same when the radio refuses a band. With a transverter (Settings → Radio → XVERT) the radio goes to its IF and the log gets the RF frequency (header 705 XV).' },
       { text: 'In CW the macros send through the radio\'s own keyer where it has one over CI-V (IC-705, 7300, 9700, 7610, 7100; no need for CW keying; without break-in only the sidetone sounds), else the M5 keyer keys the radio by wire (CW keying on). In SSB / FM the strip offers T1–T4, the radio\'s voice memories (IC-705, 7300, 9700, 7610); STOP or Esc stops them.' },
+      { text: 'Build the keyer (with CI-V for any Icom) →', guide: true },
     ],
   },
   {
@@ -235,6 +240,7 @@ const CS: readonly Section[] = [
       { code: 'E ⏎', text: 'ESM zap / vyp (v hlavičce RUN·ESM): Enter posílá makra jako v N1MM. RUN: prázdný ⏎ = CQ, značka ⏎ = EXCH, doplnění ⏎ = nic, prázdný ⏎ = TU + uložení. S&P: prázdný ⏎ = moje značka, značka ⏎ = moje značka, prázdný ⏎ = EXCH + uložení. VKV závod: prázdný ⏎ bez čísla / lokátoru se zeptá NR ? / LOC ? / NR LOC ? a QSO nechá otevřené.' },
       { code: 'K PSE QRS ⏎', text: 'Jednou odešle napsaný text.' },
       { code: 'K ⏎', text: 'CW klávesnice: co píšeš, jde do éteru, každé slovo po mezeře (můžeš psát dopředu; Backspace opraví jen neodeslané slovo); hlavička ukazuje TX. Nic se nezapisuje do logu. Konec: prázdný Enter, KONEC nebo Esc (když se nevysílá).' },
+      { text: 'Postav si klíčovač: součástky, schémata, firmware →', guide: true },
     ],
   },
   {
@@ -247,6 +253,7 @@ const CS: readonly Section[] = [
       { code: 'F28300 ⏎', text: 'Přeladí rádio na 28,300 MHz (v kHz, bez tečky); mód zůstane.' },
       { code: '23cm ⏎', text: 'Pásmo, které rádio neumí: kQSO se ho nepokusí naladit — přepne se jen deník a spojení se na něm logují; rádio zůstane připojené, jak je, a neklíčuje (hlavička 705 –), dokud nenapíšeš pásmo rádia nebo nepřepneš pásmo na rádiu. Stejně, když rádio pásmo odmítne. S transvertorem (Nastavení → Rádio → XVERT) jde rádio na mezifrekvenci a do deníku kmitočet RF (hlavička 705 XV).' },
       { text: 'V CW posílají makra vnitřní klíčovač rádia, pokud ho přes CI-V má (IC-705, 7300, 9700, 7610, 7100; CW klíčování zapínat netřeba; bez break-inu zní jen příposlech), jinak klíčuje rádio klíčovač M5 po drátu (CW klíčování zapnout). V SSB / FM lišta nabízí T1–T4, hlasové paměti rádia (IC-705, 7300, 9700, 7610); STOP nebo Esc je zastaví.' },
+      { text: 'Postav si klíčovač (i s CI-V pro jakýkoli Icom) →', guide: true },
     ],
   },
   {
@@ -274,7 +281,8 @@ export class HelpScreen implements Screen {
       for (const row of s.rows) {
         const r = el('div', 'help-row')
         if (row.code) r.append(el('code', 'help-code', row.code))
-        r.append(el('span', 'help-text', row.text))
+        if (row.guide) r.append(keyerGuideLink(row.text, 'help-text'))
+        else r.append(el('span', 'help-text', row.text))
         sec.append(r)
       }
       return sec
