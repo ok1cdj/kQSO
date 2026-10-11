@@ -1,16 +1,25 @@
-// IC-705 controller, one for the whole app (the link survives screen changes). Owns the
-// Ic705Protocol over platform.rig: handshake, the radio's frequency and mode (CI-V
-// transceive), tuning from the logging line. CW through the radio is KeyerController's
-// (CivCwOutput over this protocol). Nothing happens until "IC-705" is switched on.
+// Radio controller, one for the whole app (the link survives screen changes). Owns the
+// CivProtocol over one of two transports: the IC-705's own Bluetooth (platform.rig,
+// handshake first), or any Icom on the keyer's CI-V bus (KeyerCivTransport, ui/keyer-civ.ts).
+// The radio's frequency and mode (CI-V transceive), tuning from the logging line; what
+// the radio can do comes from its definition (core/rigmodel.ts). CW through the radio
+// is KeyerController's (CivCwOutput over this protocol). Nothing happens until the radio
+// is switched on.
 
 import {
-  Ic705Protocol,
+  CivProtocol,
+  IC705,
+  RIG_ADDR,
   bandForFreq,
   bandSpot,
+  civCommand,
   civModeFor,
   ifBand,
+  modelById,
+  modelForAddr,
   parseXverts,
-  radioBand,
+  rigHasBand,
+  rigTunes,
   toIf,
   toRf,
   modeFromCiv,
@@ -22,27 +31,30 @@ import {
   readTx,
   setFreq,
   setMode,
-  transceiveOn,
 } from '../core/index'
-import type { RigEvent, Timers, Xvert } from '../core/index'
+import type { RigEvent, RigModel, Timers, Xvert } from '../core/index'
 import type { KQSOPlatform, KeyerLinkState, RigTransport } from '../platform/index'
 import { switchOn } from './dom'
+import type { KeyerCivTransport } from './keyer-civ'
 
 export const RIG_SETTINGS = {
   enabled: 'rigEnabled', // '1' / '0', default off
+  source: 'rigSource', // 'ic705' (its own Bluetooth, APK) | 'keyer' (CI-V through the keyer)
+  model: 'rigModel', // radio via the keyer: 'auto' (by its address) or a RigModel id
+  options: 'rigOptions', // JSON string[]: bands of optional units switched on (IC-910 23 cm)
   clientId: 'rigClientId', // random UUID: with the name, how the radio knows this install
   xvert: 'rigXvert', // '1' / '0', default off — transverters on
   xverts: 'rigXverts', // JSON Xvert[] (core/xvert.ts)
 } as const
 
-/** The IC-705 tunes 0.03–199.999 and 400–470 MHz. */
-const tunable = (hz: number): boolean => (hz >= 30_000 && hz < 200_000_000) || (hz >= 400_000_000 && hz <= 470_000_000)
+export type RigSource = 'ic705' | 'keyer'
 
 /** Name shown in the radio's paired device list (16 characters at most). */
 const RIG_CLIENT_NAME = 'kQSO'
 
 export type RigNotice =
   | { readonly type: 'connectFailed'; readonly message: string }
+  | { readonly type: 'firmware' } // the keyer has no CI-V tunnel (firmware before 2.1.0)
   | { readonly type: 'tuneFailed' } // the radio refused a frequency / mode from the line
   | { readonly type: 'voiceFailed'; readonly memory: number } // empty memory, or not a phone mode
 
@@ -75,6 +87,12 @@ function randomUuid(): string {
 export class RigController {
   readonly available: boolean
   enabled = false
+  /** Where the radio is: the IC-705's own Bluetooth, or the keyer's CI-V bus. */
+  source: RigSource
+  /** Radio via the keyer: 'auto' (by the address the keyer found) or a RigModel id. */
+  modelChoice = 'auto'
+  /** Bands of optional units switched on (IC-910 23 cm). */
+  options: string[] = []
   link: KeyerLinkState = 'off'
   /** Handshake done: CI-V commands work. */
   ready = false
@@ -96,9 +114,10 @@ export class RigController {
   /** adopt() waiting for the radio's first frequency. */
   private adopting: string | undefined
   /** The protocol, for CW through the radio (KeyerController). */
-  readonly proto: Ic705Protocol | undefined
+  readonly proto: CivProtocol | undefined
 
-  private readonly transport: RigTransport | undefined
+  private readonly ic705: RigTransport | undefined
+  private keyerTr: KeyerCivTransport | undefined
   private readonly listeners = new Set<() => void>()
   private clientId = ''
   private pollTimer: number | undefined
@@ -107,24 +126,86 @@ export class RigController {
 
   constructor(private readonly platform: KQSOPlatform) {
     const tr = platform.rig
-    this.transport = tr
-    this.available = tr !== undefined
-    if (!tr) return
-    this.proto = new Ic705Protocol(
+    this.ic705 = tr
+    this.available = tr !== undefined || platform.keyer !== undefined
+    this.source = tr ? 'ic705' : 'keyer'
+    if (!this.available) return
+    this.proto = new CivProtocol(
       (bytes) => {
-        for (let i = 0; i < bytes.length; i += tr.mtu) tr.write(bytes.slice(i, i + tr.mtu))
+        const t = this.transport
+        if (!t) return
+        for (let i = 0; i < bytes.length; i += t.mtu) t.write(bytes.slice(i, i + t.mtu))
       },
       (ev) => this.onEvent(ev),
       browserTimers,
+      this.source === 'ic705' ? RIG_ADDR : undefined,
     )
-    tr.onData((bytes) => this.proto?.receive(bytes))
-    tr.onState((s, name) => this.onLink(s, name))
+    tr?.onData((bytes) => {
+      if (this.source === 'ic705') this.proto?.receive(bytes)
+    })
+    tr?.onState((s, name) => {
+      if (this.source === 'ic705') this.onLink(s, name)
+    })
+  }
+
+  /** The keyer's CI-V tunnel (KeyerController.civLink) — it needs this controller's
+   *  protocol first, hence not in the constructor. */
+  attachKeyer(tr: KeyerCivTransport | undefined): void {
+    this.keyerTr = tr
+    tr?.onData((bytes) => {
+      if (this.source === 'keyer') this.proto?.receive(bytes)
+    })
+    tr?.onState((s, name) => {
+      if (this.source === 'keyer') this.onLink(s, name)
+    })
+  }
+
+  private get transport(): RigTransport | undefined {
+    return this.source === 'ic705' ? this.ic705 : this.keyerTr
+  }
+
+  /** Both ways to a radio exist here (APK); otherwise Settings shows no choice. */
+  get sourceChoice(): boolean {
+    return this.ic705 !== undefined && this.platform.keyer !== undefined
+  }
+
+  /** What the radio is and can do. Via the keyer: chosen in Settings, else by the
+   *  address the keyer found. */
+  get model(): RigModel {
+    if (this.source === 'ic705') return IC705
+    return (this.modelChoice === 'auto' ? undefined : modelById(this.modelChoice)) ?? this.detectedModel
+  }
+
+  /** Via the keyer: the model at the address the keyer found (Settings: "Auto (…)"). */
+  get detectedModel(): RigModel {
+    return modelForAddr(this.keyerTr?.addr)
+  }
+
+  /** Via the keyer: the radio's CI-V address as the keyer found it. */
+  get addr(): number | undefined {
+    return this.source === 'keyer' ? this.keyerTr?.addr : RIG_ADDR
+  }
+
+  /** Via the keyer: connected, but its firmware has no CI-V tunnel. */
+  get oldFirmware(): boolean {
+    return this.source === 'keyer' && (this.keyerTr?.oldFirmware ?? false)
+  }
+
+  /** The radio works `band` itself (by its definition and the units switched on). */
+  private hasBand(band: string): boolean {
+    return rigHasBand(this.model, band, this.options)
   }
 
   async init(): Promise<void> {
     if (!this.available) return
     const p = this.platform
     this.enabled = switchOn(await p.getSetting(RIG_SETTINGS.enabled), false)
+    const src = await p.getSetting(RIG_SETTINGS.source)
+    if (src === 'keyer' && this.platform.keyer) this.source = 'keyer'
+    else if (src === 'ic705' && this.ic705) this.source = 'ic705'
+    if (this.proto) this.proto.rigAddr = this.source === 'ic705' ? RIG_ADDR : undefined
+    this.modelChoice = (await p.getSetting(RIG_SETTINGS.model)) ?? 'auto'
+    this.options = parseOptions(await p.getSetting(RIG_SETTINGS.options))
     this.xvertOn = switchOn(await p.getSetting(RIG_SETTINGS.xvert), false)
     this.xverts = parseXverts(await p.getSetting(RIG_SETTINGS.xverts))
     this.clientId = (await p.getSetting(RIG_SETTINGS.clientId)) ?? ''
@@ -161,9 +242,24 @@ export class RigController {
   }
 
   /** CW and voice memories go through the radio: connected, and the log is on its band
-   *  (a VHF contest on 23 cm runs another rig — the IC-705 must not key). */
+   *  (a VHF contest on 23 cm runs another rig — this radio must not key). */
   get keys(): boolean {
     return this.controls && !this.detached
+  }
+
+  /** CW through the radio's own keyer (CI-V 17): a radio that has it. */
+  get cwViaCiv(): boolean {
+    return this.keys && this.model.cwCiv === true
+  }
+
+  /** Voice memories T1–T4 in the strip: a radio that has them. */
+  get voice(): boolean {
+    return this.keys && this.model.voice === true
+  }
+
+  /** Header badge: 705, 7300, 9700, CIV … */
+  get label(): string {
+    return this.model.short
   }
 
   /** While detached by F…: the frequency typed (the log gets band + FREQ from it). */
@@ -182,7 +278,8 @@ export class RigController {
   }
 
   private xvertFor(band: string): Xvert | undefined {
-    return this.xvertOn ? this.xverts.find((x) => x.band === band && x.on) : undefined
+    if (!this.xvertOn) return undefined
+    return this.xverts.find((x) => x.band === band && x.on && this.hasBand(ifBand(x) ?? ''))
   }
 
   /**
@@ -193,7 +290,7 @@ export class RigController {
    */
   adopt(band: string): void {
     if (!this.controls) return
-    if (radioBand(band)) {
+    if (this.hasBand(band) && !this.xvertFor(band)) {
       // Another log (or this one) on a radio band: whatever the last one left is gone.
       this.adopting = undefined
       if (this.away || this.xv) {
@@ -230,6 +327,41 @@ export class RigController {
   async saveXverts(xs: readonly Xvert[]): Promise<void> {
     this.xverts = xs
     await this.platform.setSetting(RIG_SETTINGS.xverts, JSON.stringify(xs))
+    this.emit()
+  }
+
+  /** IC-705 Bluetooth or the keyer (Settings). The old link goes, the new one comes
+   *  up when the radio is switched on. */
+  async setSource(src: RigSource, save = true): Promise<void> {
+    if (src === this.source || (src === 'ic705' && !this.ic705) || (src === 'keyer' && !this.platform.keyer)) return
+    this.wantLink = false
+    await this.transport?.disconnect()
+    this.source = src
+    if (save) await this.platform.setSetting(RIG_SETTINGS.source, src)
+    this.proto?.reset()
+    if (this.proto) this.proto.rigAddr = src === 'ic705' ? RIG_ADDR : undefined
+    this.link = 'off'
+    this.ready = false
+    this.name = undefined
+    this.freqHz = undefined
+    this.modeCode = undefined
+    this.away = undefined
+    this.xv = undefined
+    if (this.enabled) await this.connect(false)
+    this.emit()
+  }
+
+  /** Radio via the keyer: 'auto' or a model id (Settings). */
+  async setModel(id: string): Promise<void> {
+    this.modelChoice = id
+    await this.platform.setSetting(RIG_SETTINGS.model, id)
+    this.emit()
+  }
+
+  /** An optional unit (its band) on / off (Settings). */
+  async setOption(band: string, on: boolean): Promise<void> {
+    this.options = on ? [...new Set([...this.options, band])] : this.options.filter((b) => b !== band)
+    await this.platform.setSetting(RIG_SETTINGS.options, JSON.stringify(this.options))
     this.emit()
   }
 
@@ -286,7 +418,9 @@ export class RigController {
    * reports what it really did.
    *
    * A transverter band tunes the radio to its IF; a band the radio doesn't work (VHF
-   * contest on 23 cm) leaves the radio alone — only the log switches (detached).
+   * contest on 23 cm) leaves the radio alone — only the log switches (detached), and
+   * QSOs are logged on it. So does a band the radio refuses (one its definition doesn't
+   * know it lacks: an IC-910 without its 23 cm unit, a radio not in the table).
    */
   async tune(band: string | undefined, mode: string | undefined): Promise<void> {
     if (!this.controls || !this.proto) return
@@ -294,7 +428,7 @@ export class RigController {
     if (band !== undefined) {
       const x = this.xvertFor(band)
       if (x) return this.go(x.ifHz, want, { xv: x })
-      if (!radioBand(band)) {
+      if (!this.hasBand(band)) {
         this.away = { band, radioBand: bandForFreq(this.freqHz ?? 0) }
         this.xv = undefined
         this.emit()
@@ -308,8 +442,13 @@ export class RigController {
       let hz = this.freqHz ?? 0
       if (band !== undefined && band !== bandForFreq(hz)) {
         const to = (await this.stacked(band))?.hz ?? bandSpot(band, want ?? 'SSB')
-        if (to === undefined) throw new Error('band')
-        await this.proto.command(setFreq(to))
+        if (to === undefined || !(await this.took(to))) {
+          // Nowhere to go, or the radio refused: the log keeps the band, the radio stays.
+          this.away = { band, radioBand: bandForFreq(this.freqHz ?? 0) }
+          this.xv = undefined
+          this.emit()
+          return
+        }
         hz = to
         this.freqHz = to
       }
@@ -333,13 +472,13 @@ export class RigController {
     const band = bandForFreq(hz)
     const x = band === undefined ? undefined : this.xvertFor(band)
     if (x) return this.go(toIf(x, hz), this.mode, { xv: x })
-    if (band !== undefined && !radioBand(band)) {
+    if (band !== undefined && !this.hasBand(band)) {
       this.away = { band, radioBand: bandForFreq(this.freqHz ?? 0), hz }
       this.xv = undefined
       this.emit()
       return
     }
-    if (!tunable(hz)) {
+    if (!rigTunes(this.model, hz)) {
       this.notice = { type: 'tuneFailed' }
       this.emit()
       return
@@ -352,7 +491,15 @@ export class RigController {
   private async go(hz: number, want: string | undefined, to: { xv?: Xvert }): Promise<void> {
     if (!this.proto) return
     try {
-      await this.proto.command(setFreq(hz))
+      if (!(await this.took(hz))) {
+        const band = bandForFreq(hz)
+        if (to.xv || band === undefined || band === bandForFreq(this.freqHz ?? 0)) throw new Error('rejected')
+        // Another band the radio refused: the log takes band + FREQ, the radio stays.
+        this.away = { band, radioBand: bandForFreq(this.freqHz ?? 0), hz }
+        this.xv = undefined
+        this.emit()
+        return
+      }
       this.freqHz = hz
       this.xv = to.xv
       this.away = undefined
@@ -368,9 +515,19 @@ export class RigController {
     this.emit()
   }
 
+  /** Set the frequency; false when the radio refused it (FA, or no answer). */
+  private async took(hz: number): Promise<boolean> {
+    try {
+      await this.proto!.command(setFreq(hz))
+      return true
+    } catch {
+      return false
+    }
+  }
+
   /** The radio's newest band stacking register for `band`, if it has one there. */
   private async stacked(band: string): Promise<{ hz: number; code: number } | undefined> {
-    const frame = readBandStack(band)
+    const frame = readBandStack(band, this.model.bandStack)
     if (!frame || !this.proto) return undefined
     try {
       const r = parseBandStack(await this.proto.command(frame))
@@ -383,7 +540,7 @@ export class RigController {
   /** Transmit voice memory T`n`. The radio doesn't say when it is done, so its TX state
    *  is watched until it is back on receive (twice in a row). */
   async playVoice(n: number): Promise<void> {
-    if (!this.controls || !this.proto) return
+    if (!this.voice || !this.proto) return
     const run = ++this.voiceRun
     try {
       await this.proto.command(playVoice(n))
@@ -433,6 +590,11 @@ export class RigController {
     void p.command(readMode()).catch(() => {})
   }
 
+  private failFirmware(): void {
+    this.notice = { type: 'firmware' }
+    this.emit()
+  }
+
   private fail(message: string): void {
     this.notice = { type: 'connectFailed', message }
     this.emit()
@@ -450,10 +612,13 @@ export class RigController {
     this.voicePlaying = false
     if (s === 'on') {
       void this.start() // retried resets only after the handshake: a radio that drops us right away is not retried forever
+    } else if (s === 'connecting' && this.oldFirmware) {
+      this.failFirmware()
     } else if (s === 'off') {
       this.freqHz = undefined
       this.modeCode = undefined
-      if (was === 'on' && this.wantLink && this.enabled && !this.retried) {
+      // Via the keyer its own controller retries the link.
+      if (was === 'on' && this.wantLink && this.enabled && !this.retried && this.source === 'ic705') {
         this.retried = true
         window.setTimeout(() => {
           if (this.wantLink && this.link === 'off' && this.transport) void this.transport.connect(false).catch(() => {})
@@ -463,9 +628,15 @@ export class RigController {
     this.emit()
   }
 
-  /** GATT up: Icom handshake, transceive on, then the current frequency and mode. */
+  /** Link up. IC-705: Icom handshake, transceive on, then the current frequency and
+   *  mode. Via the keyer: no handshake, and the radio's Transceive is its own menu. */
   private async start(): Promise<void> {
     const p = this.proto!
+    if (this.source === 'keyer') {
+      p.markReady()
+      this.refresh()
+      return
+    }
     try {
       await p.handshake(this.clientId, RIG_CLIENT_NAME)
     } catch (e) {
@@ -474,7 +645,8 @@ export class RigController {
       void this.transport?.disconnect()
       return
     }
-    await p.command(transceiveOn()).catch(() => {}) // already on, or the menu refuses: reads still work
+    const tx = this.model.transceiveOn
+    if (tx) await p.command(civCommand(tx)).catch(() => {}) // already on, or the menu refuses: reads still work
     this.refresh()
   }
 
@@ -483,7 +655,8 @@ export class RigController {
       this.ready = true
       this.retried = false
       window.clearInterval(this.pollTimer)
-      this.pollTimer = window.setInterval(() => this.proto?.poll(readFreq()), POLL_MS)
+      // Only the IC-705's Bluetooth needs it; on a wired bus transceive frames just come.
+      if (this.source === 'ic705') this.pollTimer = window.setInterval(() => this.proto?.poll(readFreq()), POLL_MS)
     }
     if (ev.type === 'freq') {
       this.freqHz = ev.hz
@@ -501,5 +674,15 @@ export class RigController {
 
   private emit(): void {
     for (const cb of this.listeners) cb()
+  }
+}
+
+/** Stored optional units (JSON string[]); anything else → none. */
+function parseOptions(json: string | null): string[] {
+  try {
+    const v = JSON.parse(json ?? '[]') as unknown
+    return Array.isArray(v) ? v.filter((b): b is string => typeof b === 'string') : []
+  } catch {
+    return []
   }
 }

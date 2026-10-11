@@ -3,7 +3,7 @@
 // the active storage backend, and About. Language follows
 // navigator.language with no in-app switch.
 
-import { LiveDb, WAVELOG_SETTINGS, apiBase, dbDate, userHeader, MACRO_SLOTS, ESM_ONLY_SLOTS, infoLabel, cqLabel, WPM_MAX, WPM_MIN, withMacro, resetMacros, XVERT_BANDS, parseMHz, bandForFreq, radioBand } from '../../core/index'
+import { LiveDb, WAVELOG_SETTINGS, apiBase, dbDate, userHeader, MACRO_SLOTS, ESM_ONLY_SLOTS, infoLabel, cqLabel, WPM_MAX, WPM_MIN, withMacro, resetMacros, xvertBands, rigHasBand, RIG_MODELS, parseMHz, bandForFreq } from '../../core/index'
 import type { ProfileId, RunMode, WavelogStation, Xvert } from '../../core/index'
 import { platformKind } from '../../platform/index'
 import type { KQSOPlatform } from '../../platform/index'
@@ -327,24 +327,27 @@ export class SettingsScreen implements Screen {
   }
 
   /**
-   * CW keyer (Web Bluetooth now, APK later): the master switch "CW keying" (default
-   * off — then nothing else shows and no Bluetooth is touched), and when on the link,
-   * the default speed and the macro editor (profile × RUN / S&P).
+   * The M5 keyer — one device, so one place to connect it: the link (Connect /
+   * Disconnect / Forget, status, the radio it has on CI-V) shows when anything uses the
+   * keyer, CW keying or the radio via the keyer. Below, the switch "CW keying" (default
+   * off) and the default speed, ESM and the macro editor (profile × RUN / S&P).
    */
   private async keyerSetting(): Promise<HTMLElement> {
     const k = this.keyer
+    const r = this.rig
     const wrap = el('div', 'setting')
     const body = el('div', 'keyer-settings')
-    // The switch is the M5 keyer's; speed, ESM and macros serve the IC-705 too.
+    // The switch is CW keying by the M5 keyer; speed, ESM and macros serve a radio keying CW over CI-V too.
     const atom = el('div', 'keyer-settings')
     const cw = el('div', 'keyer-settings')
+    const viaKeyer = (): boolean => r.enabled && r.source === 'keyer'
     const show = (): void => {
-      atom.hidden = !k.enabled
-      cw.hidden = !k.enabled && !this.rig.enabled
+      atom.hidden = !k.enabled && !viaKeyer()
+      cw.hidden = !k.enabled && !r.enabled
     }
     const seg = await this.yesNo(KEYER_SETTINGS.enabled, (on) => {
       void k.setEnabled(on, false).then(show) // yesNo has saved it
-      atom.hidden = !on
+      atom.hidden = !on && !viaKeyer()
     }, false)
     this.unsubscribeRigCw?.()
     this.unsubscribeRigCw = this.rig.subscribe(show)
@@ -358,7 +361,9 @@ export class SettingsScreen implements Screen {
         status.textContent = t('settings.keyerFailed', { msg: n.message })
         k.clearNotice()
       } else if (k.link === 'on') {
-        status.textContent = [k.name ?? 'keyer', k.version, k.battery !== undefined ? `${k.battery} %` : undefined]
+        // The radio on its CI-V bus, when the radio goes via the keyer.
+        const civ = !viaKeyer() || r.oldFirmware ? undefined : r.controls ? t('settings.keyerCiv', { radio: r.model.label }) : t('settings.keyerNoCiv')
+        status.textContent = [k.name ?? 'keyer', k.version, k.battery !== undefined ? `${k.battery} %` : undefined, civ]
           .filter((x) => x !== undefined)
           .join(' · ')
       } else if (k.link === 'connecting') {
@@ -369,7 +374,12 @@ export class SettingsScreen implements Screen {
       speedValue.textContent = `${k.defaultWpm} WPM`
     }
     this.unsubscribe?.()
-    this.unsubscribe = k.subscribe(paint)
+    const unK = k.subscribe(paint)
+    const unR = r.subscribe(paint)
+    this.unsubscribe = () => {
+      unK()
+      unR()
+    }
     paint()
 
     const link = el('div', 'segmented')
@@ -388,7 +398,7 @@ export class SettingsScreen implements Screen {
 
     const esm = await this.yesNo(KEYER_SETTINGS.esm, (on) => void k.setEsm(on, false), false) // yesNo has saved it
 
-    atom.append(el('span', 'field-label', t('settings.keyerSection')), status, link)
+    atom.append(status, link)
     cw.append(
       el('span', 'field-label', t('settings.keyerSpeed')),
       speed,
@@ -398,12 +408,21 @@ export class SettingsScreen implements Screen {
       el('div', 'about', t('settings.keyerEsmHint')),
       this.macroEditor(),
     )
-    body.append(atom, cw)
-    wrap.append(el('span', 'field-label', t('settings.keyer')), seg, el('div', 'about', t('settings.keyerHint')), body)
+    body.append(cw)
+    wrap.append(
+      el('span', 'field-label', t('settings.keyerDevice')),
+      atom,
+      el('span', 'field-label', t('settings.keyer')),
+      seg,
+      el('div', 'about', t('settings.keyerHint')),
+      body,
+    )
     return wrap
   }
 
-  /** IC-705 over BLE (APK): on / off, Connect / Disconnect / Forget, what the radio is on. */
+  /** Radio over CI-V: on / off; the IC-705's own Bluetooth (APK) or any Icom through the
+   *  keyer; the model (auto by address) and its optional units; Connect / Disconnect /
+   *  Forget; what the radio is on; transverters. */
   private async rigSetting(): Promise<HTMLElement> {
     const r = this.rig
     const wrap = el('div', 'setting')
@@ -414,35 +433,97 @@ export class SettingsScreen implements Screen {
       void r.setEnabled(on, false) // yesNo has saved it
     }, false)
 
+    // IC-705 Bluetooth | via the keyer — only where both exist (APK).
+    const source = el('div', 'segmented')
+    source.hidden = !r.sourceChoice
+    const sourceBtns = (['ic705', 'keyer'] as const).map((src) => {
+      const b = button(t(src === 'ic705' ? 'settings.rigSourceIc705' : 'settings.rigSourceKeyer'), () => void r.setSource(src), 'btn')
+      source.append(b)
+      return { src, b }
+    })
+
+    // Model (via the keyer): Auto (what the address says) or one from the table.
+    const model = el('div', 'segmented segmented--wrap')
+    const modelBtns = [{ id: 'auto', label: '' }, ...RIG_MODELS.map((m) => ({ id: m.id, label: m.label }))].map(({ id, label }) => {
+      const b = button(label, () => void r.setModel(id), 'btn')
+      model.append(b)
+      return { id, b }
+    })
+    const modelHint = el('div', 'about', t('settings.rigModelHint'))
+    const modelBox = el('div', 'keyer-settings')
+    modelBox.append(el('span', 'field-label', t('settings.rigModel')), model, modelHint)
+    // Optional units of the model (IC-910: 23 cm).
+    const options = el('div', 'segmented segmented--wrap')
+
     const status = el('div', 'about')
-    const name = (): string => r.name ?? 'IC-705'
+    // Via the keyer the link is the keyer's (its section): no second set of buttons here.
+    const keyerNote = el('div', 'about')
+    const link = el('div', 'segmented')
+    const name = (): string => (r.source === 'keyer' ? r.model.label : r.name ?? 'IC-705')
+    const via = (): string => (r.source === 'keyer' && r.name ? ` · ${t('settings.rigVia', { name: r.name })}` : '')
+    let shownModel = ''
+    const xvertBox = el('div', 'keyer-settings')
     const paint = (): void => {
+      for (const { src, b } of sourceBtns) b.setAttribute('aria-pressed', String(r.source === src))
+      modelBox.hidden = r.source !== 'keyer'
+      link.hidden = r.source === 'keyer'
+      keyerNote.hidden = r.source !== 'keyer'
+      keyerNote.textContent = t(this.keyer.link === 'off' ? 'settings.rigKeyerOff' : 'settings.rigKeyerLink')
+      const det = r.detectedModel
+      const addr = r.addr === undefined ? '' : `, ${r.addr.toString(16).toUpperCase().padStart(2, '0')}`
+      for (const { id, b } of modelBtns) {
+        b.setAttribute('aria-pressed', String(r.modelChoice === id || (id === 'auto' && !RIG_MODELS.some((m) => m.id === r.modelChoice))))
+        if (id === 'auto') b.textContent = r.addr === undefined ? t('settings.rigModelAuto') : `${t('settings.rigModelAuto')} (${det.label}${addr})`
+      }
+      const m = r.model
+      options.replaceChildren(
+        ...(m.optional ?? []).map((band) => {
+          const b = button(t('settings.rigOption', { band }), () => void r.setOption(band, !r.options.includes(band)), 'btn')
+          b.setAttribute('aria-pressed', String(r.options.includes(band)))
+          return b
+        }),
+      )
+      options.hidden = (m.optional ?? []).length === 0
+      // The transverter bands follow the radio: rebuilt when the model or a unit changes.
+      const key = `${m.id}|${r.options.join(',')}`
+      if (key !== shownModel) {
+        shownModel = key
+        void this.xvertSetting().then((x) => xvertBox.replaceChildren(x))
+      }
+
       const n = r.notice
       if (n?.type === 'connectFailed') {
         status.textContent = t('settings.rigFailed', { msg: n.message })
         r.clearNotice()
+      } else if (r.oldFirmware) {
+        status.textContent = t('settings.rigFirmware')
+        if (n?.type === 'firmware') r.clearNotice()
       } else if (r.controls) {
         const f = r.freqHz !== undefined ? `${(r.freqHz / 1e6).toFixed(3)} MHz` : undefined
-        status.textContent = [name(), f, r.mode].filter((x) => x !== undefined).join(' · ')
+        status.textContent = [name(), f, r.mode].filter((x) => x !== undefined).join(' · ') + via()
       } else if (r.link === 'on') {
         status.textContent = t('settings.rigHandshake', { name: name() })
       } else if (r.link === 'connecting') {
-        status.textContent = t('settings.rigConnecting', { name: name() })
+        status.textContent = r.source === 'keyer' && this.keyer.link === 'on' ? t('settings.rigNoRadio', { name: r.name ?? 'keyer' }) : t('settings.rigConnecting', { name: r.source === 'keyer' ? (r.name ?? 'keyer') : name() })
       } else {
         status.textContent = r.name ? `${r.name} · ${t('settings.rigOff')}` : t('settings.rigOff')
       }
     }
     this.unsubscribeRig?.()
-    this.unsubscribeRig = r.subscribe(paint)
+    const unR = r.subscribe(paint)
+    const unK = this.keyer.subscribe(paint)
+    this.unsubscribeRig = () => {
+      unR()
+      unK()
+    }
     paint()
 
-    const link = el('div', 'segmented')
     link.append(
       button(t('settings.keyerConnect'), () => void r.connect(true), 'btn'),
       button(t('settings.keyerDisconnect'), () => void r.disconnect(), 'btn'),
       button(t('settings.keyerForget'), () => void r.forget(), 'btn'),
     )
-    body.append(status, link, await this.xvertSetting())
+    body.append(source, modelBox, options, status, keyerNote, link, xvertBox)
     wrap.append(el('span', 'field-label', t('settings.rig')), seg, el('div', 'about', t('settings.rigHint')), body)
     return wrap
   }
@@ -459,7 +540,7 @@ export class SettingsScreen implements Screen {
       void r.setXvertOn(on, false) // yesNo has saved it
     }, false)
 
-    const rows = XVERT_BANDS.map((band) => {
+    const rows = xvertBands(r.model, r.options).map((band) => {
       const x = r.xverts.find((v) => v.band === band)
       const mhz = (hz: number | undefined): string => (hz === undefined ? '' : (hz / 1e6).toFixed(3))
       const row = el('div', 'xvert-row')
@@ -484,12 +565,13 @@ export class SettingsScreen implements Screen {
     })
 
     const save = async (): Promise<void> => {
-      const xs: Xvert[] = []
+      // Rows of bands this radio works itself are not shown, but stay stored (another radio).
+      const xs: Xvert[] = r.xverts.filter((x) => !rows.some((row) => row.band === x.band))
       for (const { band, row, on, rf, ifr } of rows) {
         const rfHz = parseMHz(rf.value)
         const ifHz = parseMHz(ifr.value)
         const empty = rf.value.trim() === '' && ifr.value.trim() === ''
-        const ok = rfHz !== undefined && ifHz !== undefined && bandForFreq(rfHz) === band && radioBand(bandForFreq(ifHz) ?? '')
+        const ok = rfHz !== undefined && ifHz !== undefined && bandForFreq(rfHz) === band && rigHasBand(r.model, bandForFreq(ifHz) ?? '', r.options)
         row.classList.toggle('field--error', !empty && !ok)
         if (ok) xs.push({ band, rfHz, ifHz, on: on.getAttribute('aria-pressed') === 'true' })
       }

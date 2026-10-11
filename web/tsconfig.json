@@ -5,5 +5,6 @@
     "lib": ["ES2022"],
     "types": ["vitest/globals"]
   },
-  "include": ["src/core", "tests"]
+  "include": ["src/core", "tests"],
+  "exclude": ["tests/ui"]
 }

@@ -1,14 +1,15 @@
-// Icom CI-V over the IC-705's Bluetooth LE serial: the pure part. Frame assembly from
-// BLE notifications, the Icom BLE handshake (FE F1 …), BCD frequencies, mode mapping and
-// the commands kQSO uses. No Bluetooth here — the transport hands bytes in and out
-// (platform/native.ts), the UI drives it (ui/rig.ts).
+// Icom CI-V: the pure part. Frame assembly, the IC-705's Bluetooth LE handshake
+// (FE F1 …), BCD frequencies, mode mapping and the commands kQSO uses. No Bluetooth here —
+// a transport hands bytes in and out (the IC-705's own BLE: platform/native.ts; any Icom
+// through the keyer's CI-V tunnel: ui/keyer-civ.ts), the UI drives it (ui/rig.ts).
+// What differs between radios (bands, band stack codes, functions) is core/rigmodel.ts.
 //
 import type { CwOutput, KeyerEvent } from './keyer'
 
 // Protocol facts: IC-705 CI-V Reference Guide (Icom, 2020-07); the BLE handshake as
 // reverse-engineered by JN4JXL and used by K7MDL2's IC-705 BLE examples.
 
-export const RIG_ADDR = 0xa4 // IC-705 default CI-V address
+export const RIG_ADDR = 0xa4 // IC-705 default CI-V address; the keyer readdresses frames to its radio
 export const CTRL_ADDR = 0xe0 // us
 const BROADCAST = 0x00 // transceive frames (frequency / mode changed on the radio)
 
@@ -87,6 +88,20 @@ export function hsToken(): Uint8Array {
 
 /** 0x64 from the radio: CI-V access granted. */
 export const HS_READY = 0x64
+
+// --- hex (the keyer tunnel and the APK bridge carry frames as hex text) -----------
+
+export function toHex(b: Uint8Array): string {
+  return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('')
+}
+
+/** Hex text → bytes; undefined when it isn't whole hex bytes. */
+export function fromHex(s: string): Uint8Array | undefined {
+  if (s.length % 2 !== 0 || !/^[0-9a-fA-F]*$/.test(s)) return undefined
+  const out = new Uint8Array(s.length / 2)
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(s.slice(2 * i, 2 * i + 2), 16)
+  return out
+}
 
 // --- frequency -----------------------------------------------------------------
 
@@ -167,29 +182,14 @@ export const setFreq = (hz: number): Uint8Array => civFrame(CMD.setFreq, ...enco
 export const setMode = (code: number): Uint8Array => civFrame(CMD.setMode, code)
 /** TX state: 00 receive, 01 transmit. */
 export const readTx = (): Uint8Array => civFrame(CMD.tx, 0x00)
-/** Menu 0131 "CI-V Transceive" on, so the radio reports its own changes. */
-export const transceiveOn = (): Uint8Array => civFrame(CMD.setting, 0x05, 0x01, 0x31, 0x01)
-// Band stacking register (1A 01): the radio's own last frequency and mode per band — what
-// its band key returns to. Band codes from the CI-V guide; 60 m and 4 m have none (GENE).
-const BAND_STACK: Readonly<Record<string, number>> = {
-  '160m': 0x01,
-  '80m': 0x02,
-  '40m': 0x03,
-  '30m': 0x04,
-  '20m': 0x05,
-  '17m': 0x06,
-  '15m': 0x07,
-  '12m': 0x08,
-  '10m': 0x09,
-  '6m': 0x10,
-  '2m': 0x13,
-  '70cm': 0x14,
-}
+/** A command given as its bytes (cmd, data…), e.g. a model's transceiveOn. */
+export const civCommand = (bytes: readonly number[]): Uint8Array => civFrame(bytes[0]!, ...bytes.slice(1))
 
-/** Read the newest band stacking register (register 01) of a band, or undefined when
- *  the radio has none for it. */
-export function readBandStack(band: string): Uint8Array | undefined {
-  const code = BAND_STACK[band]
+/** Read the newest band stacking register (1A 01, register 01) of a band — the radio's
+ *  own last frequency and mode there, what its band key returns to. Band codes differ
+ *  per radio (RigModel.bandStack); undefined when the radio has none for the band. */
+export function readBandStack(band: string, codes: Readonly<Record<string, number>> | undefined): Uint8Array | undefined {
+  const code = codes?.[band]
   return code === undefined ? undefined : civFrame(CMD.setting, 0x01, code, 0x01)
 }
 
@@ -277,16 +277,16 @@ const HS_TIMEOUT_MS = 5000
 const CMD_TIMEOUT_MS = 2000
 
 /**
- * Handshake, then commands out and replies in. One command at a time; FB / FA answers
- * it, a data reply answers it when the command matches (a poll's reply or a late one
- * is just an event). Transceive frames (to 00) and our own echo (BLE echoes every
- * command) are told apart by address.
+ * Commands out and replies in, after the IC-705's handshake or markReady() (keyer tunnel).
+ * One command at a time; FB / FA answers it, a data reply answers it when the command
+ * matches (a poll's reply or a late one is just an event). Transceive frames (to 00)
+ * and our own echo (BLE echoes every command) are told apart by address.
  *
  * The IC-705 sends over BLE only after something is written to it — one notification
  * of up to ~10 frames per write. So the controller polls (poll()) while connected,
  * else replies and transceive frames wait in the radio.
  */
-export class Ic705Protocol {
+export class CivProtocol {
   private readonly frames = new FrameAssembler()
   private readonly pending: Pending[] = []
   private hs: { resolve: () => void; reject: (e: Error) => void } | undefined
@@ -296,10 +296,20 @@ export class Ic705Protocol {
     private readonly write: (bytes: Uint8Array) => void,
     private readonly onEvent: (e: RigEvent) => void,
     private readonly timers: Timers,
+    /** The radio's address (IC-705: RIG_ADDR): frames from others are ignored. Undefined
+     *  = any but us (the keyer tunnel: its radio's address is whatever the radio is set
+     *  to). No default: a default would also replace an undefined passed on purpose. */
+    public rigAddr: number | undefined,
   ) {}
 
   private sleep(ms: number): Promise<void> {
     return new Promise((r) => this.timers.set(r, ms))
+  }
+
+  /** No handshake (the keyer's CI-V tunnel): commands work from now on. */
+  markReady(): void {
+    this.ready = true
+    this.onEvent({ type: 'ready' })
   }
 
   receive(bytes: Uint8Array): void {
@@ -381,7 +391,8 @@ export class Ic705Protocol {
       if (f.code === HS_READY) this.hs?.resolve()
       return
     }
-    if (f.from !== RIG_ADDR) return // our own echo, or another station on the bus
+    // Our own echo, or another station on the bus.
+    if (this.rigAddr === undefined ? f.from === CTRL_ADDR : f.from !== this.rigAddr) return
     if (f.to === BROADCAST) {
       this.event(f.cmd, f.data)
       return
@@ -435,7 +446,7 @@ export class CivCwOutput implements CwOutput {
   private run = 0 // bumped by stop / reset: a running pump sees it and quits
 
   constructor(
-    private readonly proto: Pick<Ic705Protocol, 'command'>,
+    private readonly proto: Pick<CivProtocol, 'command'>,
     private readonly timers: Timers,
     private readonly onEvent: (e: KeyerEvent) => void,
   ) {}

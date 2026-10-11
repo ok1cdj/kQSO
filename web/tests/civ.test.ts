@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   FrameAssembler,
-  Ic705Protocol,
+  CivProtocol,
+  RIG_ADDR,
   encodeFreq,
   decodeFreq,
   freqMHz,
@@ -27,7 +28,8 @@ import type { KeyerEvent } from '../src/core/keyer'
 import { bandForFreq, bandSpot } from '../src/core/dictionaries'
 import { applyRadio } from '../src/core/sticky'
 import { matchTuneCommand } from '../src/core/command'
-import { radioBand, XVERT_BANDS, parseMHz, parseXverts, toIf, toRf, ifBand } from '../src/core/xvert'
+import { parseMHz, parseXverts, toIf, toRf, ifBand } from '../src/core/xvert'
+import { IC705, rigHasBand, xvertBands } from '../src/core/rigmodel'
 
 // Through globalThis at call time, so vi.useFakeTimers() applies.
 const g = globalThis as unknown as { setTimeout(f: () => void, ms: number): unknown; clearTimeout(id: unknown): void }
@@ -106,7 +108,8 @@ describe('bands', () => {
   it('default spot per band and mode', () => {
     expect(bandSpot('40m', 'CW')).toBe(7_020_000)
     expect(bandSpot('30m', 'SSB')).toBeUndefined()
-    expect(bandSpot('23cm', 'CW')).toBeUndefined()
+    expect(bandSpot('23cm', 'CW')).toBe(1_296_050_000)
+    expect(bandSpot('13cm', 'CW')).toBeUndefined()
   })
 })
 
@@ -119,8 +122,8 @@ describe('commands', () => {
     expect(hex(playVoice(0))).toBe('fe fe a4 e0 28 00 00 fd')
   })
   it('band stacking register: newest register of a band', () => {
-    expect(hex(readBandStack('2m')!)).toBe('fe fe a4 e0 1a 01 13 01 fd')
-    expect(readBandStack('60m')).toBeUndefined()
+    expect(hex(readBandStack('2m', IC705.bandStack)!)).toBe('fe fe a4 e0 1a 01 13 01 fd')
+    expect(readBandStack('60m', IC705.bandStack)).toBeUndefined()
     // 01 <band 13> <reg 01> 144.174.000 CW, filter …
     expect(parseBandStack(bytes(0x01, 0x13, 0x01, 0x00, 0x40, 0x17, 0x44, 0x01, 0x03, 0x01))).toEqual({ hz: 144_174_000, code: 0x03 })
     expect(parseBandStack(bytes(0x01, 0x13))).toBeUndefined()
@@ -151,14 +154,14 @@ describe('cwChunks', () => {
   })
 })
 
-describe('Ic705Protocol', () => {
+describe('CivProtocol', () => {
   afterEach(() => vi.useRealTimers())
 
   it('handshakes, then is ready after 0x64', async () => {
     vi.useFakeTimers()
     const out: Uint8Array[] = []
     const events: RigEvent[] = []
-    const p = new Ic705Protocol((b) => out.push(b), (e) => events.push(e), timers)
+    const p = new CivProtocol((b) => out.push(b), (e) => events.push(e), timers, RIG_ADDR)
     const done = p.handshake('id', 'kQSO')
     await vi.advanceTimersByTimeAsync(50)
     expect(out.map((b) => b[3])).toEqual([0x61, 0x62, 0x63])
@@ -172,7 +175,7 @@ describe('Ic705Protocol', () => {
   it('matches replies in order, reports reads and transceive, skips echo', async () => {
     const events: RigEvent[] = []
     const out: Uint8Array[] = []
-    const p = new Ic705Protocol((b) => out.push(b), (e) => events.push(e), timers)
+    const p = new CivProtocol((b) => out.push(b), (e) => events.push(e), timers, RIG_ADDR)
     const read = p.command(Uint8Array.from([0xfe, 0xfe, 0xa4, 0xe0, 0x03, 0xfd]))
     const set = p.command(Uint8Array.from([0xfe, 0xfe, 0xa4, 0xe0, 0x06, 0x03, 0xfd]))
     p.receive(bytes(0xfe, 0xfe, 0xa4, 0xe0, 0x03, 0xfd)) // echo of our own command
@@ -189,8 +192,27 @@ describe('Ic705Protocol', () => {
     ])
   })
 
+  it('keyer tunnel: any radio address but ours, after markReady', async () => {
+    const events: RigEvent[] = []
+    const p = new CivProtocol(() => {}, (e) => events.push(e), timers, undefined)
+    p.markReady()
+    const read = p.command(Uint8Array.from([0xfe, 0xfe, 0xa4, 0xe0, 0x03, 0xfd]))
+    p.receive(bytes(0xfe, 0xfe, 0x58, 0xe0, 0x03, 0xfd)) // ours (as readdressed by the keyer): ignored
+    p.receive(bytes(0xfe, 0xfe, 0xe0, 0x58, 0x03, 0x00, 0x50, 0x02, 0x07, 0x00, 0xfd))
+    expect(decodeFreq(await read)).toBe(7_025_000)
+    expect(events).toEqual([{ type: 'ready' }, { type: 'freq', hz: 7_025_000 }])
+  })
+
+  it('a fixed address ignores other radios', () => {
+    const events: RigEvent[] = []
+    const p = new CivProtocol(() => {}, (e) => events.push(e), timers, 0x58)
+    p.receive(bytes(0xfe, 0xfe, 0x00, 0x94, 0x01, 0x03, 0x01, 0xfd))
+    p.receive(bytes(0xfe, 0xfe, 0x00, 0x58, 0x01, 0x03, 0x01, 0xfd))
+    expect(events).toEqual([{ type: 'mode', code: 0x03 }])
+  })
+
   it('rejects on FA and on reset', async () => {
-    const p = new Ic705Protocol(() => {}, () => {}, timers)
+    const p = new CivProtocol(() => {}, () => {}, timers, RIG_ADDR)
     const a = p.command(setFreq(1))
     p.receive(bytes(0xfe, 0xfe, 0xe0, 0xa4, 0xfa, 0xfd))
     await expect(a).rejects.toThrow('rejected')
@@ -283,11 +305,11 @@ describe('matchTuneCommand', () => {
 
 describe('transverters', () => {
   it('radio bands vs. the rest', () => {
-    expect(radioBand('2m')).toBe(true)
-    expect(radioBand('23cm')).toBe(false)
-    expect(radioBand('4m')).toBe(false)
-    expect(XVERT_BANDS).toContain('3cm')
-    expect(XVERT_BANDS).not.toContain('2m')
+    expect(rigHasBand(IC705, '2m')).toBe(true)
+    expect(rigHasBand(IC705, '23cm')).toBe(false)
+    expect(rigHasBand(IC705, '4m')).toBe(false)
+    expect(xvertBands(IC705)).toContain('3cm')
+    expect(xvertBands(IC705)).not.toContain('2m')
   })
   it('MHz input with dot or comma', () => {
     expect(parseMHz('10368.000')).toBe(10_368_000_000)
@@ -301,7 +323,8 @@ describe('transverters', () => {
     expect(ifBand(x)).toBe('2m')
   })
   it('keeps only valid stored rows', () => {
-    const json = JSON.stringify([x, { band: '23cm', rfHz: 145_000_000, ifHz: 145_000_000, on: true }, { band: '13cm', rfHz: 2_320_000_000, ifHz: 1_240_000_000 }])
+    // RF off its band, IF on no band; whether the radio works the IF band is the radio's.
+    const json = JSON.stringify([x, { band: '23cm', rfHz: 145_000_000, ifHz: 145_000_000, on: true }, { band: '13cm', rfHz: 2_320_000_000, ifHz: 100_000_000 }])
     expect(parseXverts(json)).toEqual([x])
     expect(parseXverts('nonsense')).toEqual([])
     expect(parseXverts('[]')).toEqual([])

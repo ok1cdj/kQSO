@@ -71,7 +71,7 @@ export function bandForFreq(hz: number): string | undefined {
 }
 
 /** Where typing a band tunes a radio when it has no frequency of its own for that band
- *  yet: the usual CW / SSB / FM spot (Hz), or undefined (not an HF–UHF band, no FM there). */
+ *  yet: the usual CW / SSB / FM spot (Hz), or undefined (above 23 cm, no FM there). */
 const BAND_SPOTS: Readonly<Record<string, Partial<Record<string, number>>>> = {
   '160m': { CW: 1_830_000, SSB: 1_843_000 },
   '80m': { CW: 3_530_000, SSB: 3_700_000 },
@@ -87,6 +87,7 @@ const BAND_SPOTS: Readonly<Record<string, Partial<Record<string, number>>>> = {
   '4m': { CW: 70_050_000, SSB: 70_200_000, FM: 70_450_000 },
   '2m': { CW: 144_050_000, SSB: 144_300_000, FM: 145_500_000 },
   '70cm': { CW: 432_050_000, SSB: 432_200_000, FM: 433_500_000 },
+  '23cm': { CW: 1_296_050_000, SSB: 1_296_200_000, FM: 1_297_500_000 }, // IC-9700, IC-910 with its unit
 }
 
 export function bandSpot(band: string, mode: string): number | undefined {

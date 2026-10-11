@@ -1,18 +1,8 @@
-// Which bands the IC-705 itself works, and transverters for the others: the radio
-// tunes the IF, the log gets the real (RF) frequency. Pure; the settings UI stores the
-// table, ui/rig.ts applies it.
+// Transverters for the bands a radio doesn't work: the radio tunes the IF, the log gets
+// the real (RF) frequency. Pure; the settings UI stores the table, ui/rig.ts applies it.
+// Which bands the radio works itself is its definition's (core/rigmodel.ts).
 
-import { BANDS, bandForFreq } from './dictionaries'
-
-/** Bands the IC-705 transmits on (1.8–50 MHz, 144, 430; 4 m only receives). */
-const RADIO_BANDS: ReadonlySet<string> = new Set(['160m', '80m', '60m', '40m', '30m', '20m', '17m', '15m', '12m', '10m', '6m', '2m', '70cm'])
-
-export function radioBand(band: string): boolean {
-  return RADIO_BANDS.has(band)
-}
-
-/** Bands a transverter can be set for: all the radio doesn't do itself. */
-export const XVERT_BANDS: readonly string[] = BANDS.filter((b) => !RADIO_BANDS.has(b))
+import { bandForFreq } from './dictionaries'
 
 /** One transverter: `rfHz` on the band is `ifHz` on the radio (e.g. 3 cm 10368.000 = 145.000).
  *  Used only when `on` — each one is switched on by itself, so a filled-in row for a
@@ -51,8 +41,9 @@ export function parseMHz(text: string): number | undefined {
   return Math.round(Number(t) * 1e6)
 }
 
-/** Stored table (JSON) → valid transverters: RF on its band, IF on a radio band. Never
- *  saved yet → DEFAULT_XVERTS. */
+/** Stored table (JSON) → valid transverters: RF on its band, IF on a band. Whether the
+ *  radio works the IF band depends on the radio, so that is checked where it is used.
+ *  Never saved yet → DEFAULT_XVERTS. */
 export function parseXverts(json: string | null): Xvert[] {
   if (json === null) return [...DEFAULT_XVERTS]
   let raw: unknown
@@ -72,7 +63,7 @@ export function parseXverts(json: string | null): Xvert[] {
       typeof (x as Xvert).rfHz === 'number' &&
       typeof (x as Xvert).ifHz === 'number' &&
       bandForFreq((x as Xvert).rfHz) === (x as Xvert).band &&
-      radioBand(bandForFreq((x as Xvert).ifHz) ?? ''),
+      bandForFreq((x as Xvert).ifHz) !== undefined,
   )
 }
 

@@ -28,7 +28,8 @@ export interface Screen {
 
 export class App {
   private readonly platform: KQSOPlatform = getPlatform()
-  // IC-705 and CW keyer: one link each for the whole app, so they survive screen changes.
+  // Radio and CW keyer: one link each for the whole app, so they survive screen changes.
+  // A radio via the keyer rides on the keyer's link (its CI-V tunnel).
   private readonly rig = new RigController(this.platform)
   private readonly keyer = new KeyerController(this.platform, this.rig)
   private root!: HTMLElement
@@ -36,8 +37,9 @@ export class App {
 
   mount(root: HTMLElement): void {
     this.root = root
-    void this.rig.init()
-    void this.keyer.init()
+    this.rig.attachKeyer(this.keyer.civLink)
+    // The keyer's settings first: a radio via the keyer may bring its link up.
+    void this.keyer.init().then(() => this.rig.init())
     void this.start()
   }
 

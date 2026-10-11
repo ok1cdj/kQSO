@@ -119,13 +119,15 @@ const EN: readonly Section[] = [
     ],
   },
   {
-    title: 'IC-705 (Bluetooth, beta)',
+    title: 'Radio – CI-V (beta)',
     rows: [
-      { text: 'Settings → IC-705 → Connect (Android / iOS app; first time open Pairing Reception on the radio: MENU → SET → Bluetooth Set). The header shows 705 (✕ = not connected, tap = connect). Band, mode and the exact frequency (ADIF FREQ) come from the radio.' },
-      { code: '40m ⏎ / cw ⏎', text: 'Tunes the radio: a band goes to the radio\'s last frequency there, the mode stays.' },
+      { text: 'IC-705 over its Bluetooth: Settings → Radio → IC-705 Bluetooth → Connect (Android / iOS app; first time open Pairing Reception on the radio: MENU → SET → Bluetooth Set).' },
+      { text: 'Any Icom through the M5-ESP32-keyer on the radio\'s CI-V jack (keyer firmware 2.1.0+; Android / iOS app, Chrome / Edge): Settings → Radio → Via the keyer; the keyer itself is connected under Settings → M5 keyer (one link for CW and the radio). The keyer finds the bus rate and the radio itself; switch CI-V Transceive on in the radio. The model goes by the radio\'s CI-V address — choose it in Settings if the address was changed; it decides the bands, CW and voice memories (IC-910: switch its 23 cm unit on there).' },
+      { text: 'The header shows the radio (705, 7300, 9700, 706 …; ✕ = not connected, tap = connect; … = connecting, or the keyer has no radio on CI-V). Band, mode and the exact frequency (ADIF FREQ) come from the radio.' },
+      { code: '40m ⏎ / cw ⏎', text: 'Tunes the radio: a band goes to the radio\'s last frequency there (band stacking register; older radios like the IC-706: the usual spot for the mode), the mode stays.' },
       { code: 'F28300 ⏎', text: 'Tunes the radio to 28.300 MHz (kHz, no dot); the mode stays.' },
-      { code: '23cm ⏎', text: 'A band the radio doesn\'t work: only the log switches, the radio is left alone and doesn\'t key (header 705 –) until you type a radio band or change band on the radio. With a transverter (Settings → IC-705 → XVERT) the radio goes to its IF and the log gets the RF frequency (header 705 XV).' },
-      { text: 'In CW the macros send through the radio\'s own keyer (no need for CW keying); without break-in only the sidetone sounds. In SSB / FM the strip offers T1–T4, the radio\'s voice memories; STOP or Esc stops them.' },
+      { code: '23cm ⏎', text: 'A band the radio doesn\'t work: kQSO doesn\'t try to tune it — only the log switches and QSOs are logged on it; the radio stays connected, is left alone and doesn\'t key (header 705 –) until you type a radio band or change band on the radio. The same when the radio refuses a band. With a transverter (Settings → Radio → XVERT) the radio goes to its IF and the log gets the RF frequency (header 705 XV).' },
+      { text: 'In CW the macros send through the radio\'s own keyer where it has one over CI-V (IC-705, 7300, 9700, 7610, 7100; no need for CW keying; without break-in only the sidetone sounds), else the M5 keyer keys the radio by wire (CW keying on). In SSB / FM the strip offers T1–T4, the radio\'s voice memories (IC-705, 7300, 9700, 7610); STOP or Esc stops them.' },
     ],
   },
   {
@@ -236,13 +238,15 @@ const CS: readonly Section[] = [
     ],
   },
   {
-    title: 'IC-705 (Bluetooth, beta)',
+    title: 'Rádio – CI-V (beta)',
     rows: [
-      { text: 'Nastavení → IC-705 → Připojit (aplikace pro Android a iOS; poprvé na rádiu otevři Pairing Reception: MENU → SET → Bluetooth Set). Hlavička ukazuje 705 (✕ = nepřipojeno, klepnutí = připojit). Pásmo, mód a přesný kmitočet (ADIF FREQ) bere kQSO z rádia.' },
-      { code: '40m ⏎ / cw ⏎', text: 'Přeladí rádio: pásmo na poslední kmitočet rádia na tom pásmu, mód zůstane.' },
+      { text: 'IC-705 přes jeho Bluetooth: Nastavení → Rádio → IC-705 Bluetooth → Připojit (aplikace pro Android a iOS; poprvé na rádiu otevři Pairing Reception: MENU → SET → Bluetooth Set).' },
+      { text: 'Jakýkoli Icom přes klíčovač M5-ESP32-keyer na CI-V konektoru rádia (firmware klíčovače 2.1.0+; aplikace pro Android a iOS, Chrome / Edge): Nastavení → Rádio → Přes klíčovač; samotný klíčovač se připojuje v Nastavení → Klíčovač M5 (jedno spojení pro CW i rádio). Rychlost sběrnice i rádio najde klíčovač sám; v rádiu zapni CI-V Transceive. Model se pozná podle CI-V adresy rádia — při změněné adrese ho vyber v Nastavení; podle něj se řídí pásma, CW a hlasové paměti (IC-910: tam zapni modul 23 cm).' },
+      { text: 'Hlavička ukazuje rádio (705, 7300, 9700, 706 …; ✕ = nepřipojeno, klepnutí = připojit; … = připojuje se, nebo klíčovač nemá na CI-V rádio). Pásmo, mód a přesný kmitočet (ADIF FREQ) bere kQSO z rádia.' },
+      { code: '40m ⏎ / cw ⏎', text: 'Přeladí rádio: pásmo na poslední kmitočet rádia na tom pásmu (band stacking register; starší rádia jako IC-706: obvyklý kmitočet pro mód), mód zůstane.' },
       { code: 'F28300 ⏎', text: 'Přeladí rádio na 28,300 MHz (v kHz, bez tečky); mód zůstane.' },
-      { code: '23cm ⏎', text: 'Pásmo, které rádio neumí: přepne se jen deník, rádio zůstane, jak je, a neklíčuje (hlavička 705 –), dokud nenapíšeš pásmo rádia nebo nepřepneš pásmo na rádiu. S transvertorem (Nastavení → IC-705 → XVERT) jde rádio na mezifrekvenci a do deníku kmitočet RF (hlavička 705 XV).' },
-      { text: 'V CW posílají makra vnitřní klíčovač rádia (CW klíčování zapínat netřeba); bez break-inu zní jen příposlech. V SSB / FM lišta nabízí T1–T4, hlasové paměti rádia; STOP nebo Esc je zastaví.' },
+      { code: '23cm ⏎', text: 'Pásmo, které rádio neumí: kQSO se ho nepokusí naladit — přepne se jen deník a spojení se na něm logují; rádio zůstane připojené, jak je, a neklíčuje (hlavička 705 –), dokud nenapíšeš pásmo rádia nebo nepřepneš pásmo na rádiu. Stejně, když rádio pásmo odmítne. S transvertorem (Nastavení → Rádio → XVERT) jde rádio na mezifrekvenci a do deníku kmitočet RF (hlavička 705 XV).' },
+      { text: 'V CW posílají makra vnitřní klíčovač rádia, pokud ho přes CI-V má (IC-705, 7300, 9700, 7610, 7100; CW klíčování zapínat netřeba; bez break-inu zní jen příposlech), jinak klíčuje rádio klíčovač M5 po drátu (CW klíčování zapnout). V SSB / FM lišta nabízí T1–T4, hlasové paměti rádia (IC-705, 7300, 9700, 7610); STOP nebo Esc je zastaví.' },
     ],
   },
   {

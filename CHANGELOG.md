@@ -2,6 +2,19 @@
 
 What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android app and the iOS app share one version. Newest first.
 
+## [Unreleased]
+
+### Added
+- **Any Icom through the M5-ESP32-keyer (beta)**: the keyer's CI-V tunnel (firmware 2.1.0+, `CIVTX` / `CIVRX`) drives a radio on its CI-V bus the same way as the IC-705 over Bluetooth — band, mode and `FREQ` from the radio, a typed band / mode / `F…` tunes it. Works wherever the keyer works: Android and iOS app, Chrome / Edge. Settings → Radio (was IC-705) → *Via the keyer*; on the apps also *IC-705 Bluetooth*.
+- **Radio definitions** (`core/rigmodel.ts`): bands, tuning range and CI-V functions per model — IC-705, IC-706 / MkII / MkIIG, IC-910 (optional 23 cm unit), IC-9700, IC-7300, IC-7610, IC-7100. The model goes by the CI-V address the keyer found, or is chosen in Settings (a radio with a changed address); an unknown address gets a generic radio.
+- CW through the radio's own keyer (CI-V 17) and voice memories T1–T4 on the radios that have them (IC-7300, 9700, 7610; CW also IC-7100); older radios are keyed by the keyer's wire. Band stacking register per model.
+- A band the radio doesn't work — by its definition, or because it refuses the frequency — isn't tuned: only the log switches and QSOs are logged on it, the radio stays connected (header `–`) and isn't keyed — neither CW / voice through CI-V nor the keyer's wire.
+- 23 cm spots (1296.050 CW, 1296.200 SSB, 1297.500 FM) when a radio has no band stack there.
+
+### Changed
+- The logging header shows the radio's model (`705`, `7300`, `9700`, `706`, `CIV`), and the radio texts say "radio" instead of "IC-705".
+- Transverter bands follow the radio (4 m and up that it doesn't work); rows of other bands stay stored.
+
 ## [1.8.2] – 2026-10-07
 
 ### Added

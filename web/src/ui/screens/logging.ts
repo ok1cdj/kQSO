@@ -234,7 +234,7 @@ export class LoggingScreen implements Screen {
   }
 
   private async commit(): Promise<void> {
-    // F28300: tune the IC-705 (only with the radio switched on — else F… is just input).
+    // F28300: tune the radio (only with the radio switched on — else F… is just input).
     const hz = this.rig.enabled ? matchTuneCommand(this.line) : undefined
     if (hz !== undefined) {
       this.line = ''
@@ -467,7 +467,7 @@ export class LoggingScreen implements Screen {
     void this.sendKeyed(word)
   }
 
-  // --- IC-705 ---------------------------------------------------------
+  // --- radio (IC-705, or an Icom via the keyer) -------------------------
 
   /** The radio sets band / mode / FREQ: connected, and not a satellite log (the bird does). */
   private rigSets(): boolean {
@@ -500,7 +500,9 @@ export class LoggingScreen implements Screen {
           ? t('logging.rigTuneFailed')
           : n.type === 'voiceFailed'
             ? t('logging.rigVoiceFailed', { n: n.memory })
-            : t('settings.rigFailed', { msg: n.message })
+            : n.type === 'firmware'
+              ? t('settings.rigFirmware')
+              : t('settings.rigFailed', { msg: n.message })
       this.rig.clearNotice()
       changed = true
     }
@@ -605,12 +607,12 @@ export class LoggingScreen implements Screen {
       const cls = link !== 'on' ? 'hdr-keyer hdr-keyer--off' : this.txMode ? 'hdr-keyer hdr-keyer--tx' : 'hdr-keyer'
       mid.append(button(label, () => void this.keyer.reconnect(), cls))
     }
-    // IC-705: up (band / mode from the radio), connecting, or ✕ (tap = connect).
+    // Radio (705, 7300 …): up (band / mode from the radio), connecting, or ✕ (tap = connect).
     if (this.rig.enabled && !profile.fixedBand) {
       // XV = the radio on a transverter's IF; – = the log on a band the radio doesn't work.
       const up = this.rig.controls
       const state = !up ? (this.rig.link === 'off' ? ' ✕' : ' …') : this.rig.detached ? ' –' : this.rig.xvertBand ? ' XV' : ''
-      mid.append(button(`705${state}`, () => void this.rig.reconnect(), up && !this.rig.detached ? 'hdr-keyer' : 'hdr-keyer hdr-keyer--off'))
+      mid.append(button(`${this.rig.label}${state}`, () => void this.rig.reconnect(), up && !this.rig.detached ? 'hdr-keyer' : 'hdr-keyer hdr-keyer--off'))
     }
     if (profile.contest) {
       const known = p.grid === undefined && p.call !== undefined ? this.db.lookup(p.call)?.loc : undefined
@@ -731,10 +733,10 @@ export class LoggingScreen implements Screen {
     return this.keyerOn() && this.keyer.connected
   }
 
-  /** The IC-705's voice memories own the strip: connected and in SSB / FM (the radio's mode). */
+  /** The radio's voice memories own the strip: a radio that has them, connected, in SSB / FM (its mode). */
   private voiceShown(): boolean {
     const m = this.rig.mode
-    return this.rig.keys && (m === 'SSB' || m === 'FM')
+    return this.rig.voice && (m === 'SSB' || m === 'FM')
   }
 
   /** What Enter will do with a keyer command, and whether it can't. */
@@ -814,7 +816,7 @@ export class LoggingScreen implements Screen {
       )
       return
     }
-    // IC-705 in SSB / FM: its voice memories, as the macros in CW.
+    // Radio in SSB / FM: its voice memories, as the macros in CW.
     if (this.voiceShown()) {
       this.stripEl.replaceChildren(
         ...stop,
