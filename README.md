@@ -7,11 +7,11 @@ type — callsign, band/mode, report, serial, locator, award reference — so yo
 log a QSO with almost no taps. It runs as a web app (offline PWA), as an
 Android app and as an iOS app for iPhone and iPad (the same web app in a native shell).
 
-Target devices (all first-class): **Mudita Kompakt** (480×800 e-ink), iPad/tablet,
-desktop.
+Built for the **Mudita Kompakt** (480×800 e-ink), and just as usable on any other
+phone, tablet or desktop.
 
-- **Live web:** <https://kqso.ok1cdj.com/> (web 1.8.2; the old `ok1cdj.github.io/kQSO/` redirects there)
-- **Android:** [Google Play](https://play.google.com/store/apps/details?id=com.ok1cdj.kqso), or the APK from [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.8.2) — the same signature, so either updates the other
+- **Live web:** <https://kqso.ok1cdj.com/> (web 1.9; the old `ok1cdj.github.io/kQSO/` redirects there)
+- **Android:** [Google Play](https://play.google.com/store/apps/details?id=com.ok1cdj.kqso), or the APK from [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.9) — the same signature, so either updates the other
 - **iOS (iPhone, iPad):** App Store (in review)
 - **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -157,7 +157,7 @@ tokens are ignored. See **Settings → How to log** in the app for the full gram
   (`web/src/core/rigmodel.ts`) give each model its bands, tuning range and CI-V
   functions: IC-705, IC-706 / MkII / MkIIG, IC-910 (optional 23 cm unit), IC-9700,
   IC-7300, IC-7610, IC-7100; the model goes by the CI-V address the keyer found or is
-  chosen in Settings. Tested so far: IC-705 (Bluetooth), IC-706MkII (keyer). Band, mode and
+  chosen in Settings. Tested so far: IC-705 (Bluetooth), IC-706MkII and IC-910 (keyer; Android, iPad, browser). Band, mode and
   the exact frequency (ADIF `FREQ`) follow the radio, a typed band / mode tunes it (`F28300` = 28.300 MHz; a band the radio doesn't
   work isn't tuned — only the log switches and QSOs are logged on it, and nothing keys
   the radio; transverters per band in Settings → XVERT), and

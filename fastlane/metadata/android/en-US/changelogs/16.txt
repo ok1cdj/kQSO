@@ -1,0 +1,1 @@
+Any Icom through the M5-ESP32-keyer (beta): band, mode and frequency from the radio, tuning from the log (IC-706, IC-910, IC-9700, IC-7300 …). A guide to building the keyer. VHF contest: a locator typed before the call is a locator. Also new since 1.8.1: kQSO for iPhone and iPad; ADIF without an empty MY_GRIDSQUARE.

@@ -14,6 +14,19 @@ export interface WhatsNewEntry {
 /** Newest first. */
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    version: '1.9',
+    cs: [
+      'Jakýkoli Icom přes klíčovač M5-ESP32-keyer (beta, firmware 2.1.0+): Nastavení → Rádio → Přes klíčovač. Pásmo, mód a kmitočet z rádia, napsané pásmo / mód nebo F… ho přeladí. Model se pozná podle CI-V adresy (IC-706, IC-910, IC-9700, IC-7300 …); pásmo, které rádio neumí, přepne jen deník.',
+      'Jak si klíčovač postavit (součástky, schémata, firmware): odkaz v Nastavení → Klíčovač M5.',
+      'VKV závod: lokátor napsaný před značkou je lokátor — hned QRB, azimut a značky známé u lokátoru.',
+    ],
+    en: [
+      'Any Icom through the M5-ESP32-keyer (beta, firmware 2.1.0+): Settings → Radio → Via the keyer. Band, mode and frequency from the radio; a typed band / mode or F… tunes it. The model goes by its CI-V address (IC-706, IC-910, IC-9700, IC-7300 …); a band the radio doesn\'t work switches only the log.',
+      'How to build the keyer (parts, schematics, firmware): a link in Settings → M5 keyer.',
+      'VHF contest: a locator typed before the call is a locator — QRB, azimuth and the calls known there at once.',
+    ],
+  },
+  {
     version: '1.8.2',
     cs: ['kQSO je i pro iPhone a iPad: stejné logování, soubory ADIF v aplikaci Soubory, klíčovač a IC-705 přes Bluetooth.'],
     en: ['kQSO for iPhone and iPad: the same logging, ADIF files in the Files app, the CW keyer and the IC-705 over Bluetooth.'],

@@ -1,0 +1,1 @@
+Jakýkoli Icom přes klíčovač M5-ESP32-keyer (beta): pásmo, mód a kmitočet z rádia, ladění z deníku (IC-706, IC-910, IC-9700, IC-7300 …). Návod na stavbu klíčovače. VKV závod: lokátor před značkou je lokátor. Nově od 1.8.1 také: kQSO pro iPhone a iPad; ADIF bez prázdného MY_GRIDSQUARE.
