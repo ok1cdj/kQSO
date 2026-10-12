@@ -11,9 +11,18 @@ export function registerServiceWorker(): void {
   if (!('serviceWorker' in navigator)) return
   const register = (): void => {
     // BASE_URL is the Vite base (/) — register at the app's scope.
-    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, { type: 'module' }).catch(() => {
-      /* registration failed (e.g. insecure context) — app still works online */
-    })
+    navigator.serviceWorker
+      .register(`${import.meta.env.BASE_URL}sw.js`, { type: 'module' })
+      .then((reg) => {
+        // A phone keeps the tab for days without a real reload: look for a new
+        // version whenever the app comes back to the screen.
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) void reg.update().catch(() => {})
+        })
+      })
+      .catch(() => {
+        /* registration failed (e.g. insecure context) — app still works online */
+      })
   }
   // main.ts calls this after an async start-up, usually AFTER 'load' has fired —
   // a plain load listener then never runs and the app silently loses offline mode.
