@@ -32,6 +32,7 @@ const en = {
 
   'loglist.new': '+ New log',
   'loglist.empty': 'No logs yet — create one.',
+  'loglist.howTo': 'How to log →',
   'loglist.export': 'export',
   'loglist.delete': 'delete',
   'loglist.deleteConfirm': 'Delete log "{name}" ({count} QSOs)? Cannot be undone.',
@@ -272,6 +273,7 @@ const cs: Record<keyof typeof en, string> = {
 
   'loglist.new': '+ Nový log',
   'loglist.empty': 'Zatím žádný log — založ nový.',
+  'loglist.howTo': 'Jak logovat →',
   'loglist.export': 'export',
   'loglist.delete': 'smazat',
   'loglist.deleteConfirm': 'Smazat log „{name}" ({count} QSO)? Nelze vrátit.',

@@ -35,6 +35,7 @@ export interface LogListNav {
   openLog(id: string): void
   newLog(): void
   openSettings(): void
+  openHelp(): void
   exportEdi(id: string): void
 }
 
@@ -60,12 +61,16 @@ export class LogListScreen implements Screen {
     top.append(
       el('h1', 'title', 'kQSO'),
       button(t('loglist.new'), () => this.nav.newLog(), 'btn btn--primary'),
+      button('?', () => this.nav.openHelp(), 'btn btn--icon'),
       button('⚙', () => this.nav.openSettings(), 'btn btn--icon'),
     )
 
     const list = el('ul', 'loglist')
     if (logs.length === 0) {
-      list.append(el('li', 'empty', t('loglist.empty')))
+      // First start: how to log, right where it's needed.
+      const empty = el('li', 'empty', `${t('loglist.empty')} `)
+      empty.append(button(t('loglist.howTo'), () => this.nav.openHelp(), 'btn btn--small'))
+      list.append(empty)
     } else {
       for (const log of logs) list.append(this.row(log, wl, readPushStatus(await this.platform.getSetting(pushStatusKey(log.id)))))
     }

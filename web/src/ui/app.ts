@@ -68,6 +68,7 @@ export class App {
         openLog: (id) => this.showLogging(id),
         newLog: () => this.showNewLog(),
         openSettings: () => this.showSettings(),
+        openHelp: () => this.showHelp(() => this.showLogList()),
         exportEdi: (id) => this.showEdiExport(id),
       }),
       'logs',
