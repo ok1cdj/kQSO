@@ -13,9 +13,6 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 - A link to the keyer's build guide (keyer.ok1cdj.com/build.html: parts, schematics, flasher; EN / CS) in Settings → M5 keyer and in the help.
 - VHF contest: a full locator heard before the call (`JO70VA` ⏎) is taken as the locator — QRB and azimuth at once, and the strip offers the calls the callsign database knows at that locator; the call completes the QSO later. Before, it was taken as a callsign.
 
-### Added
-- VHF contest: a full locator heard before the call (`JO70VA` ⏎) is taken as the locator — QRB and azimuth at once, and the strip offers the calls the callsign database knows at that locator; the call completes the QSO later. Before, it was taken as a callsign.
-
 ### Changed
 - The logging header shows the radio's model (`705`, `7300`, `9700`, `706`, `CIV`), and the radio texts say "radio" instead of "IC-705".
 - Transverter bands follow the radio (4 m and up that it doesn't work); rows of other bands stay stored.
