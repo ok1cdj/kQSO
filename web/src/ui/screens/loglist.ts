@@ -23,6 +23,7 @@ import { trackEvent } from '../stats'
 import { pushAdif } from '../wavelog'
 import { pushStatusText, wavelogErrorText } from '../wavelog-text'
 import { RELEASES_PAGE, availableUpdate, dismissUpdate } from '../update'
+import { appPromo, hideAppPromo } from '../stores'
 
 interface WavelogTarget {
   readonly base: string
@@ -71,8 +72,27 @@ export class LogListScreen implements Screen {
     // APK: a newer release → one quiet line under the bar (filled in once the check is back).
     const update = el('div', 'update-notice')
     update.hidden = true
-    this.root.replaceChildren(top, update, list)
+    // Web on a phone / tablet: the app in its store, one line, hidden for good on request.
+    const promo = el('div', 'update-notice')
+    promo.hidden = true
+    this.root.replaceChildren(top, update, promo, list)
     void this.showUpdate(update)
+    void this.showPromo(promo)
+  }
+
+  private async showPromo(box: HTMLElement): Promise<void> {
+    const p = await appPromo(this.platform)
+    if (!p) return
+    const get = el('a', 'btn btn--small', t(p.store === 'play' ? 'promo.play' : 'promo.appStore'))
+    get.href = p.url
+    get.target = '_blank'
+    get.rel = 'noopener'
+    const hide = button(t('update.hide'), () => {
+      box.hidden = true
+      void hideAppPromo(this.platform)
+    }, 'btn btn--small')
+    box.replaceChildren(el('span', undefined, t(p.store === 'play' ? 'promo.textAndroid' : 'promo.textIos')), get, hide)
+    box.hidden = false
   }
 
   private async showUpdate(box: HTMLElement): Promise<void> {

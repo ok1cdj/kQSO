@@ -20,6 +20,7 @@ import { RADAR_SETTING } from '../radar'
 import { STATS_SETTING, setStatsEnabled } from '../stats'
 import { KEYER_SETTINGS } from '../keyer'
 import { keyerGuideLink } from '../keyer-guide'
+import { APP_STORE_URL, PLAY_URL } from '../stores'
 import type { KeyerController } from '../keyer'
 import { RIG_SETTINGS } from '../rig'
 import type { RigController } from '../rig'
@@ -675,8 +676,19 @@ export class SettingsScreen implements Screen {
       el('div', undefined, t('settings.aboutLicense')),
       el('div', undefined, t('settings.aboutAuthor')),
       el('div', undefined, 'github.com/ok1cdj/kQSO'),
-      button(t('settings.whatsNew'), () => this.nav.openWhatsNew(), 'btn btn--small'),
     )
+    // The apps in the stores (shown everywhere: in an app it's where to rate / share it).
+    const stores = el('div')
+    const link = (label: string, href: string): HTMLAnchorElement => {
+      const a = el('a', undefined, label)
+      a.href = href
+      a.target = '_blank'
+      a.rel = 'noopener'
+      return a
+    }
+    stores.append(`${t('settings.aboutApps')} `, link('Google Play', PLAY_URL))
+    if (APP_STORE_URL) stores.append(' · ', link('App Store', APP_STORE_URL))
+    wrap.append(stores, button(t('settings.whatsNew'), () => this.nav.openWhatsNew(), 'btn btn--small'))
     return wrap
   }
 }
