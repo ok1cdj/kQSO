@@ -813,6 +813,10 @@ body {
   border-bottom: var(--border-w) solid var(--fg);
   font-size: 0.9rem;
 }
+/* [hidden] must win over display:flex: Hide, and no empty bordered line when there's nothing to say. */
+.update-notice[hidden] {
+  display: none;
+}
 .update-notice span {
   flex: 1 1 auto;
 }
