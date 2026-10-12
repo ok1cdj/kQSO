@@ -1,23 +1,29 @@
 kQSO je radioamatérský deník s jedním chytrým řádkem. Celé QSO napíšeš na jeden řádek — značku, pásmo a mód, report, pořadové číslo, lokátor, referenci — a kQSO pozná každou část podle tvaru. Náhled pod řádkem ukazuje, co se uloží. Logy jsou obyčejné soubory ADIF v zařízení, vše funguje offline.
 
-Profily logu
-• Aktivace — SOTA, GMA, POTA, WWFF, rozhledny TOTA; vlastní reference se zadá s logem, reference protistanice se zapíše pro S2S.
-• Obecný — navíc jméno.
-• VKV závod — pořadová čísla, 6místný lokátor, bodování IARU R1 (body za km), skóre po pásmech, export EDI (REG1TEST) po pásmech.
-• Satelit — co přelet, to log; družice nastaví pásma a kmitočty uplinku a downlinku.
+<b>Profily logu</b>
+<ul>
+<li><b>Aktivace</b> — SOTA, GMA, POTA, WWFF, rozhledny TOTA; vlastní reference se zadá s logem, reference protistanice se zapíše pro S2S.</li>
+<li><b>Obecný</b> — navíc jméno.</li>
+<li><b>VKV závod</b> — pořadová čísla, 6místný lokátor, bodování IARU R1 (body za km), skóre po pásmech, export EDI (REG1TEST) po pásmech.</li>
+<li><b>Satelit</b> — co přelet, to log; družice nastaví pásma a kmitočty uplinku a downlinku.</li>
+</ul>
 
-Logování
-• Pásma 160 m až 76 GHz, mikrovlny se píšou v GHz (24G, 10G …).
-• Návrhy značek a předvyplnění lokátoru z přibalené databáze a tvých spojení.
-• Upozornění na DUPE (značka + pásmo + mód; v závodě po pásmech; u satelitu po družicích).
-• Mapa udělaných lokátorů nad čtverci Maidenhead, offline.
-• Srážkový radar na mapě VKV závodu (volitelný, výchozí vypnuto).
-• Export ADIF, odeslání do vlastního Wavelogu (API v2).
-• Bezpečné ukládání: každé QSO se zapíše hned, rozpracované se po restartu nabídne zpět.
+<b>Logování</b>
+<ul>
+<li>Pásma 160 m až 76 GHz, mikrovlny se píšou v GHz (24G, 10G …).</li>
+<li>Návrhy značek a předvyplnění lokátoru z přibalené databáze a tvých spojení.</li>
+<li>Upozornění na DUPE (značka + pásmo + mód; v závodě po pásmech; u satelitu po družicích).</li>
+<li>Mapa udělaných lokátorů nad čtverci Maidenhead, offline.</li>
+<li>Srážkový radar na mapě VKV závodu (volitelný, výchozí vypnuto).</li>
+<li>Export ADIF, odeslání do vlastního Wavelogu (API v2).</li>
+<li>Bezpečné ukládání: každé QSO se zapíše hned, rozpracované se po restartu nabídne zpět.</li>
+</ul>
 
-Rádia a klíčovače (beta)
-• Icom IC-705 přes Bluetooth: pásmo, mód a přesný kmitočet z rádia, napsané pásmo nebo F28300 rádio přeladí, CW makra přes klíčovač rádia, hlasové paměti T1–T4 v SSB / FM, transvertory pro jednotlivá pásma.
-• CW klíčovač M5-ESP32-keyer přes Bluetooth: makra pro každý profil, RUN / S&P, ESM jako v N1MM, CW klávesnice.
+<b>Rádia a klíčovače (beta)</b>
+<ul>
+<li><b>Icom IC-705 přes Bluetooth</b>: pásmo, mód a přesný kmitočet z rádia, napsané pásmo nebo F28300 rádio přeladí, CW makra přes klíčovač rádia, hlasové paměti T1–T4 v SSB / FM, transvertory pro jednotlivá pásma.</li>
+<li><b>CW klíčovač</b> M5-ESP32-keyer přes Bluetooth: makra pro každý profil, RUN / S&amp;P, ESM jako v N1MM, CW klávesnice.</li>
+</ul>
 
 Vlastní abecední klávesnice (funguje i hardwarová), standardní a e-ink zobrazení, světlý i tmavý vzhled, čeština a angličtina.
 

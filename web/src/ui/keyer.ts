@@ -1,9 +1,12 @@
 // CW keyer controller, one for the whole app (the link survives screen changes).
 // Owns the KeyerProtocol over platform.keyer, the settings (on/off, default speed,
 // RUN/S&P, macros) and the reconnect. Screens subscribe and re-render on change.
-// CW goes out through a CwOutput: the IC-705's own keyer while the radio is connected
-// (CivCwOutput), else the M5 keyer — the screens and macros don't tell them apart.
-// Nothing happens — no Bluetooth at all — until "CW keying" is switched on.
+// CW goes out through a CwOutput: the radio's own keyer over CI-V while a radio that has
+// one is connected (CivCwOutput — the IC-705, or an IC-7300 / 9700 … through the keyer's
+// CI-V tunnel), else the M5 keyer by wire — the screens and macros don't tell them apart.
+// The same keyer link carries the CI-V tunnel (civLink, ui/keyer-civ.ts) for RigController.
+// Nothing happens — no Bluetooth at all — until "CW keying" or the radio via the keyer
+// is switched on.
 
 import {
   CivCwOutput,
@@ -18,6 +21,8 @@ import {
 import type { CwOutput, KeyerEvent, MacroSlot, ProfileId, RunMode, SavedMacros } from '../core/index'
 import type { KQSOPlatform, KeyerLinkState, KeyerTransport } from '../platform/index'
 import { switchOn } from './dom'
+import { KeyerCivTransport } from './keyer-civ'
+import type { KeyerCivHost } from './keyer-civ'
 import { browserTimers } from './rig'
 import type { RigController } from './rig'
 
@@ -36,7 +41,7 @@ export type KeyerNotice =
 
 const RETRY_MS = 1500
 
-export class KeyerController {
+export class KeyerController implements KeyerCivHost {
   readonly available: boolean
   enabled = false
   /** The M5 keyer's own link (Settings); the logging screen wants outLink. */
@@ -53,9 +58,12 @@ export class KeyerController {
   private readonly transport: KeyerTransport | undefined
   private readonly proto: KeyerProtocol | undefined
   private readonly civ: CivCwOutput | undefined
+  /** The CI-V tunnel over this link, RigController's transport for "radio via the keyer". */
+  readonly civLink: KeyerCivTransport | undefined
   private readonly listeners = new Set<() => void>()
   private wantLink = false // the operator wants to be connected (not after Odpojit / off)
   private retried = false // one quiet reconnect after an unexpected drop
+  private civWanted = false // the radio via the keyer wants the link (even with CW keying off)
 
   constructor(
     private readonly platform: KQSOPlatform,
@@ -71,8 +79,9 @@ export class KeyerController {
         if (rig.ready === ready) return
         ready = rig.ready
         this.civ!.reset()
-        // Radio up: the default speed, as for the keyer on every connect.
-        if (ready) void this.safe(() => this.civ!.setWpm(this.defaultWpm))
+        // Radio up: the default speed, as for the keyer on every connect — only on a
+        // radio with CW over CI-V (an IC-706 would refuse 14 0C).
+        if (ready && rig.model.cwCiv) void this.safe(() => this.civ!.setWpm(this.defaultWpm))
         this.emit()
       })
     }
@@ -83,6 +92,7 @@ export class KeyerController {
       },
       (ev) => this.onEvent(ev),
     )
+    this.civLink = new KeyerCivTransport(this)
     tr.onData((text) => this.proto?.receive(text))
     tr.onState((s, name) => this.onLink(s, name))
     tr.onBattery((pct) => {
@@ -102,7 +112,7 @@ export class KeyerController {
     this.esm = switchOn(await p.getSetting(KEYER_SETTINGS.esm), false)
     document.addEventListener('visibilitychange', () => {
       // Back from sleep / another app: the link may have dropped meanwhile.
-      if (!document.hidden && this.enabled && this.wantLink && this.link === 'off') void this.connect(false)
+      if (!document.hidden && this.wanted && this.wantLink && this.link === 'off') void this.connect(false)
     })
     if (this.enabled) void this.connect(false)
   }
@@ -112,9 +122,14 @@ export class KeyerController {
     return () => this.listeners.delete(cb)
   }
 
-  /** CW goes through the IC-705 (connected and switched on), not the M5 keyer. */
+  /** CW goes through the radio's own keyer (CI-V 17), not the M5 keyer's wire. */
   get viaRig(): boolean {
-    return this.civ !== undefined && this.rig.keys
+    return this.civ !== undefined && this.rig.cwViaCiv
+  }
+
+  /** Something wants the keyer link: CW keying, or the radio via the keyer. */
+  private get wanted(): boolean {
+    return this.enabled || this.civWanted
   }
 
   private get out(): CwOutput | undefined {
@@ -142,7 +157,14 @@ export class KeyerController {
    *  choice), or the M5 keyer with "CW keying" on. The logging screen then shows the
    *  keyer (header, macros, commands). */
   activeFor(mode: string): boolean {
-    return mode === 'CW' && (this.viaRig || (this.transport !== undefined && this.enabled))
+    return mode === 'CW' && (this.viaRig || (this.transport !== undefined && this.enabled && !this.wireBlocked))
+  }
+
+  /** The keyer's wire keys the radio it drives over CI-V, and the log is on a band that
+   *  radio doesn't work (another rig runs it): the wire must not key, as the IC-705
+   *  doesn't. With the IC-705 on its Bluetooth the keyer may key another rig — no block. */
+  get wireBlocked(): boolean {
+    return this.rig.source === 'keyer' && this.rig.controls && this.rig.detached
   }
 
   /** `save` = false when the caller (the Settings switch) stores the value itself —
@@ -151,14 +173,38 @@ export class KeyerController {
     this.enabled = on
     if (save) await this.platform.setSetting(KEYER_SETTINGS.enabled, on ? '1' : '0')
     if (on) await this.connect(false)
-    else await this.disconnect()
+    else if (!this.civWanted) await this.disconnect() // the radio still uses the link
     this.emit()
   }
 
   /** `pick` = the chooser (from a tap); otherwise the remembered keyer, if any. */
   async connect(pick: boolean): Promise<void> {
+    if (!pick && this.link !== 'off') return // already (being) connected for the other user of the link
     const tr = this.transport
     await this.attempt(async () => void (await tr!.connect(pick)))
+  }
+
+  // --- the CI-V tunnel's side (KeyerCivHost) ---------------------------------------
+
+  async civConnect(pick: boolean): Promise<boolean> {
+    this.civWanted = true
+    if (!this.transport) return false
+    if (!pick && this.link !== 'off') return true
+    let tried = false
+    await this.attempt(async () => {
+      tried = await this.transport!.connect(pick)
+    })
+    return tried
+  }
+
+  async civDisconnect(): Promise<void> {
+    this.civWanted = false
+    if (!this.enabled) await this.disconnect()
+    this.emit()
+  }
+
+  command(line: string): Promise<string> {
+    return this.proto ? this.proto.command(line) : Promise.reject(new Error('disconnected'))
   }
 
   /** From the logging screen (C ⏎, a tap on RUN / S&P): the remembered keyer, else the
@@ -173,7 +219,7 @@ export class KeyerController {
   }
 
   private async attempt(f: () => Promise<void>): Promise<void> {
-    if (!this.transport || !this.enabled) return
+    if (!this.transport || !this.wanted) return
     this.wantLink = true
     this.retried = false
     try {
@@ -243,7 +289,7 @@ export class KeyerController {
   /** Send already-expanded text; returns the characters dropped by the conversion. */
   async send(text: string): Promise<string[]> {
     const { text: clean, dropped } = sanitize(text)
-    if (!this.connected || clean.length === 0) return dropped
+    if (!this.connected || clean.length === 0 || (!this.viaRig && this.wireBlocked)) return dropped
     const out = this.out!
     const p = this.safe(() => out.send(clean))
     this.emit() // sending → STOP appears right away
@@ -284,13 +330,17 @@ export class KeyerController {
       // Every connect: version, then the default speed (an S20 lasts only until here).
       void this.safe(async () => {
         await this.proto!.ver()
+        void this.civLink?.keyerUp() // needs the version; its commands queue behind WPM
         await this.proto!.setWpm(this.defaultWpm)
         this.emit()
       })
+    } else if (s === 'connecting') {
+      this.civLink?.keyerConnecting()
     } else if (s === 'off') {
       this.proto?.reset()
+      this.civLink?.keyerDown()
       // Dropped while wanted: one quiet retry (out of range for a moment, keyer reset).
-      if (was === 'on' && this.wantLink && this.enabled && !this.retried) {
+      if (was === 'on' && this.wantLink && this.wanted && !this.retried) {
         this.retried = true
         window.setTimeout(() => {
           if (this.wantLink && this.link === 'off' && this.transport) void this.transport.connect(false).catch(() => {})
@@ -301,6 +351,9 @@ export class KeyerController {
   }
 
   private onEvent(ev: KeyerEvent): void {
+    // The tunnel's messages are the radio's business (RigController via civLink).
+    if (ev.type === 'civ') return this.civLink?.onCiv(ev.bytes)
+    if (ev.type === 'freq') return this.civLink?.onFreq(ev.hz)
     if (ev.type === 'error') this.notice = { type: 'error', what: ev.what }
     this.emit()
   }

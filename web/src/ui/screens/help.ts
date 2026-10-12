@@ -5,6 +5,7 @@
 import type { Screen } from '../app'
 import { el, button } from '../dom'
 import { lang, t } from '../i18n'
+import { keyerGuideLink } from '../keyer-guide'
 
 export interface HelpNav {
   back(): void
@@ -13,6 +14,8 @@ export interface HelpNav {
 interface Row {
   readonly code?: string
   readonly text: string
+  /** The text is a link to the keyer's build guide. */
+  readonly guide?: boolean
 }
 interface Section {
   readonly title: string
@@ -108,7 +111,7 @@ const EN: readonly Section[] = [
   {
     title: 'CW keyer (Bluetooth, beta)',
     rows: [
-      { text: 'Settings → CW keying (off by default) → Connect: the M5-ESP32-keyer over Bluetooth, in the Android app or Chrome / Edge. In CW the strip then offers the macros CQ (DE in S&P) EX TU MY REF/LOC/INF ? whenever it has nothing to suggest; the header shows RUN or S&P and the speed (✕ = not connected). Beta, tested with the M5-ESP32-keyer v2: please report bugs on GitHub Issues (github.com/ok1cdj/kQSO/issues).' },
+      { text: 'Settings → CW keying (off by default) → Connect: the M5-ESP32-keyer over Bluetooth, in the Android / iOS app or Chrome / Edge. In CW the strip then offers the macros CQ (DE in S&P) EX TU MY REF/LOC/INF ? whenever it has nothing to suggest; the header shows RUN or S&P and the speed (✕ = not connected). Beta, tested with the M5-ESP32-keyer v2: please report bugs on GitHub Issues (github.com/ok1cdj/kQSO/issues).' },
       { text: 'Each profile has its own macros for RUN (I call CQ) and S&P (I answer a CQ), editable in Settings. While sending, STOP is first in the strip; Esc stops too.' },
       { text: 'Macro variables: {CALL} their call, {MYCALL} {MYLOC} {MYREF} from the log header, {RST} sent report, {NR} my next serial (001), {LOC} {REF} their locator / reference, {HI} greeting by local time — GM until noon, GA until 18:00, GE until midnight.' },
       { code: 'R ⏎ / S ⏎', text: 'RUN / S&P mode (only while CW keying is on).' },
@@ -117,16 +120,20 @@ const EN: readonly Section[] = [
       { code: 'E ⏎', text: 'ESM on / off (header RUN·ESM): Enter sends the macros as in N1MM. RUN: empty ⏎ = CQ, call ⏎ = EXCH, filling in ⏎ = nothing, empty ⏎ = TU + save. S&P: empty ⏎ = my call, call ⏎ = my call, empty ⏎ = EXCH + save. VHF contest: an empty ⏎ without the number / locator asks NR ? / LOC ? / NR LOC ? and keeps the QSO open.' },
       { code: 'K PSE QRS ⏎', text: 'Send the text once.' },
       { code: 'K ⏎', text: 'CW keyboard: what you type goes out as CW, each word on Space (type ahead; Backspace fixes only the unsent word); the header shows TX. Nothing is logged. An empty Enter, END or Esc (with nothing on the air) ends it.' },
+      { text: 'Build the keyer: parts, schematics, firmware →', guide: true },
     ],
   },
   {
-    title: 'IC-705 (Bluetooth, beta)',
+    title: 'Radio – CI-V (beta)',
     rows: [
-      { text: 'Settings → IC-705 → Connect (Android app; first time open Pairing Reception on the radio: MENU → SET → Bluetooth Set). The header shows 705 (✕ = not connected, tap = connect). Band, mode and the exact frequency (ADIF FREQ) come from the radio.' },
-      { code: '40m ⏎ / cw ⏎', text: 'Tunes the radio: a band goes to the radio\'s last frequency there, the mode stays.' },
+      { text: 'IC-705 over its Bluetooth: Settings → Radio → IC-705 Bluetooth → Connect (Android / iOS app; first time open Pairing Reception on the radio: MENU → SET → Bluetooth Set).' },
+      { text: 'Any Icom through the M5-ESP32-keyer on the radio\'s CI-V jack (keyer firmware 2.1.0+; Android / iOS app, Chrome / Edge): Settings → Radio → Via the keyer; the keyer itself is connected under Settings → M5 keyer (one link for CW and the radio). The keyer finds the bus rate and the radio itself; switch CI-V Transceive on in the radio. The model goes by the radio\'s CI-V address — choose it in Settings if the address was changed; it decides the bands, CW and voice memories (IC-910: switch its 23 cm unit on there).' },
+      { text: 'The header shows the radio (705, 7300, 9700, 706 …; ✕ = not connected, tap = connect; … = connecting, or the keyer has no radio on CI-V). Band, mode and the exact frequency (ADIF FREQ) come from the radio.' },
+      { code: '40m ⏎ / cw ⏎', text: 'Tunes the radio: a band goes to the radio\'s last frequency there (band stacking register; older radios like the IC-706: the usual spot for the mode), the mode stays.' },
       { code: 'F28300 ⏎', text: 'Tunes the radio to 28.300 MHz (kHz, no dot); the mode stays.' },
-      { code: '23cm ⏎', text: 'A band the radio doesn\'t work: only the log switches, the radio is left alone and doesn\'t key (header 705 –) until you type a radio band or change band on the radio. With a transverter (Settings → IC-705 → XVERT) the radio goes to its IF and the log gets the RF frequency (header 705 XV).' },
-      { text: 'In CW the macros send through the radio\'s own keyer (no need for CW keying); without break-in only the sidetone sounds. In SSB / FM the strip offers T1–T4, the radio\'s voice memories; STOP or Esc stops them.' },
+      { code: '23cm ⏎', text: 'A band the radio doesn\'t work: kQSO doesn\'t try to tune it — only the log switches and QSOs are logged on it; the radio stays connected, is left alone and doesn\'t key (header 705 –) until you type a radio band or change band on the radio. The same when the radio refuses a band. With a transverter (Settings → Radio → XVERT) the radio goes to its IF and the log gets the RF frequency (header 705 XV).' },
+      { text: 'In CW the macros send through the radio\'s own keyer where it has one over CI-V (IC-705, 7300, 9700, 7610, 7100; no need for CW keying; without break-in only the sidetone sounds), else the M5 keyer keys the radio by wire (CW keying on). In SSB / FM the strip offers T1–T4, the radio\'s voice memories (IC-705, 7300, 9700, 7610); STOP or Esc stops them.' },
+      { text: 'Build the keyer (with CI-V for any Icom) →', guide: true },
     ],
   },
   {
@@ -226,7 +233,7 @@ const CS: readonly Section[] = [
   {
     title: 'CW klíčovač (Bluetooth, beta)',
     rows: [
-      { text: 'Nastavení → CW klíčování (výchozí vypnuto) → Připojit: klíčovač M5-ESP32-keyer přes Bluetooth, v aplikaci pro Android nebo v Chromu / Edge. V CW pak lišta nabízí makra CQ (v S&P DE) EX TU MY REF/LOC/INF ?, kdykoli zrovna nic nenavrhuje; hlavička ukazuje RUN nebo S&P a rychlost (✕ = nepřipojeno). Beta, vyzkoušeno s M5-ESP32-keyer v2: chyby prosím hlaste na GitHub Issues (github.com/ok1cdj/kQSO/issues).' },
+      { text: 'Nastavení → CW klíčování (výchozí vypnuto) → Připojit: klíčovač M5-ESP32-keyer přes Bluetooth, v aplikaci pro Android a iOS nebo v Chromu / Edge. V CW pak lišta nabízí makra CQ (v S&P DE) EX TU MY REF/LOC/INF ?, kdykoli zrovna nic nenavrhuje; hlavička ukazuje RUN nebo S&P a rychlost (✕ = nepřipojeno). Beta, vyzkoušeno s M5-ESP32-keyer v2: chyby prosím hlaste na GitHub Issues (github.com/ok1cdj/kQSO/issues).' },
       { text: 'Každý profil má vlastní makra pro RUN (dávám CQ) a S&P (odpovídám na CQ), upravíš je v Nastavení. Během vysílání je v liště na prvním místě STOP; zastaví i Esc.' },
       { text: 'Proměnné v makrech: {CALL} značka protistanice, {MYCALL} {MYLOC} {MYREF} z hlavičky logu, {RST} odesílaný report, {NR} moje další pořadové číslo (001), {LOC} {REF} lokátor / reference protistanice, {HI} pozdrav podle místního času — GM do poledne, GA do 18:00, GE do půlnoci.' },
       { code: 'R ⏎ / S ⏎', text: 'Režim RUN / S&P (jen se zapnutým CW klíčováním).' },
@@ -235,16 +242,20 @@ const CS: readonly Section[] = [
       { code: 'E ⏎', text: 'ESM zap / vyp (v hlavičce RUN·ESM): Enter posílá makra jako v N1MM. RUN: prázdný ⏎ = CQ, značka ⏎ = EXCH, doplnění ⏎ = nic, prázdný ⏎ = TU + uložení. S&P: prázdný ⏎ = moje značka, značka ⏎ = moje značka, prázdný ⏎ = EXCH + uložení. VKV závod: prázdný ⏎ bez čísla / lokátoru se zeptá NR ? / LOC ? / NR LOC ? a QSO nechá otevřené.' },
       { code: 'K PSE QRS ⏎', text: 'Jednou odešle napsaný text.' },
       { code: 'K ⏎', text: 'CW klávesnice: co píšeš, jde do éteru, každé slovo po mezeře (můžeš psát dopředu; Backspace opraví jen neodeslané slovo); hlavička ukazuje TX. Nic se nezapisuje do logu. Konec: prázdný Enter, KONEC nebo Esc (když se nevysílá).' },
+      { text: 'Postav si klíčovač: součástky, schémata, firmware →', guide: true },
     ],
   },
   {
-    title: 'IC-705 (Bluetooth, beta)',
+    title: 'Rádio – CI-V (beta)',
     rows: [
-      { text: 'Nastavení → IC-705 → Připojit (aplikace pro Android; poprvé na rádiu otevři Pairing Reception: MENU → SET → Bluetooth Set). Hlavička ukazuje 705 (✕ = nepřipojeno, klepnutí = připojit). Pásmo, mód a přesný kmitočet (ADIF FREQ) bere kQSO z rádia.' },
-      { code: '40m ⏎ / cw ⏎', text: 'Přeladí rádio: pásmo na poslední kmitočet rádia na tom pásmu, mód zůstane.' },
+      { text: 'IC-705 přes jeho Bluetooth: Nastavení → Rádio → IC-705 Bluetooth → Připojit (aplikace pro Android a iOS; poprvé na rádiu otevři Pairing Reception: MENU → SET → Bluetooth Set).' },
+      { text: 'Jakýkoli Icom přes klíčovač M5-ESP32-keyer na CI-V konektoru rádia (firmware klíčovače 2.1.0+; aplikace pro Android a iOS, Chrome / Edge): Nastavení → Rádio → Přes klíčovač; samotný klíčovač se připojuje v Nastavení → Klíčovač M5 (jedno spojení pro CW i rádio). Rychlost sběrnice i rádio najde klíčovač sám; v rádiu zapni CI-V Transceive. Model se pozná podle CI-V adresy rádia — při změněné adrese ho vyber v Nastavení; podle něj se řídí pásma, CW a hlasové paměti (IC-910: tam zapni modul 23 cm).' },
+      { text: 'Hlavička ukazuje rádio (705, 7300, 9700, 706 …; ✕ = nepřipojeno, klepnutí = připojit; … = připojuje se, nebo klíčovač nemá na CI-V rádio). Pásmo, mód a přesný kmitočet (ADIF FREQ) bere kQSO z rádia.' },
+      { code: '40m ⏎ / cw ⏎', text: 'Přeladí rádio: pásmo na poslední kmitočet rádia na tom pásmu (band stacking register; starší rádia jako IC-706: obvyklý kmitočet pro mód), mód zůstane.' },
       { code: 'F28300 ⏎', text: 'Přeladí rádio na 28,300 MHz (v kHz, bez tečky); mód zůstane.' },
-      { code: '23cm ⏎', text: 'Pásmo, které rádio neumí: přepne se jen deník, rádio zůstane, jak je, a neklíčuje (hlavička 705 –), dokud nenapíšeš pásmo rádia nebo nepřepneš pásmo na rádiu. S transvertorem (Nastavení → IC-705 → XVERT) jde rádio na mezifrekvenci a do deníku kmitočet RF (hlavička 705 XV).' },
-      { text: 'V CW posílají makra vnitřní klíčovač rádia (CW klíčování zapínat netřeba); bez break-inu zní jen příposlech. V SSB / FM lišta nabízí T1–T4, hlasové paměti rádia; STOP nebo Esc je zastaví.' },
+      { code: '23cm ⏎', text: 'Pásmo, které rádio neumí: kQSO se ho nepokusí naladit — přepne se jen deník a spojení se na něm logují; rádio zůstane připojené, jak je, a neklíčuje (hlavička 705 –), dokud nenapíšeš pásmo rádia nebo nepřepneš pásmo na rádiu. Stejně, když rádio pásmo odmítne. S transvertorem (Nastavení → Rádio → XVERT) jde rádio na mezifrekvenci a do deníku kmitočet RF (hlavička 705 XV).' },
+      { text: 'V CW posílají makra vnitřní klíčovač rádia, pokud ho přes CI-V má (IC-705, 7300, 9700, 7610, 7100; CW klíčování zapínat netřeba; bez break-inu zní jen příposlech), jinak klíčuje rádio klíčovač M5 po drátu (CW klíčování zapnout). V SSB / FM lišta nabízí T1–T4, hlasové paměti rádia (IC-705, 7300, 9700, 7610); STOP nebo Esc je zastaví.' },
+      { text: 'Postav si klíčovač (i s CI-V pro jakýkoli Icom) →', guide: true },
     ],
   },
   {
@@ -272,7 +283,8 @@ export class HelpScreen implements Screen {
       for (const row of s.rows) {
         const r = el('div', 'help-row')
         if (row.code) r.append(el('code', 'help-code', row.code))
-        r.append(el('span', 'help-text', row.text))
+        if (row.guide) r.append(keyerGuideLink(row.text, 'help-text'))
+        else r.append(el('span', 'help-text', row.text))
         sec.append(r)
       }
       return sec

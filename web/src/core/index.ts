@@ -35,6 +35,7 @@ export {
   chunk,
   KeyerProtocol,
   asyncEvent,
+  versionAtLeast,
   sanitize,
   expandMacro,
   greeting,
@@ -57,8 +58,12 @@ export {
 export type { CwOutput, KeyerEvent, MacroSlot, RunMode, MacroSet, MacroContext, SavedMacros, EsmBefore, EsmAfter } from './keyer'
 export type { ParseResult } from './parse'
 export {
-  Ic705Protocol,
+  CivProtocol,
   CivCwOutput,
+  RIG_ADDR,
+  civCommand,
+  toHex,
+  fromHex,
   CIV_MODE,
   civModeFor,
   modeFromCiv,
@@ -67,14 +72,15 @@ export {
   readMode,
   setFreq,
   setMode,
-  transceiveOn,
   playVoice,
   readTx,
   readBandStack,
   parseBandStack,
 } from './civ'
 export type { RigEvent, Timers } from './civ'
-export { radioBand, XVERT_BANDS, parseMHz, parseXverts, toIf, toRf, ifBand } from './xvert'
+export { parseMHz, parseXverts, toIf, toRf, ifBand } from './xvert'
+export { RIG_MODELS, IC705, genericModel, modelById, modelForAddr, knowsBands, modelBands, rigHasBand, rigTunes, xvertBands } from './rigmodel'
+export type { RigModel } from './rigmodel'
 export type { Xvert } from './xvert'
 export { buildQso, missingParts, padSerial } from './qso'
 export { initialState, reduce } from './reducer'

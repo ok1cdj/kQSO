@@ -834,3 +834,9 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Links out of the app (the keyer's build guide): the text colour, underlined. */
+a.help-text,
+.about a {
+  color: var(--fg);
+  text-underline-offset: 2px;
+}

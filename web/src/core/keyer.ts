@@ -3,6 +3,7 @@
 // keyer's character set. No DOM, no Bluetooth — the transport hands lines in and out
 // (platform/…/keyer.ts), the UI drives it (ui/keyer.ts).
 
+import { fromHex } from './civ'
 import type { ProfileId } from './model'
 
 // --- framing -------------------------------------------------------------------
@@ -45,11 +46,23 @@ export type KeyerEvent =
   | { readonly type: 'stopped' } // STOP or the keyer's button
   | { readonly type: 'error'; readonly what: string } // ERR char | full | watchdog (async)
   | { readonly type: 'wpm'; readonly wpm: number } // speed changed on the keyer itself
+  | { readonly type: 'civ'; readonly bytes: Uint8Array } // CIVRX: a frame from the radio (tunnel)
+  | { readonly type: 'freq'; readonly hz: number | undefined } // FREQ: radio found (hz) or lost
 
 /** Asynchronous message, or undefined for a command response. The two never overlap:
- *  a response to WPM is OK, so a bare "WPM n" is always the keyer's own change. */
+ *  a response to WPM is OK, so a bare "WPM n" is always the keyer's own change. FREQ
+ *  and CIVRX lines are messages too: kQSO never sends a bare FREQ (whose response looks
+ *  the same), and CIVRX ON is answered with OK. */
 export function asyncEvent(line: string): KeyerEvent | undefined {
   const l = line.trim().toUpperCase()
+  const civ = /^CIVRX ([0-9A-F]+)$/.exec(l)
+  if (civ) {
+    const bytes = fromHex(civ[1]!)
+    return bytes ? { type: 'civ', bytes } : undefined
+  }
+  if (l === 'FREQ NONE') return { type: 'freq', hz: undefined }
+  const freq = /^FREQ (\d+)( |$)/.exec(l)
+  if (freq) return { type: 'freq', hz: Number(freq[1]) }
   if (l === 'DONE') return { type: 'done' }
   if (l === 'STOPPED') return { type: 'stopped' }
   const err = /^ERR (CHAR|FULL|WATCHDOG)$/.exec(l)
@@ -167,6 +180,18 @@ export class KeyerProtocol implements CwOutput {
     }
     this.pending.shift()?.resolve(line.trim())
   }
+}
+
+/** "2.1.0" ≥ "2.1.0"; false for an unknown version. */
+export function versionAtLeast(version: string | undefined, min: string): boolean {
+  if (!version) return false
+  const a = version.split('.').map((n) => parseInt(n, 10) || 0)
+  const b = min.split('.').map((n) => parseInt(n, 10) || 0)
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const d = (a[i] ?? 0) - (b[i] ?? 0)
+    if (d !== 0) return d > 0
+  }
+  return true
 }
 
 /** Split at spaces into parts of at most `max` characters (a longer word is cut). */

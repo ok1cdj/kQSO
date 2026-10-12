@@ -44,8 +44,10 @@ export function writeQso(qso: Qso): string {
     writeField(F.RST_SENT, qso.report.sent),
     writeField(F.RST_RCVD, qso.report.rcvd),
     writeField(F.STATION_CALLSIGN, qso.stationCall),
-    writeField(F.MY_GRIDSQUARE, qso.myGrid),
   )
+  // No own locator (it's optional outside the VHF contest): leave the field out
+  // rather than write an empty one. The reader defaults it to '' either way.
+  if (qso.myGrid !== '') parts.push(writeField(F.MY_GRIDSQUARE, qso.myGrid))
   if (qso.grid !== undefined) parts.push(writeField(F.GRIDSQUARE, qso.grid))
   if (qso.theirRef !== undefined)
     for (const [n, v] of refToFields(qso.theirRef, false)) parts.push(writeField(n, v))

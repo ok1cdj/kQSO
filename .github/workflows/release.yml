@@ -1,14 +1,19 @@
 name: Release
 
-# Build a signed release APK and attach it to a GitHub Release whenever a v* tag
-# is pushed (e.g. `git tag v1.0 && git push origin v1.0`). Also runnable manually.
+# On a v* tag (e.g. `git tag v1.9 && git push origin v1.9`): a signed APK to a
+# GitHub Release, and the AAB to Google Play production with the release notes
+# from fastlane/metadata/android/<locale>/changelogs/<versionCode>.txt. Play
+# reviews it and publishes it to everyone (managed publishing must stay off).
+# Also runnable manually: builds and tests, uploads nothing.
 # The web is deployed separately on every push to main (deploy.yml).
 #
 # Required repository secrets (Settings -> Secrets and variables -> Actions):
-#   KEYSTORE_BASE64    - `base64 -w0 keystore/kqso.jks`
-#   KEYSTORE_PASSWORD  - store password
-#   KEY_ALIAS          - key alias
-#   KEY_PASSWORD       - key password
+#   KEYSTORE_BASE64           - `base64 -w0 keystore/kqso.jks`
+#   KEYSTORE_PASSWORD         - store password
+#   KEY_ALIAS                 - key alias
+#   KEY_PASSWORD              - key password
+#   PLAY_SERVICE_ACCOUNT_JSON - Google Cloud service account key (JSON), invited in
+#                               Play Console with release rights for kQSO
 on:
   push:
     tags: ['v*']
@@ -36,10 +41,12 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      - name: Build web bundle
+      - name: Build and test web bundle
         working-directory: web
         run: |
           npm ci
+          npm run typecheck
+          npm test
           npm run build
 
       - name: Set up Android SDK
@@ -70,10 +77,28 @@ jobs:
             echo "signing.keyPassword=${KEY_PW}"
           } > local.properties
 
-      - name: Build signed release APK
+      - name: Version matches the tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VER=$(grep -oE 'versionName = "[^"]+"' app/build.gradle.kts | grep -oE '"[^"]+"' | tr -d '"')
+          if [ "v$VER" != "$GITHUB_REF_NAME" ]; then echo "::error::tag $GITHUB_REF_NAME but versionName $VER"; exit 1; fi
+
+      - name: Play release notes from the fastlane changelogs
+        run: |
+          # whatsnew-<locale> files as upload-google-play wants them; Play allows 500 characters.
+          VC=$(grep -oE 'versionCode = [0-9]+' app/build.gradle.kts | grep -oE '[0-9]+')
+          mkdir -p whatsnew
+          for L in en-US cs-CZ; do
+            F="fastlane/metadata/android/$L/changelogs/$VC.txt"
+            if [ ! -s "$F" ]; then echo "::error::$F is missing"; exit 1; fi
+            if [ "$(wc -m < "$F")" -gt 500 ]; then echo "::error::$F is over 500 characters"; exit 1; fi
+            cp "$F" "whatsnew/whatsnew-$L"
+          done
+
+      - name: Build signed release APK and AAB
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleRelease bundleRelease --no-daemon
 
       - name: Name the APK
         id: apk
@@ -105,3 +130,41 @@ jobs:
           files: ${{ steps.apk.outputs.name }}
           body_path: release-notes.md
           generate_release_notes: true
+
+      - name: Check Google Play access (manual run)
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        env:
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          # Opens an edit of kQSO and deletes it again: proves the key and the rights
+          # without uploading anything.
+          if [ -z "$PLAY_JSON" ]; then echo "::error::PLAY_SERVICE_ACCOUNT_JSON secret is not set"; exit 1; fi
+          pip install --quiet google-auth requests
+          python3 - <<'PY'
+          import json, os
+          from google.oauth2 import service_account
+          from google.auth.transport.requests import AuthorizedSession
+          creds = service_account.Credentials.from_service_account_info(
+              json.loads(os.environ["PLAY_JSON"]), scopes=["https://www.googleapis.com/auth/androidpublisher"])
+          s = AuthorizedSession(creds)
+          base = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/com.ok1cdj.kqso/edits"
+          r = s.post(base)
+          print("open edit:", r.status_code, r.text[:300])
+          r.raise_for_status()
+          edit = r.json()["id"]
+          t = s.get(f"{base}/{edit}/tracks/production")
+          print("production track:", t.status_code, t.text[:500])
+          s.delete(f"{base}/{edit}")
+          t.raise_for_status()
+          PY
+
+      - name: Upload to Google Play (production)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.ok1cdj.kqso
+          releaseFiles: app/build/outputs/bundle/release/app-release.aab
+          track: production
+          status: completed
+          whatsNewDirectory: whatsnew

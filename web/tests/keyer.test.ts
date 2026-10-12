@@ -14,6 +14,7 @@ import {
   DEFAULT_MACROS,
   infoLabel,
   esmMessage,
+  versionAtLeast,
 } from '../src/core/keyer'
 import type { KeyerEvent, MacroContext } from '../src/core/keyer'
 import { matchKeyerCommand } from '../src/core/command'
@@ -270,5 +271,29 @@ describe('esmMessage', () => {
         expect(DEFAULT_MACROS[p][m]['LOC?']).toBe('LOC ?')
         expect(DEFAULT_MACROS[p][m]['NRLOC?']).toBe('NR LOC ?')
       }
+  })
+})
+
+describe('CI-V tunnel lines', () => {
+  it('CIVRX and FREQ are messages, not responses', () => {
+    expect(asyncEvent('CIVRX FEFEE058FBFD')).toEqual({ type: 'civ', bytes: Uint8Array.from([0xfe, 0xfe, 0xe0, 0x58, 0xfb, 0xfd]) })
+    expect(asyncEvent('FREQ 14025000 CW')).toEqual({ type: 'freq', hz: 14_025_000 })
+    expect(asyncEvent('FREQ NONE')).toEqual({ type: 'freq', hz: undefined })
+    expect(asyncEvent('CIV AUTO 19200 58')).toBeUndefined() // the CIV query's response
+    expect(asyncEvent('CIVRX FEF')).toBeUndefined() // not whole bytes: left alone
+  })
+  it('a CIVRX between a command and its response does not take the response', async () => {
+    const events: KeyerEvent[] = []
+    const p = new KeyerProtocol(() => {}, (e) => events.push(e))
+    const r = p.command('CIVTX FEFEA4E003FD')
+    p.receive('CIVRX FEFE00580003FD\nFREQ 7030000 CW\nOK\n')
+    expect(await r).toBe('OK')
+    expect(events.map((e) => e.type)).toEqual(['civ', 'freq'])
+  })
+  it('firmware version check', () => {
+    expect(versionAtLeast('2.1.0', '2.1.0')).toBe(true)
+    expect(versionAtLeast('2.10.1', '2.1.0')).toBe(true)
+    expect(versionAtLeast('2.0.2', '2.1.0')).toBe(false)
+    expect(versionAtLeast(undefined, '2.1.0')).toBe(false)
   })
 })

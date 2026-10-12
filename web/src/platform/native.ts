@@ -1,37 +1,44 @@
-// Android WebView bridge. The shell injects `window.KQSONative`
-// via addJavascriptInterface — a SYNCHRONOUS object (methods return strings, not
-// Promises). NativePlatform wraps it into the async KQSOPlatform the app expects.
-// In phase 1 (browser) KQSONative is absent and this stays dormant.
+// Native shells. Android injects `window.KQSONative` via addJavascriptInterface — a
+// SYNCHRONOUS object (methods return strings, not Promises). The iOS shell answers the
+// same calls asynchronously (platform/ios.ts adapts its WKWebView message handler to this
+// interface). NativePlatform awaits every call, so both fit the async KQSOPlatform the
+// app expects. In the browser neither is present and this stays dormant.
 
 import type { LogMeta } from '../core/model'
 import { readLogFile, writeLogHeader } from '../core/index'
 import type { KQSOPlatform, KeyerLinkState, KeyerTransport, LogSummary, RigTransport } from './types'
+import { iosBridge, iosShell } from './ios'
 
-/** The raw @JavascriptInterface surface. Pure file I/O keyed by log id (mirrors the OPFS worker). */
-interface NativeBridge {
+/** A value now (Android) or later (iOS). */
+type Ret<T> = T | Promise<T>
+
+/** The raw bridge surface. Pure file I/O keyed by log id (mirrors the OPFS worker).
+ *  displayMode / appVersion / installSource / *Mtu are read synchronously on both. */
+export interface NativeBridge {
   displayMode(): string
   appVersion(): string
-  isPersisted(): boolean
-  list(): string // JSON array of log ids
-  createHeader(id: string, content: string): void
-  append(id: string, text: string): void
-  read(id: string): string
-  rewrite(id: string, content: string): void
-  remove(id: string): void
-  writeJournal(id: string, text: string): void
-  readJournal(id: string): string
-  clearJournal(id: string): void
-  getSetting(key: string): string | null
-  setSetting(key: string, value: string): void
-  exportLog(id: string, filename: string): void
-  exportText(content: string, filename: string): void
-  readCallDb(): string
-  writeCallDb(text: string): void
-  shareLog(id: string, filename: string): void
+  isPersisted(): Ret<boolean>
+  list(): Ret<string> // JSON array of log ids
+  createHeader(id: string, content: string): Ret<void>
+  append(id: string, text: string): Ret<void>
+  read(id: string): Ret<string>
+  rewrite(id: string, content: string): Ret<void>
+  remove(id: string): Ret<void>
+  writeJournal(id: string, text: string): Ret<void>
+  readJournal(id: string): Ret<string>
+  clearJournal(id: string): Ret<void>
+  getSetting(key: string): Ret<string | null>
+  setSetting(key: string, value: string): Ret<void>
+  exportLog(id: string, filename: string): Ret<void>
+  exportText(content: string, filename: string): Ret<void>
+  readCallDb(): Ret<string>
+  writeCallDb(text: string): Ret<void>
+  shareLog(id: string, filename: string): Ret<void>
   keepAwake(on: boolean): void
   setDarkBars?(dark: boolean): void // absent in older APKs
   installSource?(): string // absent before 1.8.1; "" = sideloaded / unknown
-  // BLE devices (app/…/BleLink.kt); answers come back through window.__kqsoKeyer / __kqsoRig.
+  // BLE devices (Android BleLink.kt, iOS BleLink.swift); answers come back through
+  // window.__kqsoKeyer / __kqsoRig.
   keyerConnect?(pick: boolean): void
   keyerDisconnect?(): void
   keyerForget?(): void
@@ -44,7 +51,7 @@ interface NativeBridge {
   rigMtu?(): number
 }
 
-/** What the native side calls back (BleLink.js()). */
+/** What the native side calls back (BleLink js()). */
 interface NativeLinkCallbacks {
   state(s: KeyerLinkState, name: string): void
   data(text: string): void // the IC-705: lowercase hex
@@ -218,79 +225,81 @@ class NativePlatform implements KQSOPlatform {
   }
 
   async listLogs(): Promise<LogSummary[]> {
-    const ids = JSON.parse(this.raw.list()) as string[]
-    return ids.map((id) => {
-      const { meta, count } = readLogFile(this.raw.read(id))
-      return { id, name: meta.name, profile: meta.profile, qsoCount: count }
-    })
+    const ids = JSON.parse(await this.raw.list()) as string[]
+    const out: LogSummary[] = []
+    for (const id of ids) {
+      const { meta, count } = readLogFile(await this.raw.read(id))
+      out.push({ id, name: meta.name, profile: meta.profile, qsoCount: count })
+    }
+    return out
   }
 
   async createLog(meta: LogMeta): Promise<string> {
     const id = this.newId(meta.name)
-    this.raw.createHeader(id, writeLogHeader(meta))
+    await this.raw.createHeader(id, writeLogHeader(meta))
     return id
   }
 
   async appendQso(logId: string, adifRecord: string): Promise<void> {
-    this.raw.append(logId, adifRecord.endsWith('\n') ? adifRecord : adifRecord + '\n')
+    await this.raw.append(logId, adifRecord.endsWith('\n') ? adifRecord : adifRecord + '\n')
   }
 
   async readLog(logId: string): Promise<string> {
-    return this.raw.read(logId)
+    return await this.raw.read(logId)
   }
 
   async rewriteLog(logId: string, content: string): Promise<void> {
-    this.raw.rewrite(logId, content)
+    await this.raw.rewrite(logId, content)
   }
 
   async deleteLog(logId: string): Promise<void> {
-    this.raw.remove(logId)
+    await this.raw.remove(logId)
   }
 
   async writeJournal(logId: string, text: string): Promise<void> {
-    this.raw.writeJournal(logId, text)
+    await this.raw.writeJournal(logId, text)
   }
 
   async readJournal(logId: string): Promise<string> {
-    return this.raw.readJournal(logId)
+    return await this.raw.readJournal(logId)
   }
 
   async clearJournal(logId: string): Promise<void> {
-    this.raw.clearJournal(logId)
+    await this.raw.clearJournal(logId)
   }
 
   async getSetting(key: string): Promise<string | null> {
     // A Kotlin null comes through the bridge as undefined, not null — and the callers
     // test `=== null` for "never set" (switchOn: a default-off switch would read Yes).
-    return this.raw.getSetting(key) ?? null
+    return (await this.raw.getSetting(key)) ?? null
   }
 
   async setSetting(key: string, value: string): Promise<void> {
-    this.raw.setSetting(key, value)
+    await this.raw.setSetting(key, value)
   }
 
   async exportLog(logId: string, filename: string): Promise<void> {
-    this.raw.exportLog(logId, filename)
+    await this.raw.exportLog(logId, filename)
   }
 
   async exportText(content: string, filename: string): Promise<void> {
-    this.raw.exportText(content, filename)
+    await this.raw.exportText(content, filename)
   }
 
   async readCallDb(): Promise<string> {
-    return this.raw.readCallDb()
+    return await this.raw.readCallDb()
   }
 
   async writeCallDb(text: string): Promise<void> {
-    this.raw.writeCallDb(text)
+    await this.raw.writeCallDb(text)
   }
 
   async shareLog(logId: string, filename: string): Promise<void> {
-    this.raw.shareLog(logId, filename)
+    await this.raw.shareLog(logId, filename)
   }
 
   async isPersisted(): Promise<boolean> {
-    return this.raw.isPersisted()
+    return await this.raw.isPersisted()
   }
 
   keepAwake(on: boolean): void {
@@ -303,5 +312,13 @@ class NativePlatform implements KQSOPlatform {
 }
 
 export function nativePlatform(): KQSOPlatform | null {
-  return typeof window !== 'undefined' && window.KQSONative ? new NativePlatform(window.KQSONative) : null
+  if (typeof window === 'undefined') return null
+  const raw = window.KQSONative ?? iosBridge()
+  return raw ? new NativePlatform(raw) : null
+}
+
+/** Inside a native shell (Android or iOS): no service worker, no web statistics, no
+ *  add-to-home hint. */
+export function inNativeShell(): boolean {
+  return typeof window !== 'undefined' && (window.KQSONative !== undefined || iosShell())
 }
