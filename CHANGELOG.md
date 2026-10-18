@@ -5,7 +5,7 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 ## [Unreleased]
 
 ### Added
-- **My locator from the position**: 📍 next to *My locator* in New Log fills the 6-character locator from the device position (web, Android, iOS). Asked only on the tap; an approximate fix (over 2 km) is flagged to check. The position isn't stored — only the locator, as before.
+- **My locator from the position**: the locate button (crosshair) next to *My locator* in New Log fills the 6-character locator from the device position (web, Android, iOS). Asked only on the tap; an approximate fix (over 2 km) is flagged to check. The position isn't stored — only the locator, as before.
 
 ## [1.9] – 2026-10-12
 

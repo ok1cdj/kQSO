@@ -20,7 +20,7 @@ import {
 import type { AwardReference, LogMeta, ProfileId } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
-import { el, button, fieldError, fieldRow, selectRow, tilePicker } from '../dom'
+import { el, button, fieldError, fieldRow, selectRow, strokeIcon, tilePicker } from '../dom'
 import type { Tile } from '../dom'
 import { t } from '../i18n'
 import { trackEvent } from '../stats'
@@ -37,6 +37,9 @@ const dateName = (d: Date): string => `${pad2(d.getDate())}${pad2(d.getMonth() +
 const BAND_OPTIONS = BANDS.map((b) => [b, b] as const)
 const MODE_OPTIONS = MODES.map((m) => [m, m] as const)
 
+
+// "My location" crosshair: ring, centre dot, four ticks out.
+const LOCATE_ICON = 'M12 2v4M12 18v4M2 12h4M18 12h4M6 12a6 6 0 1 0 12 0a6 6 0 1 0-12 0M11 12a1 1 0 1 0 2 0a1 1 0 1 0-2 0'
 
 // The four log profiles. Aktivace carries a sub-line naming its schemes.
 const PROFILE_TILES = (): readonly Tile[] => [
@@ -172,7 +175,7 @@ export class NewLogScreen implements Screen {
     name.input.select()
   }
 
-  /** 📍 next to the locator: the device position → 6-character locator. Asked only
+  /** The locate button next to the locator: the device position → 6-character locator. Asked only
    *  on the tap, so nobody who doesn't use it ever sees the permission prompt. */
   private addLocate(field: { row: HTMLElement; input: HTMLInputElement }): void {
     const getPosition = this.platform.getPosition
@@ -183,7 +186,7 @@ export class NewLogScreen implements Screen {
       note.textContent = text
       note.hidden = text === ''
     }
-    const locate = button('📍', () => {
+    const locate = button('', () => {
       locate.disabled = true
       say(t('newlog.locating'))
       getPosition()
@@ -201,6 +204,7 @@ export class NewLogScreen implements Screen {
           locate.disabled = false
         })
     }, 'btn btn--icon')
+    locate.append(strokeIcon(LOCATE_ICON, 'icon'))
     locate.title = t('newlog.locate')
     locate.setAttribute('aria-label', t('newlog.locate'))
     const inline = el('span', 'field-inline')

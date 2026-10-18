@@ -52,7 +52,7 @@ const EN: readonly Section[] = [
   {
     title: 'Locator, name, reference',
     rows: [
-      { code: 'JN79US', text: 'Grid locator (after the callsign). Your own: 📍 in New Log fills it from the position.' },
+      { code: 'JN79US', text: 'Grid locator (after the callsign). Your own: the crosshair button in New Log fills it from the position.' },
       { code: 'PETR', text: 'Name — General profile only.' },
       { code: 'OK/ZC/001', text: 'Reference; the last slash becomes a dash → OK/ZC-001. Also GMA OL/LI/001, POTA CZ/0001, WWFF OKFF/0001, lookout tower (TOTA) OKR/1001.' },
     ],
@@ -174,7 +174,7 @@ const CS: readonly Section[] = [
   {
     title: 'Locator, jméno, reference',
     rows: [
-      { code: 'JN79US', text: 'Locator (za volačkou). Svůj: 📍 v Novém logu ho vyplní z polohy.' },
+      { code: 'JN79US', text: 'Locator (za volačkou). Svůj: tlačítko se zaměřovačem v Novém logu ho vyplní z polohy.' },
       { code: 'PETR', text: 'Jméno — jen profil Obecný.' },
       { code: 'OK/ZC/001', text: 'Reference; poslední lomítko se změní na pomlčku → OK/ZC-001. Také GMA OL/LI/001, POTA CZ/0001, WWFF OKFF/0001, rozhledna (TOTA) OKR/1001.' },
     ],

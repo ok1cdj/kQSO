@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
         cbs.forEach { it(granted) }
     }
 
-    // Location for 📍 (locator from the position), asked only on that tap. Approximate
+    // Location for the locate button (locator from the position), asked only on that tap. Approximate
     // alone counts as granted: the page warns when the fix is too rough for a locator.
     private val requestLocation = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -111,7 +111,7 @@ class MainActivity : ComponentActivity() {
             settings.cacheMode = WebSettings.LOAD_NO_CACHE
             settings.allowFileAccess = false
             settings.allowContentAccess = false
-            settings.setGeolocationEnabled(true) // navigator.geolocation for 📍 in New Log
+            settings.setGeolocationEnabled(true) // navigator.geolocation for the locate button in New Log
             keyer = BleLink(this@MainActivity, BleLink.KEYER)
             rig = BleLink(this@MainActivity, BleLink.IC705)
             addJavascriptInterface(KQSOBridge(this@MainActivity, keyer, rig), "KQSONative")

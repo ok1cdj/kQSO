@@ -1,6 +1,6 @@
 import CoreLocation
 
-/// The device position for 📍 in New Log (the kqso:// page has no Geolocation API).
+/// The device position for the locate button in New Log (the kqso:// page has no Geolocation API).
 /// Asked only on that tap; the page keeps just the locator. Main thread.
 final class Location: NSObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()

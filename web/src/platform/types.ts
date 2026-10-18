@@ -55,7 +55,7 @@ export interface RigTransport {
   onState(cb: (s: KeyerLinkState, name?: string) => void): void
 }
 
-/** Device position for the own locator (📍 in New Log). Only the locator is kept. */
+/** Device position for the own locator (the locate button in New Log). Only the locator is kept. */
 export interface GeoPosition {
   readonly lat: number
   readonly lon: number

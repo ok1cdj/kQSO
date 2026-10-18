@@ -2,6 +2,7 @@
 // preventDefault so a tap neither focuses the button (no system keyboard) nor
 // selects text, and reacts immediately.
 
+import { strokeIcon } from './dom'
 import { KEY_ROWS } from './keys'
 import type { KeyAction, KeyIcon } from './keys'
 
@@ -13,15 +14,7 @@ const ICON_PATHS: Readonly<Record<KeyIcon, string>> = {
 }
 
 function iconSvg(icon: KeyIcon): SVGSVGElement {
-  const ns = 'http://www.w3.org/2000/svg'
-  const svg = document.createElementNS(ns, 'svg')
-  svg.setAttribute('viewBox', '0 0 24 24')
-  svg.setAttribute('class', `key-icon key-icon--${icon}`)
-  svg.setAttribute('aria-hidden', 'true')
-  const path = document.createElementNS(ns, 'path')
-  path.setAttribute('d', ICON_PATHS[icon])
-  svg.appendChild(path)
-  return svg
+  return strokeIcon(ICON_PATHS[icon], `key-icon key-icon--${icon}`)
 }
 
 export function createKeyboard(onKey: (action: KeyAction) => void): HTMLElement {

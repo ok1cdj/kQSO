@@ -17,6 +17,20 @@ export function switchOn(saved: string | null, def = true): boolean {
   return saved === null ? def : saved !== '0'
 }
 
+/** A 24×24 line icon (no fill, currentColor) — black on e-ink, follows the theme and
+ *  :active inversion, independent of the device's emoji font. Style: .key-icon / .icon. */
+export function strokeIcon(d: string, cls: string): SVGSVGElement {
+  const ns = 'http://www.w3.org/2000/svg'
+  const svg = document.createElementNS(ns, 'svg')
+  svg.setAttribute('viewBox', '0 0 24 24')
+  svg.setAttribute('class', cls)
+  svg.setAttribute('aria-hidden', 'true')
+  const path = document.createElementNS(ns, 'path')
+  path.setAttribute('d', d)
+  svg.appendChild(path)
+  return svg
+}
+
 export function button(label: string, onClick: () => void, cls = 'btn'): HTMLButtonElement {
   const b = el('button', cls, label)
   b.type = 'button'

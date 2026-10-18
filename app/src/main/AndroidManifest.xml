@@ -15,7 +15,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
-    <!-- Location: 📍 in New Log (locator from the position, asked on that tap; the
+    <!-- Location: the locate button in New Log (locator from the position, asked on that tap; the
          position stays on the device), and on Android 11 also the BLE scan. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
