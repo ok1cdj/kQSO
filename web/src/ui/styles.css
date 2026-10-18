@@ -452,6 +452,20 @@ body {
   font-size: 0.8rem;
   font-weight: bold;
 }
+.field-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+/* An input with a button beside it (📍 next to My locator). */
+.field-inline {
+  display: flex;
+  gap: 0.35rem;
+  align-items: stretch;
+}
+.field-inline .field-input {
+  flex: 1;
+  min-width: 0;
+}
 /* No colour on e-ink — a thicker border marks the offending field. */
 .field--error .field-input {
   border-width: calc(var(--border-w) * 3);

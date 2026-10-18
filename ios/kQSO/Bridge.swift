@@ -8,6 +8,7 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
     private let storage = Storage()
     private lazy var keyer = BleLink(spec: .keyer, owner: self)
     private lazy var rig = BleLink(spec: .ic705, owner: self)
+    private lazy var location = Location()
 
     func userContentController(
         _ userContentController: WKUserContentController,
@@ -56,6 +57,7 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
         case "rigDisconnect": rig.disconnect(); ok()
         case "rigForget": rig.forget(); ok()
         case "rigWrite": rig.write(str(0)); ok()
+        case "position": location.request(replyHandler)
         default: replyHandler(nil, "unknown op \(op)")
         }
     }

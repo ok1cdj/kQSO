@@ -6,6 +6,7 @@
 // (a document-start user script, the MTUs updated as links come up).
 
 import type { NativeBridge } from './native'
+import type { GeoPosition } from './types'
 
 interface IosMessageHandler {
   postMessage(msg: { op: string; args: unknown[] }): Promise<unknown>
@@ -79,5 +80,6 @@ export function iosBridge(): NativeBridge | undefined {
     rigForget: send('rigForget'),
     rigWrite: send('rigWrite'),
     rigMtu: () => window.KQSOIos?.rigMtu ?? 20,
+    position: call<GeoPosition>('position'),
   }
 }

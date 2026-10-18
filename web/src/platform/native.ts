@@ -6,8 +6,9 @@
 
 import type { LogMeta } from '../core/model'
 import { readLogFile, writeLogHeader } from '../core/index'
-import type { KQSOPlatform, KeyerLinkState, KeyerTransport, LogSummary, RigTransport } from './types'
+import type { GeoPosition, KQSOPlatform, KeyerLinkState, KeyerTransport, LogSummary, RigTransport } from './types'
 import { iosBridge, iosShell } from './ios'
+import { browserPosition, geolocationAvailable } from './web/geo'
 
 /** A value now (Android) or later (iOS). */
 type Ret<T> = T | Promise<T>
@@ -49,6 +50,9 @@ export interface NativeBridge {
   rigForget?(): void
   rigWrite?(hex: string): void
   rigMtu?(): number
+  // iOS only (CoreLocation; the kqso:// page has no Geolocation API). Rejects with a
+  // GeoFailure. Android lets the WebView's own navigator.geolocation ask instead.
+  position?(): Ret<GeoPosition>
 }
 
 /** What the native side calls back (BleLink js()). */
@@ -204,6 +208,7 @@ class NativePlatform implements KQSOPlatform {
   readonly installSource: string | undefined
   readonly keyer: KeyerTransport | undefined
   readonly rig: RigTransport | undefined
+  readonly getPosition: (() => Promise<GeoPosition>) | undefined
 
   constructor(private readonly raw: NativeBridge) {
     const m = raw.displayMode()
@@ -212,6 +217,12 @@ class NativePlatform implements KQSOPlatform {
     this.installSource = raw.installSource?.() || undefined
     this.keyer = raw.keyerConnect ? keyerLink(raw) : undefined
     this.rig = raw.rigConnect ? new NativeRig(raw) : undefined
+    const position = raw.position?.bind(raw)
+    this.getPosition = position
+      ? async () => await position()
+      : geolocationAvailable()
+        ? () => browserPosition()
+        : undefined
   }
 
   private newId(name: string): string {

@@ -2,6 +2,7 @@ package com.ok1cdj.kqso
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -10,6 +11,7 @@ import android.util.Log
 import android.view.WindowManager
 import android.widget.FrameLayout
 import android.webkit.ConsoleMessage
+import android.webkit.GeolocationPermissions
 import android.webkit.ValueCallback
 import android.webkit.JsResult
 import android.webkit.WebChromeClient
@@ -39,6 +41,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var keyer: BleLink
     private lateinit var rig: BleLink
     private val pendingPermission = mutableListOf<(Boolean) -> Unit>()
+    private val pendingLocation = mutableListOf<(Boolean) -> Unit>()
     private var pendingExport: String? = null
     private var pendingChooser: ValueCallback<Array<Uri>>? = null
 
@@ -74,6 +77,17 @@ class MainActivity : ComponentActivity() {
         cbs.forEach { it(granted) }
     }
 
+    // Location for 📍 (locator from the position), asked only on that tap. Approximate
+    // alone counts as granted: the page warns when the fix is too rough for a locator.
+    private val requestLocation = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        val cbs = pendingLocation.toList()
+        pendingLocation.clear()
+        val granted = result.values.any { it }
+        cbs.forEach { it(granted) }
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,6 +111,7 @@ class MainActivity : ComponentActivity() {
             settings.cacheMode = WebSettings.LOAD_NO_CACHE
             settings.allowFileAccess = false
             settings.allowContentAccess = false
+            settings.setGeolocationEnabled(true) // navigator.geolocation for 📍 in New Log
             keyer = BleLink(this@MainActivity, BleLink.KEYER)
             rig = BleLink(this@MainActivity, BleLink.IC705)
             addJavascriptInterface(KQSOBridge(this@MainActivity, keyer, rig), "KQSONative")
@@ -124,6 +139,15 @@ class MainActivity : ComponentActivity() {
                 override fun onConsoleMessage(m: ConsoleMessage): Boolean {
                     Log.i("kQSOWeb", "${m.messageLevel()} ${m.message()} @${m.sourceId()}:${m.lineNumber()}")
                     return true
+                }
+
+                // navigator.geolocation: the WebView asks here, we ask Android. Not retained:
+                // a permission revoked in system settings is noticed on the next tap.
+                override fun onGeolocationPermissionsShowPrompt(
+                    origin: String,
+                    callback: GeolocationPermissions.Callback,
+                ) {
+                    requestLocationPermission { granted -> callback.invoke(origin, granted, false) }
                 }
 
                 // Without this the WebView ignores <input type=file> entirely.
@@ -200,6 +224,14 @@ class MainActivity : ComponentActivity() {
         if (perms.all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }) return cb(true)
         pendingPermission.add(cb)
         if (pendingPermission.size == 1) requestPermissions.launch(perms) // one dialog for all
+    }
+
+    /** Ask for location (or answer at once when fine or approximate is already granted). */
+    private fun requestLocationPermission(cb: (Boolean) -> Unit) {
+        val perms = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+        if (perms.any { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }) return cb(true)
+        pendingLocation.add(cb)
+        if (pendingLocation.size == 1) requestLocation.launch(perms)
     }
 
     fun evalJs(script: String) {

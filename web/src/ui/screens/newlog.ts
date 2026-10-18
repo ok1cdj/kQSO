@@ -9,6 +9,7 @@ import {
   PROFILES,
   SATELLITES,
   isFullLocator,
+  latLonToGrid,
   matchBand,
   matchMode,
   parseReferenceInput,
@@ -87,6 +88,7 @@ export class NewLogScreen implements Screen {
     const callError = fieldError(myCall, t('newlog.myCallRequired'))
     // VKV contest can't score QRB without the own locator — block Create until it's valid.
     const gridError = fieldError(myGrid, t('newlog.myGridRequired'))
+    this.addLocate(myGrid)
     const myRef = fieldRow(t('newlog.myRef'), '', { placeholder: t('newlog.myRefPlaceholder') })
     const band = selectRow(t('newlog.band'), BAND_OPTIONS, prev.defaultSignal.band)
     const mode = selectRow(t('newlog.mode'), MODE_OPTIONS, prev.defaultSignal.mode)
@@ -168,6 +170,43 @@ export class NewLogScreen implements Screen {
     syncFields()
     name.input.focus()
     name.input.select()
+  }
+
+  /** 📍 next to the locator: the device position → 6-character locator. Asked only
+   *  on the tap, so nobody who doesn't use it ever sees the permission prompt. */
+  private addLocate(field: { row: HTMLElement; input: HTMLInputElement }): void {
+    const getPosition = this.platform.getPosition
+    if (!getPosition) return
+    const note = el('span', 'field-note')
+    note.hidden = true
+    const say = (text: string): void => {
+      note.textContent = text
+      note.hidden = text === ''
+    }
+    const locate = button('📍', () => {
+      locate.disabled = true
+      say(t('newlog.locating'))
+      getPosition()
+        .then((p) => {
+          field.input.value = latLonToGrid(p.lat, p.lon)
+          field.input.dispatchEvent(new Event('input')) // clears a "required" error
+          // Android's approximate location is ~2 km off: the subsquare may be wrong.
+          say(p.accuracy > 2000 ? t('newlog.locateRough', { km: Math.round(p.accuracy / 1000) }) : '')
+        })
+        .catch((e: unknown) => {
+          const why = e instanceof Error ? e.message : ''
+          say(t(why === 'denied' ? 'newlog.locateDenied' : why === 'timeout' ? 'newlog.locateTimeout' : 'newlog.locateUnavailable'))
+        })
+        .finally(() => {
+          locate.disabled = false
+        })
+    }, 'btn btn--icon')
+    locate.title = t('newlog.locate')
+    locate.setAttribute('aria-label', t('newlog.locate'))
+    const inline = el('span', 'field-inline')
+    field.input.replaceWith(inline)
+    inline.append(field.input, locate)
+    inline.after(note)
   }
 
   private async create(meta: LogMeta): Promise<void> {

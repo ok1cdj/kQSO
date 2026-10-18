@@ -4,7 +4,8 @@
 
 import type { LogMeta } from '../../core/model'
 import { readLogFile, writeLogHeader } from '../../core/index'
-import type { KQSOPlatform, KeyerTransport, LogSummary } from '../types'
+import type { GeoPosition, KQSOPlatform, KeyerTransport, LogSummary } from '../types'
+import { browserPosition, geolocationAvailable } from './geo'
 import { WebBluetoothKeyer, webBluetoothAvailable } from './keyer'
 import type { RequestBody, WorkerRequest, WorkerResponse } from './protocol'
 
@@ -31,6 +32,8 @@ export class WebPlatform implements KQSOPlatform {
   private settingsWrites: Promise<void> = Promise.resolve()
   /** CW keyer over Web Bluetooth — Chrome / Edge only; Safari and Firefox have none. */
   readonly keyer: KeyerTransport | undefined = webBluetoothAvailable() ? new WebBluetoothKeyer() : undefined
+  /** The browser asks for the permission itself, on the first call. */
+  readonly getPosition: (() => Promise<GeoPosition>) | undefined = geolocationAvailable() ? () => browserPosition() : undefined
 
   constructor() {
     // Ask for persistent storage as early as possible. On an installed PWA the

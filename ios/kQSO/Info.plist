@@ -31,6 +31,8 @@
 	<false/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>kQSO connects to your CW keyer (M5-ESP32-keyer) or Icom IC-705 over Bluetooth, only when you switch that on.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>kQSO turns your position into your locator when you tap the pin in New Log. The position stays on your device.</string>
 	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>

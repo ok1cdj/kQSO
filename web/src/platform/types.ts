@@ -55,6 +55,16 @@ export interface RigTransport {
   onState(cb: (s: KeyerLinkState, name?: string) => void): void
 }
 
+/** Device position for the own locator (📍 in New Log). Only the locator is kept. */
+export interface GeoPosition {
+  readonly lat: number
+  readonly lon: number
+  readonly accuracy: number // metres
+}
+
+/** Why getPosition failed: the rejection's Error message. */
+export type GeoFailure = 'denied' | 'unavailable' | 'timeout'
+
 export interface KQSOPlatform {
   /** Host-forced display mode; the web shim leaves it undefined. */
   readonly displayMode?: 'eink' | 'standard'
@@ -105,4 +115,8 @@ export interface KQSOPlatform {
 
   /** IC-705 over BLE; APK only. */
   readonly rig?: RigTransport | undefined
+
+  /** Device position, asked only on a tap; undefined where the host has none.
+   *  Rejects with an Error whose message is a GeoFailure. */
+  readonly getPosition?: (() => Promise<GeoPosition>) | undefined
 }
