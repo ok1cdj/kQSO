@@ -6,7 +6,7 @@
 
 import type { LogMeta } from '../core/model'
 import { readLogFile, writeLogHeader } from '../core/index'
-import type { GeoPosition, KQSOPlatform, KeyerLinkState, KeyerTransport, LogSummary, RigTransport } from './types'
+import type { GeoPosition, KQSOPlatform, KeyerLinkState, KeyerTransport, LogSummary, RefTileStore, RigTransport } from './types'
 import { iosBridge, iosShell } from './ios'
 import { browserPosition, geolocationAvailable } from './web/geo'
 
@@ -35,6 +35,11 @@ export interface NativeBridge {
   readCallDb(): Ret<string>
   writeCallDb(text: string): Ret<void>
   shareLog(id: string, filename: string): Ret<void>
+  // Offline reference tiles, one per locator field (absent before the apps had them).
+  refRead?(field: string): Ret<string>
+  refWrite?(field: string, text: string): Ret<void>
+  refList?(): Ret<string> // JSON array of fields
+  refRemove?(field: string): Ret<void>
   keepAwake(on: boolean): void
   setDarkBars?(dark: boolean): void // absent in older APKs
   installSource?(): string // absent before 1.8.1; "" = sideloaded / unknown
@@ -202,6 +207,19 @@ class NativeRig implements RigTransport {
   }
 }
 
+function refTileStore(raw: NativeBridge): RefTileStore {
+  return {
+    read: async (field) => await raw.refRead!(field),
+    write: async (field, text) => {
+      await raw.refWrite!(field, text)
+    },
+    list: async () => JSON.parse(await raw.refList!()) as string[],
+    remove: async (field) => {
+      await raw.refRemove!(field)
+    },
+  }
+}
+
 class NativePlatform implements KQSOPlatform {
   readonly displayMode: 'eink' | 'standard'
   readonly nativeVersion: string
@@ -209,6 +227,7 @@ class NativePlatform implements KQSOPlatform {
   readonly keyer: KeyerTransport | undefined
   readonly rig: RigTransport | undefined
   readonly getPosition: (() => Promise<GeoPosition>) | undefined
+  readonly refTiles: RefTileStore | undefined
 
   constructor(private readonly raw: NativeBridge) {
     const m = raw.displayMode()
@@ -223,6 +242,7 @@ class NativePlatform implements KQSOPlatform {
       : geolocationAvailable()
         ? () => browserPosition()
         : undefined
+    this.refTiles = raw.refRead ? refTileStore(raw) : undefined
   }
 
   private newId(name: string): string {

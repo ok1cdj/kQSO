@@ -6,6 +6,7 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 
 ### Added
 - **My locator from the position**: the locate button (crosshair) next to *My locator* in New Log fills the 6-character locator from the device position (web, Android, iOS). Asked only on the tap; an approximate fix (over 2 km) is flagged to check. The position isn't stored — only the locator, as before.
+- **Nearest references, offline**: after the locate button in an Activation log, New Log lists the nearest SOTA, POTA, WWFF, GMA and TOTA references (25 km, three of each); a tap adds one to *My reference*. The data comes by locator field (`JO`, ~1000 km) from kqso.ok1cdj.com/refs/ and stays in the device — the field around you downloads by itself when online, more in Settings → *Offline references*. Android keeps the tiles out of Auto Backup, iOS out of iCloud backup and the Files app.
 - **Several references in one activation**: *My reference* in New Log takes a summit, POTA parks (n-fer), a WWFF area and a tower at once, separated by spaces; one summit, WWFF area or tower per log. Export of such a log offers the whole ADIF and one file per reference, for each program's upload, named as the program asks (WWFF `CALL@OKFF-0123 20261019.adi`, POTA `CALL@CZ-0123-20261019.adi`). QSOs carry `MY_SOTA_REF`, `MY_POTA_REF` (parks comma-separated), the new `MY_WWFF_REF`, and `MY_SIG` / `MY_SIG_INFO` with GMA or TOTA (else WWFF, as before). `{MYREF}` in the macros sends them all. Logs with one reference read as before.
 
 ## [1.9] – 2026-10-12

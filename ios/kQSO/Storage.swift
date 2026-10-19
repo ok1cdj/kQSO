@@ -3,11 +3,14 @@ import Foundation
 /// Logs as real .adi files in Documents/logs (visible in the Files app), the crash
 /// journal next to them, the callsign database outside the logs folder — the same
 /// layout as the Android bridge (KQSOBridge.kt). Settings live in UserDefaults.
+/// Offline reference tiles (refsync.ts) go to Application Support/refs: not in Files,
+/// and out of the iCloud backup, since they can be downloaded again.
 final class Storage {
     private let fm = FileManager.default
     private let docs: URL
     private let logs: URL
     private let callDb: URL
+    private let refs: URL
     private let defaults = UserDefaults.standard
 
     init() {
@@ -15,6 +18,13 @@ final class Storage {
         logs = docs.appendingPathComponent("logs", isDirectory: true)
         callDb = docs.appendingPathComponent("calldb.tsv")
         try? fm.createDirectory(at: logs, withIntermediateDirectories: true)
+        var refsDir = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("refs", isDirectory: true)
+        try? fm.createDirectory(at: refsDir, withIntermediateDirectories: true)
+        var noBackup = URLResourceValues()
+        noBackup.isExcludedFromBackup = true
+        try? refsDir.setResourceValues(noBackup)
+        refs = refsDir
     }
 
     private func adi(_ id: String) -> URL { logs.appendingPathComponent("\(safe(id)).adi") }
@@ -69,4 +79,22 @@ final class Storage {
 
     func readCallDb() -> String { readText(callDb) }
     func writeCallDb(_ text: String) { writeText(callDb, text) }
+
+    /// A locator field ("JO") as the tile file, or nil for anything else from the page.
+    private func tile(_ field: String) -> URL? {
+        guard field.count == 2, field.allSatisfy({ ("A"..."R").contains($0) }) else { return nil }
+        return refs.appendingPathComponent("\(field).tsv")
+    }
+
+    func readRefTile(_ field: String) -> String { tile(field).map(readText) ?? "" }
+    func writeRefTile(_ field: String, _ text: String) { if let url = tile(field) { writeText(url, text) } } // atomic
+    func removeRefTile(_ field: String) { if let url = tile(field) { try? fm.removeItem(at: url) } }
+
+    func listRefTiles() -> String {
+        let fields = ((try? fm.contentsOfDirectory(atPath: refs.path)) ?? [])
+            .filter { $0.hasSuffix(".tsv") }
+            .map { String($0.dropLast(4)) }
+        let data = (try? JSONSerialization.data(withJSONObject: fields)) ?? Data("[]".utf8)
+        return String(data: data, encoding: .utf8) ?? "[]"
+    }
 }

@@ -20,6 +20,16 @@ class KQSOBridge(private val activity: MainActivity, private val keyer: BleLink,
     // Callsign DB live layer: one file outside logsDir, so deleting logs never touches it.
     private val callDb: File = File(ctx.filesDir, "calldb.tsv")
 
+    // Offline references, one tile per locator field (refsync.ts). Downloaded again any time,
+    // so outside Auto Backup: tens of MB would push the backup past its 25 MB and lose the logs.
+    private val refsDir: File = File(ctx.noBackupFilesDir, "refs").apply { mkdirs() }
+    private val fieldName = Regex("^[A-R]{2}$")
+
+    private fun tile(field: String): File {
+        require(fieldName.matches(field)) { "bad field" }
+        return File(refsDir, "$field.tsv")
+    }
+
     private fun adi(id: String) = File(logsDir, "$id.adi")
     private fun journal(id: String) = File(logsDir, "$id.journal")
 
@@ -95,6 +105,30 @@ class KQSOBridge(private val activity: MainActivity, private val keyer: BleLink,
 
     @JavascriptInterface
     fun writeCallDb(text: String) = callDb.writeText(text)
+
+    @JavascriptInterface
+    fun refRead(field: String): String = tile(field).let { if (it.exists()) it.readText() else "" }
+
+    @JavascriptInterface
+    fun refWrite(field: String, text: String) {
+        // Whole tile or none: a half-written one would parse as fewer references.
+        val tmp = File(refsDir, "$field.tmp")
+        tmp.writeText(text)
+        tmp.renameTo(tile(field))
+    }
+
+    @JavascriptInterface
+    fun refList(): String {
+        val fields = refsDir.listFiles { f -> f.name.endsWith(".tsv") }
+            ?.map { it.name.removeSuffix(".tsv") }
+            ?: emptyList()
+        return JSONArray(fields).toString()
+    }
+
+    @JavascriptInterface
+    fun refRemove(field: String) {
+        tile(field).delete()
+    }
 
     @JavascriptInterface
     fun shareLog(id: String, filename: String) = activity.shareFile(read(id), filename)

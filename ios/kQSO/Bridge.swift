@@ -41,6 +41,10 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
         case "setSetting": storage.setSetting(str(0), str(1)); ok()
         case "readCallDb": replyHandler(storage.readCallDb(), nil)
         case "writeCallDb": storage.writeCallDb(str(0)); ok()
+        case "refRead": replyHandler(storage.readRefTile(str(0)), nil)
+        case "refWrite": storage.writeRefTile(str(0), str(1)); ok()
+        case "refList": replyHandler(storage.listRefTiles(), nil)
+        case "refRemove": storage.removeRefTile(str(0)); ok()
         case "exportLog", "shareLog":
             if let vc { Share.file(storage.read(str(0)), named: str(1), from: vc) }
             ok()
