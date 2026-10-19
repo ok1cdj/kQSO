@@ -168,7 +168,7 @@ export class LogListScreen implements Screen {
       ...refs.map((ref) =>
         button(`${ref.kind} ${ref.value}`, () => {
           trackEvent('export', { format: 'adif-ref', profile: log.profile })
-          void this.platform.exportText(writeRefExport(qsos, ref), refExportName(log.id, ref))
+          void this.platform.exportText(writeRefExport(qsos, ref), refExportName(meta.myCall, ref, qsos))
         }, 'btn btn--small'),
       ),
     )

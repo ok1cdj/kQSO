@@ -119,7 +119,14 @@ export function writeRefExport(qsos: readonly Qso[], ref: AwardReference): strin
   return writeAdif(qsos.map((q) => ({ ...q, myRefs: [ref] })))
 }
 
-/** "20261019-OK-JC-001.adi": the log id and the reference, slashes made file-safe. */
-export function refExportName(logId: string, ref: AwardReference): string {
-  return `${logId}-${ref.value.replace(/\//g, '-')}.adi`
+/**
+ * The file name each program asks for, dated by the first QSO (UTC):
+ * WWFF "OK1CDJ@OKFF-0123 20261019.adi", POTA "OK1CDJ@CZ-0123-20261019.adi", and the
+ * same shape for SOTA / GMA / TOTA. Slashes (OK1CDJ/P, OK/JC-001) become dashes.
+ */
+export function refExportName(myCall: string, ref: AwardReference, qsos: readonly Qso[]): string {
+  const first = qsos.reduce<Date | undefined>((d, q) => (d && d <= q.timeOn ? d : q.timeOn), undefined)
+  const date = (first ?? new Date()).toISOString().slice(0, 10).replace(/-/g, '')
+  const safe = (s: string): string => s.replace(/\//g, '-')
+  return `${safe(myCall)}@${safe(ref.value)}${ref.kind === 'WWFF' ? ' ' : '-'}${date}.adi`
 }

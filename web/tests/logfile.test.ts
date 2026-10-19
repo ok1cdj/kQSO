@@ -85,6 +85,13 @@ describe('log-file codec (meta in ADIF header)', () => {
     expect(text).not.toContain('APP_KQSO')
     expect(text).not.toContain('MY_SOTA_REF')
     expect(readAdif(text).qsos.map((q) => q.myRefs)).toEqual([[park], [park]])
-    expect(refExportName('20261019', { kind: 'SOTA', value: 'OK/ZC-001' })).toBe('20261019-OK-ZC-001.adi')
+  })
+
+  it('per-reference file names as each program asks, dated by the first QSO (UTC)', () => {
+    const late = { ...qso, timeOn: new Date('2026-09-23T00:10:00Z') }
+    const qsos = [late, qso]
+    expect(refExportName('OK1CDJ', { kind: 'WWFF', value: 'OKFF-0123' }, qsos)).toBe('OK1CDJ@OKFF-0123 20260922.adi')
+    expect(refExportName('OK1CDJ/P', { kind: 'POTA', value: 'CZ-0123' }, qsos)).toBe('OK1CDJ-P@CZ-0123-20260922.adi')
+    expect(refExportName('OK1CDJ', { kind: 'SOTA', value: 'OK/ZC-001' }, qsos)).toBe('OK1CDJ@OK-ZC-001-20260922.adi')
   })
 })
