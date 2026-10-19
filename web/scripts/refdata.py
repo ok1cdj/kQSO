@@ -47,12 +47,18 @@ kQSO offline references, rebuilt weekly from the programs' own lists.
 SOTA  Summits on the Air, https://www.sota.org.uk/ (summitslist.csv)
 POTA  Parks on the Air, https://pota.app/ (all_parks_ext.csv)
 WWFF  World Wide Flora & Fauna, https://wwff.co/ (wwff_directory.csv)
-GMA   Global Mountain Activity, https://www.cqgma.org/ (summits.csv)
+GMA   GMA Outdoor Activities, DL0QW, https://www.gma.rocks/ (summits.csv)
 TOTA  Towers on the Air, https://wwtota.com/
 
 Only references valid on the date in each file are included; names are
 shortened. The programs' lists are authoritative. Check them before an
 activation, and check park boundaries (POTA, WWFF) on the spot.
+
+The GMA references here are derived from the GMA list and are licensed,
+like it, under CC BY-SA 2.0 DE: https://creativecommons.org/licenses/by-sa/2.0/de/
+
+Any program that wants its data corrected or removed here: write to
+ondra@ok1cdj.com and it will be done with the next weekly rebuild.
 """
 
 
