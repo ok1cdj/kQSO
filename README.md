@@ -110,8 +110,9 @@ tokens are ignored. See **Settings → How to log** in the app for the full gram
   6mm 4mm (ADIF names; EDI `PBand` 1,3…76 GHz). Microwaves can be typed in GHz —
   `1G 2G 3G 5G 10G 24G 47G 76G` — handy for `24G`, since the keyboard has no dot.
 - **Log profiles**, chosen when a log is created:
-  - **Activation** (SOTA / GMA / POTA / WWFF / TOTA lookout towers) — your reference is set when the log is
-    created; the worked station's reference is logged for S2S.
+  - **Activation** (SOTA / GMA / POTA / WWFF / TOTA lookout towers) — your references are set when the log is
+    created, several at once (a summit + POTA parks + a WWFF area …), and export also gives one file per
+    reference; the worked station's reference is logged for S2S.
   - **General** — adds the name.
   - **VHF contest** — serials, 6-char locator required, IARU R1 scoring (below).
   - **Satellite** — one log per pass; the bird (RS-44, SO-50, ISS, QO-100…) is

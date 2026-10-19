@@ -62,7 +62,7 @@ export function buildQso(partial: PartialQso, sticky: StickyState, meta: LogMeta
   }
   if (partial.grid !== undefined) qso.grid = partial.grid
   if (partial.theirRef !== undefined) qso.theirRef = partial.theirRef
-  if (meta.myRef !== undefined) qso.myRef = meta.myRef
+  if (meta.myRefs !== undefined) qso.myRefs = meta.myRefs
   if (partial.name !== undefined) qso.name = partial.name
   if (partial.serial !== undefined) qso.serial = padSerial(partial.serial)
   if (sticky.satName !== undefined) qso.satName = sticky.satName

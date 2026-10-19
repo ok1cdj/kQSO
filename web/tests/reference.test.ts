@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { matchReference, parseReferenceInput } from '../src/core/reference'
+import { matchReference, parseMyRefsInput, parseReferenceInput } from '../src/core/reference'
 
 describe('reference detection', () => {
   it('SOTA — three parts, last 3 digits', () => {
@@ -10,6 +10,15 @@ describe('reference detection', () => {
     expect(matchReference('OL/LI/001')).toEqual({ kind: 'GMA', value: 'OL/LI-001' })
     expect(matchReference('DA/NI/001')).toEqual({ kind: 'GMA', value: 'DA/NI-001' })
     expect(matchReference('OM0/BA/012')).toEqual({ kind: 'GMA', value: 'OM0/BA-012' })
+  })
+
+  it('GMA — its own regions inside SOTA associations (HuMPs, Faroes), and UNM without one', () => {
+    expect(matchReference('G/HCE/001')).toEqual({ kind: 'GMA', value: 'G/HCE-001' })
+    expect(parseReferenceInput('GM/HCS-005')).toEqual({ kind: 'GMA', value: 'GM/HCS-005' })
+    expect(parseReferenceInput('OY/EY-001')).toEqual({ kind: 'GMA', value: 'OY/EY-001' })
+    expect(parseReferenceInput('G/LD-001')).toEqual({ kind: 'SOTA', value: 'G/LD-001' })
+    expect(parseReferenceInput('UNM-001')).toEqual({ kind: 'GMA', value: 'UNM-001' })
+    expect(matchReference('UNM/001')).toEqual({ kind: 'GMA', value: 'UNM-001' })
   })
 
   it('SOTA associations stay SOTA (OK, DM)', () => {
@@ -101,5 +110,30 @@ describe('reference edge shapes', () => {
 
   it('rejects a six-digit last part', () => {
     expect(matchReference('US/000001')).toBeNull()
+  })
+})
+
+describe('parseMyRefsInput (New log, several references)', () => {
+  it('splits on spaces and commas, normalizes, drops repeats', () => {
+    expect(parseMyRefsInput(' ok/jc/001, CZ-0123 cz/0124 CZ-0123 ')).toEqual({
+      ok: true,
+      refs: [
+        { kind: 'SOTA', value: 'OK/JC-001' },
+        { kind: 'POTA', value: 'CZ-0123' },
+        { kind: 'POTA', value: 'CZ-0124' },
+      ],
+    })
+    expect(parseMyRefsInput('')).toEqual({ ok: true, refs: [] })
+  })
+
+  it('names the token that is not a reference', () => {
+    expect(parseMyRefsInput('OK/JC-001 OK1CDJ/P')).toEqual({ ok: false, bad: 'OK1CDJ/P' })
+  })
+
+  it('one summit, WWFF area or tower per log; parks add up', () => {
+    expect(parseMyRefsInput('OK/JC-001 OK/JC-002')).toEqual({ ok: false, twice: 'SOTA' })
+    expect(parseMyRefsInput('OKFF-0001 OKFF-0002')).toEqual({ ok: false, twice: 'WWFF' })
+    expect(parseMyRefsInput('OKR-1001 OKR-1002')).toEqual({ ok: false, twice: 'TOTA' })
+    expect(parseMyRefsInput('OK/JC-001 OL/LI-001 OKFF-0001 OKR-1001').ok).toBe(true)
   })
 })

@@ -120,7 +120,7 @@ export class QsoEditScreen implements Screen {
       if (n) q.name = n
       const r = parseReferenceInput(ref.input.value)
       if (r) q.theirRef = r
-      if (orig.myRef !== undefined) q.myRef = orig.myRef
+      if (orig.myRefs !== undefined) q.myRefs = orig.myRefs
       const sn = serial.input.value.trim()
       if (sn) q.serial = padSerial(sn)
       if (orig.sentSerial !== undefined) q.sentSerial = orig.sentSerial // TX serial is auto, not edited

@@ -3,7 +3,7 @@
 
 import type { Qso } from '../model'
 import { byteLength } from './bytes'
-import { F, refToFields } from './fields'
+import { F, myRefsToFields, refToFields } from './fields'
 
 /** One ADIF field: `<NAME:byteLen>VALUE`. */
 export function writeField(name: string, value: string): string {
@@ -50,9 +50,9 @@ export function writeQso(qso: Qso): string {
   if (qso.myGrid !== '') parts.push(writeField(F.MY_GRIDSQUARE, qso.myGrid))
   if (qso.grid !== undefined) parts.push(writeField(F.GRIDSQUARE, qso.grid))
   if (qso.theirRef !== undefined)
-    for (const [n, v] of refToFields(qso.theirRef, false)) parts.push(writeField(n, v))
-  if (qso.myRef !== undefined)
-    for (const [n, v] of refToFields(qso.myRef, true)) parts.push(writeField(n, v))
+    for (const [n, v] of refToFields(qso.theirRef)) parts.push(writeField(n, v))
+  if (qso.myRefs !== undefined)
+    for (const [n, v] of myRefsToFields(qso.myRefs)) parts.push(writeField(n, v))
   if (qso.name !== undefined) parts.push(writeField(F.NAME, qso.name))
   if (qso.serial !== undefined) parts.push(writeField(F.SRX_STRING, qso.serial))
   if (qso.sentSerial !== undefined) parts.push(writeField(F.STX_STRING, qso.sentSerial))

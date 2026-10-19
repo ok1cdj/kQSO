@@ -4,7 +4,7 @@
 // file is also the export.
 
 import type { AwardReference, LogMeta, ProfileId, Qso, ReferenceKind, Signal } from '../model'
-import { writeField, writeQso } from './writer'
+import { writeAdif, writeField, writeQso } from './writer'
 import { readAdif } from './reader'
 
 const A = {
@@ -36,7 +36,9 @@ function metaFields(meta: LogMeta): string[] {
     writeField(A.DEFBAND, s.band),
     writeField(A.DEFMODE, s.mode),
   ]
-  if (meta.myRef) out.push(writeField(A.MYREF, `${meta.myRef.kind} ${meta.myRef.value}`))
+  // "SOTA OK/JC-001;POTA CZ-0123" — a single reference (older logs) is the same without the ;
+  if (meta.myRefs && meta.myRefs.length > 0)
+    out.push(writeField(A.MYREF, meta.myRefs.map((r) => `${r.kind} ${r.value}`).join(';')))
   if (s.bandRx !== undefined) out.push(writeField(A.DEFBANDRX, s.bandRx))
   if (s.modeRx !== undefined) out.push(writeField(A.DEFMODERX, s.modeRx))
   if (meta.satLabel !== undefined) out.push(writeField(A.SATLABEL, meta.satLabel))
@@ -87,8 +89,8 @@ function metaFromHeader(h: Record<string, string>): LogMeta {
   }
   const myRefRaw = h[A.MYREF]
   if (myRefRaw !== undefined) {
-    const ref = parseRef(myRefRaw)
-    if (ref) meta.myRef = ref
+    const refs = myRefRaw.split(';').map(parseRef).filter((r): r is AwardReference => r !== undefined)
+    if (refs.length > 0) meta.myRefs = refs
   }
   const satLabel = h[A.SATLABEL]
   if (satLabel !== undefined) meta.satLabel = satLabel
@@ -109,4 +111,15 @@ export interface ParsedLogFile {
 export function readLogFile(text: string): ParsedLogFile {
   const { header, qsos } = readAdif(text)
   return { meta: metaFromHeader(header), qsos, count: qsos.length }
+}
+
+/** One program's upload from an activation with several references: plain ADIF (no
+ *  APP_KQSO header) where every QSO carries just that reference. */
+export function writeRefExport(qsos: readonly Qso[], ref: AwardReference): string {
+  return writeAdif(qsos.map((q) => ({ ...q, myRefs: [ref] })))
+}
+
+/** "20261019-OK-JC-001.adi": the log id and the reference, slashes made file-safe. */
+export function refExportName(logId: string, ref: AwardReference): string {
+  return `${logId}-${ref.value.replace(/\//g, '-')}.adi`
 }

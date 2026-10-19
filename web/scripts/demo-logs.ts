@@ -48,7 +48,7 @@ const sotaMeta: LogMeta = {
   profile: 'aktivace',
   myCall: 'OE/OK1CDJ/P',
   myGrid: 'JN67QR',
-  myRef,
+  myRefs: [myRef],
   defaultSignal: { band: '20m', mode: 'SSB' },
 }
 const sota: Qso[] = readFileSync(join(src, 'oe-sb-257.txt'), 'utf8')
@@ -63,7 +63,7 @@ const sota: Qso[] = readFileSync(join(src, 'oe-sb-257.txt'), 'utf8')
     report: { sent: f[4]!, rcvd: f[5]! },
     stationCall: sotaMeta.myCall,
     myGrid: sotaMeta.myGrid,
-    myRef,
+    myRefs: [myRef],
   }))
 writeFileSync(join(out, 'oe-sb-257-demo02.adi'), writeLogFile(sotaMeta, sota))
 

@@ -23,7 +23,7 @@ describe('parse → ADIF → parse roundtrip', () => {
       call: 'OK2XYZ',
       signal: { band: '40m', mode: 'SSB' },
       theirRef: { kind: 'SOTA', value: 'OK/ZC-014' },
-      myRef: { kind: 'SOTA', value: 'OK/ZC-001' },
+      myRefs: [{ kind: 'SOTA', value: 'OK/ZC-001' }],
     }
     expect(roundtrip(qso)).toEqual(qso)
   })
@@ -34,7 +34,7 @@ describe('parse → ADIF → parse roundtrip', () => {
       call: 'OK2XYZ',
       signal: { band: '20m', mode: 'CW' },
       theirRef: { kind: 'POTA', value: 'OK-0001' },
-      myRef: { kind: 'POTA', value: 'OK-0002' },
+      myRefs: [{ kind: 'POTA', value: 'OK-0002' }],
     }
     expect(roundtrip(qso)).toEqual(qso)
   })
@@ -45,7 +45,7 @@ describe('parse → ADIF → parse roundtrip', () => {
       call: 'OK2XYZ',
       signal: { band: '2m', mode: 'FM' },
       theirRef: { kind: 'WWFF', value: 'OKFF-0001' },
-      myRef: { kind: 'WWFF', value: 'OKFF-0002' },
+      myRefs: [{ kind: 'WWFF', value: 'OKFF-0002' }],
     }
     expect(roundtrip(qso)).toEqual(qso)
   })
@@ -56,7 +56,7 @@ describe('parse → ADIF → parse roundtrip', () => {
       call: 'OK2XYZ',
       signal: { band: '2m', mode: 'FM' },
       theirRef: { kind: 'GMA', value: 'DA/NI-001' },
-      myRef: { kind: 'GMA', value: 'OL/LI-001' },
+      myRefs: [{ kind: 'GMA', value: 'OL/LI-001' }],
     }
     expect(roundtrip(qso)).toEqual(qso)
   })
@@ -67,7 +67,7 @@ describe('parse → ADIF → parse roundtrip', () => {
       call: 'OK2XYZ',
       signal: { band: '2m', mode: 'FM' },
       theirRef: { kind: 'TOTA', value: 'OKR-0427' },
-      myRef: { kind: 'TOTA', value: 'OKR-1001' },
+      myRefs: [{ kind: 'TOTA', value: 'OKR-1001' }],
     }
     expect(roundtrip(qso)).toEqual(qso)
   })
@@ -126,5 +126,29 @@ describe('parse → ADIF → parse roundtrip', () => {
     const b: Qso = { ...BASE, call: 'DL5ABC', signal: { band: '20m', mode: 'CW' } }
     const { qsos } = readAdif(writeAdif([a, b]))
     expect(qsos).toEqual([a, b])
+  })
+
+  it('several of my references', () => {
+    const qso: Qso = {
+      ...BASE,
+      call: 'OK2XYZ',
+      signal: { band: '20m', mode: 'CW' },
+      theirRef: { kind: 'POTA', value: 'OK-0001' },
+      myRefs: [
+        { kind: 'SOTA', value: 'OK/JC-001' },
+        { kind: 'POTA', value: 'CZ-0123' },
+        { kind: 'POTA', value: 'CZ-0124' },
+        { kind: 'WWFF', value: 'OKFF-0123' },
+        { kind: 'TOTA', value: 'OKR-1001' },
+      ],
+    }
+    expect(roundtrip(qso)).toEqual(qso)
+  })
+
+  it('reads my WWFF from MY_SIG alone (logs from before MY_WWFF_REF)', () => {
+    const { qsos } = readAdif(
+      '<EOH>\n<CALL:6>OK2XYZ <QSO_DATE:8>20260922 <TIME_ON:4>1432 <MY_SIG:4>WWFF <MY_SIG_INFO:9>OKFF-0002 <EOR>\n',
+    )
+    expect(qsos[0]!.myRefs).toEqual([{ kind: 'WWFF', value: 'OKFF-0002' }])
   })
 })

@@ -40,7 +40,7 @@ export interface Qso {
   readonly myGrid: string // ADIF MY_GRIDSQUARE (from LogMeta)
   readonly grid?: string // ADIF GRIDSQUARE — worked station's locator
   readonly theirRef?: AwardReference // S2S reference of worked station — Aktivace
-  readonly myRef?: AwardReference // my activated reference — Aktivace (from LogMeta)
+  readonly myRefs?: readonly AwardReference[] // my activated references — Aktivace (from LogMeta)
   readonly name?: string // ADIF NAME — Obecný
   readonly serial?: string // received serial (ADIF SRX_STRING) — VKV závod
   readonly sentSerial?: string // sent serial (ADIF STX_STRING) — VKV závod, auto-incremented
@@ -84,7 +84,7 @@ export interface LogMeta {
   readonly profile: ProfileId // "Profil" — immutable after creation
   readonly myCall: string // "Moje volačka" — always required
   readonly myGrid: string // "Můj locator"
-  readonly myRef?: AwardReference // "Moje reference" — Aktivace only
+  readonly myRefs?: readonly AwardReference[] // "Moje reference" — Aktivace only; SOTA + POTA parks + …
   readonly defaultSignal: Signal // "Pásmo / mód" — sticky seed
   readonly satLabel?: string // Satellite: chosen bird (DB label, e.g. "AO-7 A") — one log per pass
   readonly edi?: EdiContest // VHF contest: filled at the first EDI export, kept for the next one

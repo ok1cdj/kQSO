@@ -1,7 +1,8 @@
 // Log list: name + QSO count, tap to open, per-row export/delete, and a
 // "Nový log" button. The app's home screen. General/Satellite/VKV logs also get a
 // manual Wavelog push once it's configured in Settings, with the last
-// push result under the name.
+// push result under the name. An activation with several references also exports
+// one file per reference (each program wants its own upload).
 
 import {
   PROFILES,
@@ -12,7 +13,9 @@ import {
   pushStatusKey,
   readLogFile,
   readPushStatus,
+  refExportName,
   writeLogFile,
+  writeRefExport,
 } from '../../core/index'
 import type { PushStatus, WavelogStation } from '../../core/index'
 import type { KQSOPlatform, LogSummary } from '../../platform/index'
@@ -121,9 +124,22 @@ export class LogListScreen implements Screen {
     const status = el('small', 'logrow-status', pushed ? pushStatusText(pushed) : '')
     status.hidden = !pushed
     open.append(status)
-    const exp = button(t('loglist.export'), () => {
+    const exportAll = (): void => {
       trackEvent('export', { format: 'adif', profile: log.profile })
       void this.fillSatFrequencies(log.id).then(() => this.platform.exportLog(log.id, `${log.id}.adi`))
+    }
+    let perRef: HTMLElement | undefined
+    const exp = button(t('loglist.export'), () => {
+      if (perRef) {
+        perRef.hidden = !perRef.hidden
+        return
+      }
+      if (!PROFILES[log.profile].usesReferences) return exportAll()
+      void this.refExports(log, exportAll).then((row) => {
+        if (!row) return exportAll()
+        perRef = row
+        li.after(row)
+      })
     }, 'btn btn--small')
     const del = button(t('loglist.delete'), () => void this.remove(log), 'btn btn--small')
     li.append(open, exp)
@@ -138,6 +154,25 @@ export class LogListScreen implements Screen {
     }
     li.append(del)
     return li
+  }
+
+  /** An activation with several references: a row with the whole log and one file per
+   *  reference (each program wants its own upload). Undefined for one reference or none. */
+  private async refExports(log: LogSummary, exportAll: () => void): Promise<HTMLElement | undefined> {
+    const { meta, qsos } = readLogFile(await this.platform.readLog(log.id))
+    const refs = meta.myRefs ?? []
+    if (refs.length < 2) return undefined
+    const row = el('li', 'logrow-refs')
+    row.append(
+      button(t('loglist.exportAll'), exportAll, 'btn btn--small'),
+      ...refs.map((ref) =>
+        button(`${ref.kind} ${ref.value}`, () => {
+          trackEvent('export', { format: 'adif-ref', profile: log.profile })
+          void this.platform.exportText(writeRefExport(qsos, ref), refExportName(log.id, ref))
+        }, 'btn btn--small'),
+      ),
+    )
+    return row
   }
 
   /** Satellite QSOs from before FREQ / FREQ_RX were stored get them written into the

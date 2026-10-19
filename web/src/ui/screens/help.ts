@@ -55,6 +55,7 @@ const EN: readonly Section[] = [
       { code: 'JN79US', text: 'Grid locator (after the callsign). Your own: the crosshair button in New Log fills it from the position.' },
       { code: 'PETR', text: 'Name — General profile only.' },
       { code: 'OK/ZC/001', text: 'Reference; the last slash becomes a dash → OK/ZC-001. Also GMA OL/LI/001, POTA CZ/0001, WWFF OKFF/0001, lookout tower (TOTA) OKR/1001.' },
+      { code: 'OK/ZC-001 CZ-0123', text: 'Your own references, in New Log: several at once — a summit, POTA parks, a WWFF area, a tower — separated by spaces. Export then offers the whole log and one file per reference, for each program\'s upload.' },
     ],
   },
   {
@@ -113,7 +114,7 @@ const EN: readonly Section[] = [
     rows: [
       { text: 'Settings → CW keying (off by default) → Connect: the M5-ESP32-keyer over Bluetooth, in the Android / iOS app or Chrome / Edge. In CW the strip then offers the macros CQ (DE in S&P) EX TU MY REF/LOC/INF ? whenever it has nothing to suggest; the header shows RUN or S&P and the speed (✕ = not connected). Beta, tested with the M5-ESP32-keyer v2: please report bugs on GitHub Issues (github.com/ok1cdj/kQSO/issues).' },
       { text: 'Each profile has its own macros for RUN (I call CQ) and S&P (I answer a CQ), editable in Settings. While sending, STOP is first in the strip; Esc stops too.' },
-      { text: 'Macro variables: {CALL} their call, {MYCALL} {MYLOC} {MYREF} from the log header, {RST} sent report, {NR} my next serial (001), {LOC} {REF} their locator / reference, {HI} greeting by local time — GM until noon, GA until 18:00, GE until midnight.' },
+      { text: 'Macro variables: {CALL} their call, {MYCALL} {MYLOC} {MYREF} from the log header ({MYREF} all your references), {RST} sent report, {NR} my next serial (001), {LOC} {REF} their locator / reference, {HI} greeting by local time — GM until noon, GA until 18:00, GE until midnight.' },
       { code: 'R ⏎ / S ⏎', text: 'RUN / S&P mode (only while CW keying is on).' },
       { code: 'S20 ⏎', text: 'Speed 20 WPM until the keyer disconnects; on connect the default speed from Settings is sent.' },
       { code: 'C ⏎', text: 'Connect the keyer again after it dropped (✕ next to RUN / S&P in the header). Tapping RUN / S&P does the same.' },
@@ -177,6 +178,7 @@ const CS: readonly Section[] = [
       { code: 'JN79US', text: 'Locator (za volačkou). Svůj: tlačítko se zaměřovačem v Novém logu ho vyplní z polohy.' },
       { code: 'PETR', text: 'Jméno — jen profil Obecný.' },
       { code: 'OK/ZC/001', text: 'Reference; poslední lomítko se změní na pomlčku → OK/ZC-001. Také GMA OL/LI/001, POTA CZ/0001, WWFF OKFF/0001, rozhledna (TOTA) OKR/1001.' },
+      { code: 'OK/ZC-001 CZ-0123', text: 'Vlastní reference v Novém logu: i víc najednou — vrchol, parky POTA, oblast WWFF, rozhledna — oddělené mezerou. Export pak nabídne celý log a soubor pro každou referenci zvlášť, na nahrání do jednotlivých programů.' },
     ],
   },
   {
@@ -235,7 +237,7 @@ const CS: readonly Section[] = [
     rows: [
       { text: 'Nastavení → CW klíčování (výchozí vypnuto) → Připojit: klíčovač M5-ESP32-keyer přes Bluetooth, v aplikaci pro Android a iOS nebo v Chromu / Edge. V CW pak lišta nabízí makra CQ (v S&P DE) EX TU MY REF/LOC/INF ?, kdykoli zrovna nic nenavrhuje; hlavička ukazuje RUN nebo S&P a rychlost (✕ = nepřipojeno). Beta, vyzkoušeno s M5-ESP32-keyer v2: chyby prosím hlaste na GitHub Issues (github.com/ok1cdj/kQSO/issues).' },
       { text: 'Každý profil má vlastní makra pro RUN (dávám CQ) a S&P (odpovídám na CQ), upravíš je v Nastavení. Během vysílání je v liště na prvním místě STOP; zastaví i Esc.' },
-      { text: 'Proměnné v makrech: {CALL} značka protistanice, {MYCALL} {MYLOC} {MYREF} z hlavičky logu, {RST} odesílaný report, {NR} moje další pořadové číslo (001), {LOC} {REF} lokátor / reference protistanice, {HI} pozdrav podle místního času — GM do poledne, GA do 18:00, GE do půlnoci.' },
+      { text: 'Proměnné v makrech: {CALL} značka protistanice, {MYCALL} {MYLOC} {MYREF} z hlavičky logu ({MYREF} všechny tvoje reference), {RST} odesílaný report, {NR} moje další pořadové číslo (001), {LOC} {REF} lokátor / reference protistanice, {HI} pozdrav podle místního času — GM do poledne, GA do 18:00, GE do půlnoci.' },
       { code: 'R ⏎ / S ⏎', text: 'Režim RUN / S&P (jen se zapnutým CW klíčováním).' },
       { code: 'S20 ⏎', text: 'Rychlost 20 WPM do odpojení klíčovače; po připojení se pošle výchozí rychlost z Nastavení.' },
       { code: 'C ⏎', text: 'Znovu připojí klíčovač, když spadl (✕ u RUN / S&P v hlavičce). Totéž udělá klepnutí na RUN / S&P.' },

@@ -382,7 +382,7 @@ export class LoggingScreen implements Screen {
     const dry = parseLine(this.line, this.state.sticky, this.state.partial, PROFILES[this.meta.profile]).partial
     const last = this.qsos.length > 0 ? this.qsos[this.qsos.length - 1] : undefined
     const from = saved ?? (dry.call === undefined ? last : undefined)
-    const common = { myCall: this.meta.myCall, myLoc: this.meta.myGrid, myRef: this.meta.myRef?.value, hi: greeting(new Date()) }
+    const common = { myCall: this.meta.myCall, myLoc: this.meta.myGrid, myRef: this.meta.myRefs?.map((r) => r.value).join(' '), hi: greeting(new Date()) }
     const text = expandMacro(
       this.keyer.macroText(this.meta.profile, slot),
       from

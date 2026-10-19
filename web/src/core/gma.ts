@@ -3,6 +3,9 @@
 // three-part reference is GMA when its association is on this list, else SOTA.
 // Source: maps.gma.rocks load_gma_regions.php minus the SOTA associations
 // (summitslist.csv), 2026-09-30. A GMA association added later falls back to SOTA.
+// GMA also has its own regions inside SOTA associations (HuMPs G/HCE, GM/HCS, EI/HIE…,
+// Faroe OY/EY…): GMA_REGIONS, from gma.rocks summits.csv minus the SOTA regions,
+// 2026-10-19. Six GMA-only summits numbered inside SOTA regions (I/FV-356) stay SOTA.
 
 const GMA_ASSOCIATIONS: ReadonlySet<string> = new Set(
   (
@@ -16,7 +19,19 @@ const GMA_ASSOCIATIONS: ReadonlySet<string> = new Set(
   ).split(' '),
 )
 
-/** True when a summit association prefix (OL, OM0, DA…) is GMA-only, not SOTA. */
-export function isGmaAssociation(prefix: string): boolean {
-  return GMA_ASSOCIATIONS.has(prefix)
+const GMA_REGIONS: ReadonlySet<string> = new Set(
+  (
+    'CT/HDC EA2/HBI EA6/HIB EA6/HME EI/HIE EI/HIN EI/HIS EI/HIW F/HBR F/HFC F/HNO ' +
+    'G/HCE G/HDC G/HLD G/HNP G/HSB G/HSC G/HSE G/HSP G/HTW G/HWB GD/HGD GI/HAH GI/HCA ' +
+    'GI/HMM GI/HSM GI/HSW GJ/HGJ GM/HCS GM/HES GM/HNS GM/HSI GM/HSS GM/HWS GU/HGU ' +
+    'GW/HMW GW/HNW GW/HSW OY/EY OY/NO OY/SA OY/ST OY/SU OY/VA PA/HPA VK1/HCT VK6/HCE'
+  ).split(' '),
+)
+
+/** True when a summit (association OL, OM0, DA… or region G/HCE, OY/EY…) is GMA-only, not SOTA. */
+export function isGmaSummit(association: string, region: string): boolean {
+  return GMA_ASSOCIATIONS.has(association) || GMA_REGIONS.has(`${association}/${region}`)
 }
+
+/** GMA's unmapped summits have no association: UNM-001 (Kazakhstan). */
+export const GMA_NO_ASSOCIATION = 'UNM'

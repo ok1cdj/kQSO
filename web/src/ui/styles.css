@@ -415,6 +415,15 @@ body {
   color: var(--fg);
   cursor: pointer;
 }
+.logrow-refs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+.logrow-refs[hidden] {
+  display: none;
+}
 .logrow-status {
   display: block;
   font-size: 0.75rem;

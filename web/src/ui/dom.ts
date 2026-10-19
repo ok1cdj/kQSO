@@ -61,7 +61,7 @@ export function fieldRow(
  * Attach a hidden error line to a field row. `show()` reveals it, marks the row and
  * focuses the input; typing clears it again. Used for fields a profile requires.
  */
-export function fieldError(field: { row: HTMLElement; input: HTMLInputElement }, message: string): { show(): void } {
+export function fieldError(field: { row: HTMLElement; input: HTMLInputElement }, message: string): { show(text?: string): void } {
   const msg = el('span', 'field-error', message)
   msg.hidden = true
   field.row.append(msg)
@@ -70,7 +70,9 @@ export function fieldError(field: { row: HTMLElement; input: HTMLInputElement },
     field.row.classList.remove('field--error')
   })
   return {
-    show() {
+    /** `text` replaces the message, for a field with more than one way to be wrong. */
+    show(text?: string) {
+      if (text !== undefined) msg.textContent = text
       msg.hidden = false
       field.row.classList.add('field--error')
       field.input.focus()

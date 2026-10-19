@@ -35,7 +35,7 @@ describe('writeQso against reference output', () => {
       ...BASE,
       call: 'OK2XYZ',
       theirRef: { kind: 'SOTA', value: 'OK/ZC-014' },
-      myRef: { kind: 'SOTA', value: 'OK/ZC-001' },
+      myRefs: [{ kind: 'SOTA', value: 'OK/ZC-001' }],
     }
     expect(writeQso(qso)).toBe(`${HEAD} <SOTA_REF:9>OK/ZC-014 <MY_SOTA_REF:9>OK/ZC-001 <EOR>`)
   })
@@ -45,20 +45,20 @@ describe('writeQso against reference output', () => {
       ...BASE,
       call: 'OK2XYZ',
       theirRef: { kind: 'POTA', value: 'OK-0001' },
-      myRef: { kind: 'POTA', value: 'OK-0002' },
+      myRefs: [{ kind: 'POTA', value: 'OK-0002' }],
     }
     expect(writeQso(qso)).toBe(`${HEAD} <POTA_REF:7>OK-0001 <MY_POTA_REF:7>OK-0002 <EOR>`)
   })
 
-  it('Aktivace WWFF — SIG/SIG_INFO + MY_SIG/MY_SIG_INFO', () => {
+  it('Aktivace WWFF — SIG/SIG_INFO + MY_WWFF_REF and MY_SIG/MY_SIG_INFO (Logsearch)', () => {
     const qso: Qso = {
       ...BASE,
       call: 'OK2XYZ',
       theirRef: { kind: 'WWFF', value: 'OKFF-0001' },
-      myRef: { kind: 'WWFF', value: 'OKFF-0002' },
+      myRefs: [{ kind: 'WWFF', value: 'OKFF-0002' }],
     }
     expect(writeQso(qso)).toBe(
-      `${HEAD} <SIG:4>WWFF <SIG_INFO:9>OKFF-0001 <MY_SIG:4>WWFF <MY_SIG_INFO:9>OKFF-0002 <EOR>`,
+      `${HEAD} <SIG:4>WWFF <SIG_INFO:9>OKFF-0001 <MY_WWFF_REF:9>OKFF-0002 <MY_SIG:4>WWFF <MY_SIG_INFO:9>OKFF-0002 <EOR>`,
     )
   })
 
@@ -67,7 +67,7 @@ describe('writeQso against reference output', () => {
       ...BASE,
       call: 'OK2XYZ',
       theirRef: { kind: 'GMA', value: 'DA/NI-001' },
-      myRef: { kind: 'GMA', value: 'OL/LI-001' },
+      myRefs: [{ kind: 'GMA', value: 'OL/LI-001' }],
     }
     expect(writeQso(qso)).toBe(
       `${HEAD} <SIG:3>GMA <SIG_INFO:9>DA/NI-001 <MY_SIG:3>GMA <MY_SIG_INFO:9>OL/LI-001 <EOR>`,
@@ -79,7 +79,7 @@ describe('writeQso against reference output', () => {
       ...BASE,
       call: 'OK2XYZ',
       theirRef: { kind: 'TOTA', value: 'OKR-0427' },
-      myRef: { kind: 'TOTA', value: 'OKR-1001' },
+      myRefs: [{ kind: 'TOTA', value: 'OKR-1001' }],
     }
     expect(writeQso(qso)).toBe(
       `${HEAD} <SIG:4>TOTA <SIG_INFO:8>OKR-0427 <MY_SIG:4>TOTA <MY_SIG_INFO:8>OKR-1001 <EOR>`,
@@ -99,5 +99,23 @@ describe('writeQso against reference output', () => {
   it('24 GHz is written under its ADIF name 1.25cm', () => {
     const qso: Qso = { ...BASE, call: 'OK2XYZ', signal: { band: '1.25cm', mode: 'CW' } }
     expect(writeQso(qso)).toContain('<BAND:6>1.25cm <MODE:2>CW')
+  })
+
+  it('several of my references: SOTA, POTA parks comma-separated, WWFF, MY_SIG = GMA', () => {
+    const qso: Qso = {
+      ...BASE,
+      call: 'OK2XYZ',
+      myRefs: [
+        { kind: 'SOTA', value: 'OK/JC-001' },
+        { kind: 'POTA', value: 'CZ-0123' },
+        { kind: 'WWFF', value: 'OKFF-0123' },
+        { kind: 'POTA', value: 'CZ-0124' },
+        { kind: 'GMA', value: 'OL/LI-001' },
+      ],
+    }
+    expect(writeQso(qso)).toBe(
+      `${HEAD} <MY_SOTA_REF:9>OK/JC-001 <MY_POTA_REF:15>CZ-0123,CZ-0124 <MY_WWFF_REF:9>OKFF-0123 ` +
+        '<MY_SIG:3>GMA <MY_SIG_INFO:9>OL/LI-001 <EOR>',
+    )
   })
 })

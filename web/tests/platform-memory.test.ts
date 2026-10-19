@@ -8,7 +8,7 @@ const meta: LogMeta = {
   profile: 'aktivace',
   myCall: 'OK1CDJ',
   myGrid: 'JN79US',
-  myRef: { kind: 'SOTA', value: 'OK/ZC-001' },
+  myRefs: [{ kind: 'SOTA', value: 'OK/ZC-001' }],
   defaultSignal: { band: '40m', mode: 'SSB' },
 }
 

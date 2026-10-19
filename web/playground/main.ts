@@ -51,7 +51,7 @@ function makeMeta(profile: ProfileId): LogMeta {
     myGrid: 'JN79US',
     defaultSignal: { band: '40m', mode: 'SSB' },
   }
-  return profile === 'aktivace' ? { ...base, myRef: { kind: 'SOTA', value: 'OK/ZC-001' } } : base
+  return profile === 'aktivace' ? { ...base, myRefs: [{ kind: 'SOTA', value: 'OK/ZC-001' }] } : base
 }
 
 function tokenLabel(cls: TokenClass): { text: string; kind: string } {
@@ -81,7 +81,7 @@ function renderLivePreview(): void {
 function renderState(): void {
   const s = state.sticky
   stickyEl.textContent = `${s.band} ${s.mode}${s.bandRx ? ` /RX ${s.bandRx}` : ''}`
-  mineEl.textContent = `${meta.myCall} ${meta.myGrid}${meta.myRef ? ` (${meta.myRef.value})` : ''}`
+  mineEl.textContent = `${meta.myCall} ${meta.myGrid}${meta.myRefs ? ` (${meta.myRefs.map((r) => r.value).join(' ')})` : ''}`
   partialEl.textContent = JSON.stringify(
     state.partial,
     (_k, v) => (v instanceof Date ? v.toISOString() : v),

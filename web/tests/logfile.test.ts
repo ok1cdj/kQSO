@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { writeLogFile, writeLogHeader, readLogFile } from '../src/core/adif/logfile'
+import { writeLogFile, writeLogHeader, readLogFile, writeRefExport, refExportName } from '../src/core/adif/logfile'
+import { readAdif } from '../src/core/adif/reader'
 import { writeQso } from '../src/core/adif/writer'
 import type { LogMeta, Qso } from '../src/core/model'
 
@@ -8,7 +9,7 @@ const meta: LogMeta = {
   profile: 'aktivace',
   myCall: 'OK1CDJ',
   myGrid: 'JN79US',
-  myRef: { kind: 'SOTA', value: 'OK/ZC-001' },
+  myRefs: [{ kind: 'SOTA', value: 'OK/ZC-001' }],
   defaultSignal: { band: '40m', mode: 'SSB' },
 }
 
@@ -20,7 +21,7 @@ const qso: Qso = {
   stationCall: 'OK1CDJ',
   myGrid: 'JN79US',
   theirRef: { kind: 'SOTA', value: 'OK/ZC-014' },
-  myRef: { kind: 'SOTA', value: 'OK/ZC-001' },
+  myRefs: [{ kind: 'SOTA', value: 'OK/ZC-001' }],
 }
 
 describe('log-file codec (meta in ADIF header)', () => {
@@ -55,6 +56,35 @@ describe('log-file codec (meta in ADIF header)', () => {
     }
     const parsed = readLogFile(writeLogFile(m, []))
     expect(parsed.meta).toEqual(m)
-    expect(parsed.meta.myRef).toBeUndefined()
+    expect(parsed.meta.myRefs).toBeUndefined()
+  })
+
+  it('several references in the header, ; separated', () => {
+    const m: LogMeta = {
+      ...meta,
+      myRefs: [
+        { kind: 'SOTA', value: 'OK/JC-001' },
+        { kind: 'POTA', value: 'CZ-0123' },
+        { kind: 'POTA', value: 'CZ-0124' },
+      ],
+    }
+    const text = writeLogHeader(m)
+    expect(text).toContain('<APP_KQSO_MYREF:40>SOTA OK/JC-001;POTA CZ-0123;POTA CZ-0124')
+    expect(readLogFile(text).meta).toEqual(m)
+  })
+
+  it('a log from before several references reads its one reference', () => {
+    const text = '<APP_KQSO_PROFILE:8>aktivace <APP_KQSO_MYREF:14>SOTA OK/ZC-001 <EOH>\n'
+    expect(readLogFile(text).meta.myRefs).toEqual([{ kind: 'SOTA', value: 'OK/ZC-001' }])
+  })
+
+  it('a per-reference export carries only that reference, without the kQSO header', () => {
+    const both: Qso = { ...qso, myRefs: [{ kind: 'SOTA', value: 'OK/ZC-001' }, { kind: 'POTA', value: 'CZ-0123' }] }
+    const park = { kind: 'POTA', value: 'CZ-0123' } as const
+    const text = writeRefExport([both, both], park)
+    expect(text).not.toContain('APP_KQSO')
+    expect(text).not.toContain('MY_SOTA_REF')
+    expect(readAdif(text).qsos.map((q) => q.myRefs)).toEqual([[park], [park]])
+    expect(refExportName('20261019', { kind: 'SOTA', value: 'OK/ZC-001' })).toBe('20261019-OK-ZC-001.adi')
   })
 })

@@ -3,7 +3,7 @@
 // the last slash is normalized to a dash.
 
 import type { AwardReference, ReferenceKind } from './model'
-import { isGmaAssociation } from './gma'
+import { GMA_NO_ASSOCIATION, isGmaSummit } from './gma'
 
 /**
  * The discriminator against a portable callsign: a reference's last `/`-part is
@@ -18,14 +18,15 @@ const REF_LAST_PART = /^\d{3,5}$/
  * (OKR, OMR, DLR, GBR, 9MR, 4XR). WWFF ends with FF (OKFF).
  */
 function twoPartKind(prefix: string): ReferenceKind {
+  if (prefix === GMA_NO_ASSOCIATION) return 'GMA'
   if (prefix.endsWith('FF')) return 'WWFF'
   if (prefix.length >= 3 && prefix.endsWith('R')) return 'TOTA'
   return 'POTA'
 }
 
-/** Three-part kind by association: GMA-only summits have their own (OL, OM0, DA). */
-function summitKind(association: string): ReferenceKind {
-  return isGmaAssociation(association) ? 'GMA' : 'SOTA'
+/** Three-part kind by association / region: GMA-only summits have their own (OL, OM0, DA; G/HCE). */
+function summitKind(association: string, region: string): ReferenceKind {
+  return isGmaSummit(association, region) ? 'GMA' : 'SOTA'
 }
 
 /**
@@ -53,7 +54,7 @@ export function matchReference(raw: string): AwardReference | null {
   if (parts.length === 2) {
     kind = twoPartKind(parts[0]!)
   } else if (parts.length === 3) {
-    kind = summitKind(parts[0]!)
+    kind = summitKind(parts[0]!, parts[1]!)
   } else {
     // Exotic shapes (GMA/HEMA) are out of scope.
     return null
@@ -83,6 +84,32 @@ export function parseReferenceInput(raw: string): AwardReference | null {
   const num = s.slice(dash + 1)
   if (!REF_LAST_PART.test(num)) return null
 
-  const kind: ReferenceKind = head.includes('/') ? summitKind(head.split('/')[0]!) : twoPartKind(head)
+  const [association, region] = head.split('/')
+  const kind: ReferenceKind = region !== undefined ? summitKind(association!, region) : twoPartKind(head)
   return { kind, value: `${head}-${num}` }
+}
+
+/** A log carries one summit, one WWFF area, one tower — but POTA parks can be several (n-fer). */
+export const oncePerLog = (kind: ReferenceKind): boolean => kind !== 'POTA'
+
+export type MyRefsResult =
+  | { readonly ok: true; readonly refs: AwardReference[] }
+  | { readonly ok: false; readonly bad: string } // the token that isn't a reference
+  | { readonly ok: false; readonly twice: ReferenceKind } // a kind that can be in a log once
+
+/**
+ * The New log "My reference" field: references separated by spaces or commas
+ * ("OK/ZC-001 CZ-0123, CZ-0124"). A repeated reference counts once.
+ */
+export function parseMyRefsInput(raw: string): MyRefsResult {
+  const refs: AwardReference[] = []
+  for (const token of raw.split(/[\s,;]+/)) {
+    if (token === '') continue
+    const ref = parseReferenceInput(token)
+    if (!ref) return { ok: false, bad: token }
+    if (refs.some((r) => r.kind === ref.kind && r.value === ref.value)) continue
+    if (oncePerLog(ref.kind) && refs.some((r) => r.kind === ref.kind)) return { ok: false, twice: ref.kind }
+    refs.push(ref)
+  }
+  return { ok: true, refs }
 }

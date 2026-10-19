@@ -1,5 +1,6 @@
 // New log form. Classic inputs (system keyboard is fine here).
-// Band/mode are dropdowns (no typing). Reference accepts slash or dash. Operator
+// Band/mode are dropdowns (no typing). References (several: SOTA + POTA parks + …)
+// accept slash or dash, separated by spaces or commas. Operator
 // call + locator prefill from the last remembered values (saved on create); each
 // log still keeps its own meta in the .adi.
 
@@ -12,12 +13,14 @@ import {
   latLonToGrid,
   matchBand,
   matchMode,
+  oncePerLog,
+  parseMyRefsInput,
   parseReferenceInput,
   readLogFile,
   satelliteByLabel,
   satelliteSignal,
 } from '../../core/index'
-import type { AwardReference, LogMeta, ProfileId } from '../../core/index'
+import type { LogMeta, MyRefsResult, ProfileId } from '../../core/index'
 import { fieldsAround, nearestRefs } from '../../core/refdb'
 import type { GeoPosition, KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
@@ -103,6 +106,7 @@ export class NewLogScreen implements Screen {
     // VKV contest can't score QRB without the own locator — block Create until it's valid.
     const gridError = fieldError(myGrid, t('newlog.myGridRequired'))
     const myRef = fieldRow(t('newlog.myRef'), '', { placeholder: t('newlog.myRefPlaceholder') })
+    const refError = fieldError(myRef, '')
     // Activation: the references around the located position, offered under My reference.
     const near = el('div', 'ref-near')
     near.hidden = true
@@ -124,6 +128,7 @@ export class NewLogScreen implements Screen {
     // One log per satellite pass — the bird is chosen here, not on the logging screen.
     const sat = tilePicker(t('newlog.satellite'), SAT_TILES, prev.satLabel ?? rememberedSat.label)
 
+    let refs: MyRefsResult = { ok: true, refs: [] } // My reference, parsed on Create
     const collect = (): LogMeta => {
       const profileId = profile.value() as ProfileId
       const chosenSat = satelliteByLabel(sat.value()) ?? rememberedSat
@@ -141,15 +146,14 @@ export class NewLogScreen implements Screen {
               },
       }
       if (profileId === 'sat') meta.satLabel = chosenSat.label
-      const ref: AwardReference | null =
-        profileId === 'aktivace' ? parseReferenceInput(myRef.input.value) : null
-      if (ref) meta.myRef = ref
+      if (profileId === 'aktivace' && refs.ok && refs.refs.length > 0) meta.myRefs = refs.refs
       return meta
     }
 
     const actions = el('div', 'form-actions')
     actions.append(
       button(t('newlog.create'), () => {
+        refs = profile.value() === 'aktivace' ? parseMyRefsInput(myRef.input.value) : { ok: true, refs: [] }
         const meta = collect()
         if (meta.myCall === '') {
           callError.show()
@@ -157,6 +161,10 @@ export class NewLogScreen implements Screen {
         }
         if (PROFILES[meta.profile].requiresGrid && !isFullLocator(meta.myGrid)) {
           gridError.show()
+          return
+        }
+        if (!refs.ok) {
+          refError.show('bad' in refs ? t('newlog.myRefBad', { ref: refs.bad }) : t('newlog.myRefTwice', { kind: refs.twice }))
           return
         }
         void this.create(meta)
@@ -241,8 +249,9 @@ export class NewLogScreen implements Screen {
     inline.after(note)
   }
 
-  /** The nearest references of every program; a tap puts one into My reference. Tiles
-   *  come from the device, or are downloaded for the field around the position. */
+  /** The nearest references of every program; a tap adds one to My reference or takes it
+   *  out again (another summit, WWFF area or tower replaces the one there — parks add up).
+   *  Tiles come from the device, or are downloaded for the field around the position. */
   private async showNearby(box: HTMLElement, p: GeoPosition, input: HTMLInputElement): Promise<void> {
     const seq = ++this.nearSeq
     box.hidden = false
@@ -250,13 +259,20 @@ export class NewLogScreen implements Screen {
     const { tiles, missing } = await ensureTiles(this.platform, fieldsAround(p.lat, p.lon, NEAR_KM))
     if (seq !== this.nearSeq) return
     const refs = nearestRefs(tiles, p.lat, p.lon, { maxKm: NEAR_KM, perKind: NEAR_PER_KIND })
+    // The field stays the one source: the list reads and edits its tokens.
+    const tokens = (): string[] => input.value.toUpperCase().split(/[\s,;]+/).filter((s) => s !== '')
+    const isRef = (token: string, value: string): boolean => parseReferenceInput(token)?.value === value
     const items = refs.map((r) => {
       const b = button('', () => {
-        input.value = r.value
+        let toks = tokens()
+        if (toks.some((tok) => isRef(tok, r.value))) toks = toks.filter((tok) => !isRef(tok, r.value))
+        else {
+          if (oncePerLog(r.kind)) toks = toks.filter((tok) => parseReferenceInput(tok)?.kind !== r.kind)
+          toks.push(r.value)
+        }
+        input.value = toks.join(' ')
         input.dispatchEvent(new Event('input'))
-        for (const other of items) other.setAttribute('aria-pressed', String(other === b))
       }, 'btn ref-near__item')
-      b.setAttribute('aria-pressed', 'false')
       b.append(
         el('span', 'ref-near__ref', `${r.kind} ${r.value}`),
         el('span', 'ref-near__name', r.name),
@@ -268,6 +284,13 @@ export class NewLogScreen implements Screen {
     if (missing.length > 0) notes.push(el('span', 'field-note', t('newlog.nearMissing', { fields: missing.join(', ') })))
     if (refs.length === 0 && missing.length === 0) notes.push(el('span', 'field-note', t('newlog.nearNone', { km: NEAR_KM })))
     if (refs.some((r) => r.kind === 'POTA' || r.kind === 'WWFF')) notes.push(el('span', 'field-note', t('newlog.nearParks')))
+    const sync = (): void => {
+      if (seq !== this.nearSeq) return
+      const toks = tokens()
+      refs.forEach((r, i) => items[i]!.setAttribute('aria-pressed', String(toks.some((tok) => isRef(tok, r.value)))))
+    }
+    input.addEventListener('input', sync)
+    sync()
     box.replaceChildren(...items, ...notes)
   }
 

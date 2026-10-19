@@ -134,8 +134,23 @@ def field(lat, lon):
     return chr(65 + int(x // 20)) + chr(65 + int(y // 10))
 
 
+def unmojibake(s):
+    """UTF-8 read as cp1252, maybe twice (GMA: 'Ð¥Ð°Ð½' for 'Хан', 'BarrosÃƒÂ£'). Kept only
+    when it gives Latin, Greek, Cyrillic or punctuation (’ –): Sámi 'ášš' is valid UTF-8
+    too, as Ogham, and Slovak 'Úš' as Arabic."""
+    for _ in range(2):
+        try:
+            fixed = s.encode('cp1252').decode('utf-8')
+        except UnicodeError:
+            break
+        if fixed == s or any(0x52F < ord(ch) < 0x2000 or ord(ch) > 0x20CF for ch in fixed):
+            break
+        s = fixed
+    return s
+
+
 def clean(s):
-    s = html.unescape(s or '').replace('\u00ad', '')
+    s = unmojibake(html.unescape(s or '')).replace('\u00ad', '')
     s = ' '.join(re.sub(r'<[^<>]*(>|$)', ' ', s).split())  # GMA: 'Děvín <Devin>'
     return s if len(s) <= NAME_MAX else s[:NAME_MAX - 1].rstrip() + '…'
 

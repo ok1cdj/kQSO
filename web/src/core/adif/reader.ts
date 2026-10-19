@@ -4,7 +4,7 @@
 
 import type { Qso, Signal } from '../model'
 import { utf8Encode, utf8Decode } from './bytes'
-import { F, fieldsToRef } from './fields'
+import { F, fieldsToMyRefs, fieldsToRef } from './fields'
 
 const LT = 0x3c // '<'
 const GT = 0x3e // '>'
@@ -48,10 +48,10 @@ function toQso(r: Record<string, string>): Qso {
   }
   const grid = r[F.GRIDSQUARE]
   if (grid !== undefined) qso.grid = grid
-  const theirRef = fieldsToRef(r, false)
+  const theirRef = fieldsToRef(r)
   if (theirRef) qso.theirRef = theirRef
-  const myRef = fieldsToRef(r, true)
-  if (myRef) qso.myRef = myRef
+  const myRefs = fieldsToMyRefs(r)
+  if (myRefs.length > 0) qso.myRefs = myRefs
   const name = r[F.NAME]
   if (name !== undefined) qso.name = name
   const serial = r[F.SRX_STRING]
