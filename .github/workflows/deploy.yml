@@ -3,6 +3,9 @@ name: Deploy web to GitHub Pages
 on:
   push:
     branches: [main]
+  # Weekly: the offline references (refs/) are rebuilt from the programs' lists.
+  schedule:
+    - cron: '17 3 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -32,10 +35,16 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      # The site = the web app + refs/ (offline references by locator field). refs/ stays
+      # out of web/dist, which the APK and the iOS bundle are built from. A source that
+      # fails stops the deploy, so the last good refs/ stays online.
+      - run: |
+          cp -r dist ../_site
+          python3 scripts/refdata.py --out ../_site/refs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: web/dist
+          path: _site
 
   deploy:
     needs: build
