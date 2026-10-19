@@ -3,7 +3,8 @@
 // truth). QSO records follow. Uploaders ignore APP_ header fields, so the same
 // file is also the export.
 
-import type { AwardReference, LogMeta, ProfileId, Qso, ReferenceKind, Signal } from '../model'
+import type { AwardReference, LogMeta, ProfileId, Qso, Signal } from '../model'
+import { formatRefList, parseRefList } from './fields'
 import { writeAdif, writeField, writeQso } from './writer'
 import { readAdif } from './reader'
 
@@ -24,7 +25,6 @@ const A = {
 } as const
 
 const PROFILE_IDS: readonly ProfileId[] = ['vkv', 'aktivace', 'obecny', 'sat']
-const REF_KINDS: readonly ReferenceKind[] = ['SOTA', 'GMA', 'POTA', 'WWFF', 'TOTA']
 
 function metaFields(meta: LogMeta): string[] {
   const s = meta.defaultSignal
@@ -38,7 +38,7 @@ function metaFields(meta: LogMeta): string[] {
   ]
   // "SOTA OK/JC-001;POTA CZ-0123" — a single reference (older logs) is the same without the ;
   if (meta.myRefs && meta.myRefs.length > 0)
-    out.push(writeField(A.MYREF, meta.myRefs.map((r) => `${r.kind} ${r.value}`).join(';')))
+    out.push(writeField(A.MYREF, formatRefList(meta.myRefs)))
   if (s.bandRx !== undefined) out.push(writeField(A.DEFBANDRX, s.bandRx))
   if (s.modeRx !== undefined) out.push(writeField(A.DEFMODERX, s.modeRx))
   if (meta.satLabel !== undefined) out.push(writeField(A.SATLABEL, meta.satLabel))
@@ -58,14 +58,6 @@ export function writeLogFile(meta: LogMeta, qsos: readonly Qso[]): string {
 /** The header line alone — what `createLog` writes before any QSO is appended. */
 export function writeLogHeader(meta: LogMeta): string {
   return writeLogFile(meta, []).trimEnd() + '\n'
-}
-
-function parseRef(raw: string): AwardReference | undefined {
-  const sp = raw.indexOf(' ')
-  if (sp < 0) return undefined
-  const kind = raw.slice(0, sp) as ReferenceKind
-  const value = raw.slice(sp + 1)
-  return REF_KINDS.includes(kind) ? { kind, value } : undefined
 }
 
 function metaFromHeader(h: Record<string, string>): LogMeta {
@@ -89,7 +81,7 @@ function metaFromHeader(h: Record<string, string>): LogMeta {
   }
   const myRefRaw = h[A.MYREF]
   if (myRefRaw !== undefined) {
-    const refs = myRefRaw.split(';').map(parseRef).filter((r): r is AwardReference => r !== undefined)
+    const refs = parseRefList(myRefRaw)
     if (refs.length > 0) meta.myRefs = refs
   }
   const satLabel = h[A.SATLABEL]

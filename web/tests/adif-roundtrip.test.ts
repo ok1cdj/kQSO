@@ -145,6 +145,22 @@ describe('parse → ADIF → parse roundtrip', () => {
     expect(roundtrip(qso)).toEqual(qso)
   })
 
+  it('a GMA summit with a TOTA tower keeps both (one MY_SIG, the rest in APP_KQSO_MYREF)', () => {
+    const qso: Qso = {
+      ...BASE,
+      call: 'OK2XYZ',
+      signal: { band: '2m', mode: 'FM' },
+      myRefs: [
+        { kind: 'GMA', value: 'OL/LI-001' },
+        { kind: 'TOTA', value: 'OKR-1001' },
+      ],
+    }
+    const text = writeAdif([qso])
+    expect(text).toContain('<MY_SIG:3>GMA')
+    expect(text).toContain('<APP_KQSO_MYREF:27>GMA OL/LI-001;TOTA OKR-1001')
+    expect(roundtrip(qso)).toEqual(qso)
+  })
+
   it('reads my WWFF from MY_SIG alone (logs from before MY_WWFF_REF)', () => {
     const { qsos } = readAdif(
       '<EOH>\n<CALL:6>OK2XYZ <QSO_DATE:8>20260922 <TIME_ON:4>1432 <MY_SIG:4>WWFF <MY_SIG_INFO:9>OKFF-0002 <EOR>\n',

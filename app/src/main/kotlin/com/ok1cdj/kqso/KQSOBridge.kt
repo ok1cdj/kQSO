@@ -111,10 +111,11 @@ class KQSOBridge(private val activity: MainActivity, private val keyer: BleLink,
 
     @JavascriptInterface
     fun refWrite(field: String, text: String) {
+        val target = tile(field) // validates the field before anything is written
         // Whole tile or none: a half-written one would parse as fewer references.
         val tmp = File(refsDir, "$field.tmp")
         tmp.writeText(text)
-        tmp.renameTo(tile(field))
+        check(tmp.renameTo(target)) { "tile not saved" }
     }
 
     @JavascriptInterface

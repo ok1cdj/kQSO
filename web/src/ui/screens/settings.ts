@@ -249,9 +249,11 @@ export class SettingsScreen implements Screen {
       const failed: string[] = []
       for (const f of fields) {
         say(t('settings.refsDownloading', { field: f }))
-        ;((await downloadTile(this.platform, f)) ? got : failed).push(f)
+        // A full storage throws on the write: that field failed, the next may fit.
+        const ok = await downloadTile(this.platform, f).catch(() => false)
+        ;(ok ? got : failed).push(f)
       }
-      await showList()
+      await showList().catch(() => {})
       say(
         [
           got.length > 0 ? t('settings.refsDownloaded', { fields: got.join(', ') }) : '',

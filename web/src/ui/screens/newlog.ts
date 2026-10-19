@@ -256,7 +256,9 @@ export class NewLogScreen implements Screen {
     const seq = ++this.nearSeq
     box.hidden = false
     box.replaceChildren(el('span', 'field-note', t('newlog.nearSearching')))
-    const { tiles, missing } = await ensureTiles(this.platform, fieldsAround(p.lat, p.lon, NEAR_KM))
+    const fields = fieldsAround(p.lat, p.lon, NEAR_KM)
+    // Storage can fail (full): say the area isn't there rather than search for ever.
+    const { tiles, missing } = await ensureTiles(this.platform, fields).catch(() => ({ tiles: [], missing: fields }))
     if (seq !== this.nearSeq) return
     const refs = nearestRefs(tiles, p.lat, p.lon, { maxKm: NEAR_KM, perKind: NEAR_PER_KIND })
     // The field stays the one source: the list reads and edits its tokens.

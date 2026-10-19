@@ -161,11 +161,29 @@ def clean(s):
     return s if len(s) <= NAME_MAX else s[:NAME_MAX - 1].rstrip() + '…'
 
 
+def mirror(base, out):
+    """Copy the published tiles as they are (deploy, when a source is down)."""
+    def get(name):
+        req = urllib.request.Request(base + name, headers={'User-Agent': 'kQSO refdata'})
+        with urllib.request.urlopen(req, timeout=120) as r:
+            return r.read()
+    out.mkdir(parents=True, exist_ok=True)
+    index = get('index.json')
+    for f in json.loads(index)['fields']:
+        (out / f'{f}.tsv').write_bytes(get(f'{f}.tsv'))
+    (out / 'LICENSE.txt').write_bytes(get('LICENSE.txt'))
+    (out / 'index.json').write_bytes(index)
+    print(f'mirrored {len(json.loads(index)["fields"])} fields from {base} -> {out}')
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     ap.add_argument('--out', required=True, type=Path)
     ap.add_argument('--cache', type=Path)
+    ap.add_argument('--mirror', metavar='URL', help='copy the tiles published at URL instead of building them')
     args = ap.parse_args()
+    if args.mirror:
+        return mirror(args.mirror, args.out)
     cache = args.cache or Path(tempfile.mkdtemp())
     cache.mkdir(parents=True, exist_ok=True)
     args.out.mkdir(parents=True, exist_ok=True)

@@ -33,6 +33,7 @@ export const F = {
   SAT_NAME: 'SAT_NAME',
   SAT_MODE: 'SAT_MODE',
   PROGRAMID: 'PROGRAMID',
+  APP_MYREF: 'APP_KQSO_MYREF', // all my references, when the ADIF fields can't hold them
   ADIF_VER: 'ADIF_VER',
 } as const
 
@@ -69,8 +70,25 @@ export function fieldsToRef(fields: Record<string, string>): AwardReference | un
   return undefined
 }
 
+const REF_KINDS: readonly ReferenceKind[] = ['SOTA', 'GMA', 'POTA', 'WWFF', 'TOTA']
+
+/** "SOTA OK/JC-001;POTA CZ-0123" — the log header's (and an overflowing QSO's) form. */
+export function formatRefList(refs: readonly AwardReference[]): string {
+  return refs.map((r) => `${r.kind} ${r.value}`).join(';')
+}
+
+export function parseRefList(raw: string): AwardReference[] {
+  const out: AwardReference[] = []
+  for (const item of raw.split(';')) {
+    const sp = item.indexOf(' ')
+    const kind = item.slice(0, sp) as ReferenceKind
+    if (sp > 0 && REF_KINDS.includes(kind)) out.push({ kind, value: item.slice(sp + 1) })
+  }
+  return out
+}
+
 /**
- * Encode my references (at most one of each kind but POTA, see validateMyRefs). SOTA and
+ * Encode my references (at most one of each kind but POTA, see parseMyRefsInput). SOTA and
  * WWFF have their own fields, POTA parks share MY_POTA_REF comma-separated. MY_SIG carries
  * GMA or TOTA (no ADIF field; rozhledny.eu wants MY_SIG=TOTA), else WWFF — what older kQSO
  * wrote and Logsearch reads.
@@ -83,13 +101,19 @@ export function myRefsToFields(refs: readonly AwardReference[]): Array<[string, 
   if (parks.length > 0) out.push([F.MY_POTA_REF, parks.map((r) => r.value).join(',')])
   const wwff = refs.find((r) => r.kind === 'WWFF')
   if (wwff) out.push([F.MY_WWFF_REF, wwff.value])
-  const sig = refs.find((r) => r.kind === 'GMA' || r.kind === 'TOTA') ?? wwff
+  const sigs = refs.filter((r) => r.kind === 'GMA' || r.kind === 'TOTA')
+  const sig = sigs[0] ?? wwff
   if (sig) out.push([F.MY_SIG, sig.kind], [F.MY_SIG_INFO, sig.value])
+  // A GMA summit with a tower on it: one MY_SIG for two. The rest goes in an APP_ field
+  // uploaders skip, so the log keeps both (the per-reference export carries each).
+  if (sigs.length > 1) out.push([F.APP_MYREF, formatRefList(refs)])
   return out
 }
 
 /** My references from a decoded field record, in field order; empty when there are none. */
 export function fieldsToMyRefs(fields: Record<string, string>): AwardReference[] {
+  const all = fields[F.APP_MYREF]
+  if (all !== undefined) return parseRefList(all)
   const out: AwardReference[] = []
   const add = (kind: ReferenceKind, value: string | undefined): void => {
     const v = value?.trim()

@@ -128,17 +128,15 @@ export class LogListScreen implements Screen {
       trackEvent('export', { format: 'adif', profile: log.profile })
       void this.fillSatFrequencies(log.id).then(() => this.platform.exportLog(log.id, `${log.id}.adi`))
     }
-    let perRef: HTMLElement | undefined
+    let perRef: Promise<HTMLElement | undefined> | undefined // read once, a second tap waits for it
     const exp = button(t('loglist.export'), () => {
-      if (perRef) {
-        perRef.hidden = !perRef.hidden
-        return
-      }
       if (!PROFILES[log.profile].usesReferences) return exportAll()
-      void this.refExports(log, exportAll).then((row) => {
+      const first = !perRef
+      perRef ??= this.refExports(log, exportAll)
+      void perRef.then((row) => {
         if (!row) return exportAll()
-        perRef = row
-        li.after(row)
+        if (first) li.after(row)
+        else row.hidden = !row.hidden
       })
     }, 'btn btn--small')
     const del = button(t('loglist.delete'), () => void this.remove(log), 'btn btn--small')

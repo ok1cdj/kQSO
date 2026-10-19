@@ -36,11 +36,16 @@ jobs:
       - run: npm test
       - run: npm run build
       # The site = the web app + refs/ (offline references by locator field). refs/ stays
-      # out of web/dist, which the APK and the iOS bundle are built from. A source that
-      # fails stops the deploy, so the last good refs/ stays online.
+      # out of web/dist, which the APK and the iOS bundle are built from. When a source
+      # is down or changed its format, the references online now are carried over, so
+      # the app still deploys; only when that fails too does the deploy stop.
       - run: |
           cp -r dist ../_site
-          python3 scripts/refdata.py --out ../_site/refs
+          if ! python3 scripts/refdata.py --out ../_site/refs; then
+            echo "::warning::References not rebuilt (a source failed); keeping the published ones"
+            rm -rf ../_site/refs
+            python3 scripts/refdata.py --mirror https://kqso.ok1cdj.com/refs/ --out ../_site/refs
+          fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
