@@ -81,4 +81,20 @@ describe('MemoryPlatform (KQSOPlatform contract)', () => {
     expect(await p.listLogs()).toEqual([])
     expect(await p.readCallDb()).toBe('OK1ABC\tJN79US\t20260924\t1\n')
   })
+
+  it('reference tiles: per field, apart from the logs', async () => {
+    const p = new MemoryPlatform()
+    const tiles = p.refTiles
+    expect(await tiles.read('JO')).toBe('')
+    expect(await tiles.list()).toEqual([])
+    await tiles.write('JO', 'a')
+    await tiles.write('JN', 'b')
+    await tiles.write('JO', 'c') // overwrite
+    expect((await tiles.list()).sort()).toEqual(['JN', 'JO'])
+    expect(await tiles.read('JO')).toBe('c')
+    expect(await p.listLogs()).toEqual([])
+    await tiles.remove('JN')
+    await tiles.remove('JN') // already gone
+    expect(await tiles.list()).toEqual(['JO'])
+  })
 })

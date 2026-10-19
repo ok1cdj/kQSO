@@ -62,6 +62,15 @@ export interface GeoPosition {
   readonly accuracy: number // metres
 }
 
+/** Offline award references (core/refdb.ts): one TSV tile per Maidenhead field
+ *  ("JO"), kept apart from the logs and the settings. Callers pass valid field names. */
+export interface RefTileStore {
+  read(field: string): Promise<string> // '' when not downloaded
+  write(field: string, text: string): Promise<void>
+  list(): Promise<string[]> // downloaded fields, any order
+  remove(field: string): Promise<void>
+}
+
 /** Why getPosition failed: the rejection's Error message. */
 export type GeoFailure = 'denied' | 'unavailable' | 'timeout'
 
@@ -106,6 +115,9 @@ export interface KQSOPlatform {
   // the logs — deleting logs never touches it.
   readCallDb(): Promise<string> // '' when none yet
   writeCallDb(text: string): Promise<void>
+
+  /** Downloaded reference tiles; undefined where the host cannot store them. */
+  readonly refTiles?: RefTileStore | undefined
 
   /** Whether storage is persistent, i.e. exempt from WebKit's 7-day eviction. */
   isPersisted(): Promise<boolean>

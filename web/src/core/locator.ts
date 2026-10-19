@@ -43,9 +43,14 @@ export function qrbKm(a: string, b: string): number | undefined {
   const p = gridCenter(a)
   const q = gridCenter(b)
   if (!p || !q) return undefined
+  return distanceKm(p.lat, p.lon, q.lat, q.lon)
+}
+
+/** Great-circle distance between two points in degrees, km (unrounded). */
+export function distanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const c =
-    Math.sin(p.lat * RAD) * Math.sin(q.lat * RAD) +
-    Math.cos(p.lat * RAD) * Math.cos(q.lat * RAD) * Math.cos((q.lon - p.lon) * RAD)
+    Math.sin(lat1 * RAD) * Math.sin(lat2 * RAD) +
+    Math.cos(lat1 * RAD) * Math.cos(lat2 * RAD) * Math.cos((lon2 - lon1) * RAD)
   return (Math.acos(Math.min(1, Math.max(-1, c))) / RAD) * KM_PER_DEG
 }
 

@@ -18,11 +18,13 @@ import {
   satelliteSignal,
 } from '../../core/index'
 import type { AwardReference, LogMeta, ProfileId } from '../../core/index'
-import type { KQSOPlatform } from '../../platform/index'
+import { fieldsAround, nearestRefs } from '../../core/refdb'
+import type { GeoPosition, KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
 import { el, button, fieldError, fieldRow, selectRow, strokeIcon, tilePicker } from '../dom'
 import type { Tile } from '../dom'
-import { t } from '../i18n'
+import { lang, t } from '../i18n'
+import { ensureTiles } from '../refsync'
 import { trackEvent } from '../stats'
 
 export interface NewLogNav {
@@ -37,6 +39,14 @@ const dateName = (d: Date): string => `${pad2(d.getDate())}${pad2(d.getMonth() +
 const BAND_OPTIONS = BANDS.map((b) => [b, b] as const)
 const MODE_OPTIONS = MODES.map((m) => [m, m] as const)
 
+// Nearby references offered after a locate: this far, this many of each program.
+const NEAR_KM = 25
+const NEAR_PER_KIND = 3
+
+const kmText = (km: number): string => {
+  const s = km < 10 ? km.toFixed(1) : String(Math.round(km))
+  return lang === 'cs' ? s.replace('.', ',') : s
+}
 
 // "My location" crosshair: ring, centre dot, four ticks out.
 const LOCATE_ICON = 'M12 2v4M12 18v4M2 12h4M18 12h4M6 12a6 6 0 1 0 12 0a6 6 0 1 0-12 0M11 12a1 1 0 1 0 2 0a1 1 0 1 0-2 0'
@@ -58,6 +68,7 @@ const SAT_TILES: readonly Tile[] = SATELLITES.map((s) => ({
 
 export class NewLogScreen implements Screen {
   private readonly root = el('form', 'screen screen--form')
+  private nearSeq = 0 // a newer locate wins over a slower older one
 
   constructor(
     private readonly platform: KQSOPlatform,
@@ -91,8 +102,23 @@ export class NewLogScreen implements Screen {
     const callError = fieldError(myCall, t('newlog.myCallRequired'))
     // VKV contest can't score QRB without the own locator — block Create until it's valid.
     const gridError = fieldError(myGrid, t('newlog.myGridRequired'))
-    this.addLocate(myGrid)
     const myRef = fieldRow(t('newlog.myRef'), '', { placeholder: t('newlog.myRefPlaceholder') })
+    // Activation: the references around the located position, offered under My reference.
+    const near = el('div', 'ref-near')
+    near.hidden = true
+    myRef.row.append(near)
+    let located: GeoPosition | undefined
+    let nearShown = false
+    const showNear = (): void => {
+      if (!located || nearShown || profile.value() !== 'aktivace') return
+      nearShown = true
+      void this.showNearby(near, located, myRef.input)
+    }
+    this.addLocate(myGrid, (p) => {
+      located = p
+      nearShown = false
+      showNear()
+    })
     const band = selectRow(t('newlog.band'), BAND_OPTIONS, prev.defaultSignal.band)
     const mode = selectRow(t('newlog.mode'), MODE_OPTIONS, prev.defaultSignal.mode)
     // One log per satellite pass — the bird is chosen here, not on the logging screen.
@@ -160,6 +186,7 @@ export class NewLogScreen implements Screen {
       mode.row.hidden = isSat
       sat.row.hidden = !isSat
       myRef.row.hidden = profileId !== 'aktivace'
+      showNear()
     }
     // Picking VHF contest starts it on 2m SSB (still changeable below). Only on a tap:
     // a VKV log prefilled from the last one keeps that log's band and mode.
@@ -177,7 +204,7 @@ export class NewLogScreen implements Screen {
 
   /** The locate button next to the locator: the device position → 6-character locator. Asked only
    *  on the tap, so nobody who doesn't use it ever sees the permission prompt. */
-  private addLocate(field: { row: HTMLElement; input: HTMLInputElement }): void {
+  private addLocate(field: { row: HTMLElement; input: HTMLInputElement }, located: (p: GeoPosition) => void): void {
     const getPosition = this.platform.getPosition
     if (!getPosition) return
     const note = el('span', 'field-note')
@@ -195,6 +222,7 @@ export class NewLogScreen implements Screen {
           field.input.dispatchEvent(new Event('input')) // clears a "required" error
           // Android's approximate location is ~2 km off: the subsquare may be wrong.
           say(p.accuracy > 2000 ? t('newlog.locateRough', { km: Math.round(p.accuracy / 1000) }) : '')
+          located(p)
         })
         .catch((e: unknown) => {
           const why = e instanceof Error ? e.message : ''
@@ -211,6 +239,36 @@ export class NewLogScreen implements Screen {
     field.input.replaceWith(inline)
     inline.append(field.input, locate)
     inline.after(note)
+  }
+
+  /** The nearest references of every program; a tap puts one into My reference. Tiles
+   *  come from the device, or are downloaded for the field around the position. */
+  private async showNearby(box: HTMLElement, p: GeoPosition, input: HTMLInputElement): Promise<void> {
+    const seq = ++this.nearSeq
+    box.hidden = false
+    box.replaceChildren(el('span', 'field-note', t('newlog.nearSearching')))
+    const { tiles, missing } = await ensureTiles(this.platform, fieldsAround(p.lat, p.lon, NEAR_KM))
+    if (seq !== this.nearSeq) return
+    const refs = nearestRefs(tiles, p.lat, p.lon, { maxKm: NEAR_KM, perKind: NEAR_PER_KIND })
+    const items = refs.map((r) => {
+      const b = button('', () => {
+        input.value = r.value
+        input.dispatchEvent(new Event('input'))
+        for (const other of items) other.setAttribute('aria-pressed', String(other === b))
+      }, 'btn ref-near__item')
+      b.setAttribute('aria-pressed', 'false')
+      b.append(
+        el('span', 'ref-near__ref', `${r.kind} ${r.value}`),
+        el('span', 'ref-near__name', r.name),
+        el('span', 'ref-near__km', `${kmText(r.km)} km`),
+      )
+      return b
+    })
+    const notes: HTMLElement[] = []
+    if (missing.length > 0) notes.push(el('span', 'field-note', t('newlog.nearMissing', { fields: missing.join(', ') })))
+    if (refs.length === 0 && missing.length === 0) notes.push(el('span', 'field-note', t('newlog.nearNone', { km: NEAR_KM })))
+    if (refs.some((r) => r.kind === 'POTA' || r.kind === 'WWFF')) notes.push(el('span', 'field-note', t('newlog.nearParks')))
+    box.replaceChildren(...items, ...notes)
   }
 
   private async create(meta: LogMeta): Promise<void> {

@@ -474,6 +474,40 @@ body {
   flex: 1;
   min-width: 0;
 }
+/* Nearby references after a locate (New log, Activation): one tappable row each. */
+.ref-near {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+.ref-near[hidden] {
+  display: none;
+}
+.ref-near__item {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  text-align: left;
+}
+.ref-near__ref {
+  font-weight: bold;
+  white-space: nowrap;
+}
+.ref-near__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ref-near__km {
+  white-space: nowrap;
+}
+/* The chosen one: no colour on e-ink, a thicker border. */
+.ref-near__item[aria-pressed='true'] {
+  border-width: calc(var(--border-w) * 3);
+}
 /* No colour on e-ink — a thicker border marks the offending field. */
 .field--error .field-input {
   border-width: calc(var(--border-w) * 3);
@@ -655,6 +689,21 @@ body {
 .segmented {
   display: flex;
   gap: 0.4rem;
+}
+/* Offline references: one row per downloaded field, Delete at the end. */
+.refs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.refs-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.refs-row__text {
+  flex: 1;
+  min-width: 0;
 }
 .segmented .btn {
   flex: 1;

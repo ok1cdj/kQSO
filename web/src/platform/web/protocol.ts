@@ -15,6 +15,10 @@ export type WorkerRequest =
   | { id: number; op: 'writeSettings'; content: string }
   | { id: number; op: 'readCallDb' }
   | { id: number; op: 'writeCallDb'; content: string }
+  | { id: number; op: 'readRefTile'; field: string }
+  | { id: number; op: 'writeRefTile'; field: string; content: string }
+  | { id: number; op: 'listRefTiles' }
+  | { id: number; op: 'removeRefTile'; field: string }
 
 export type WorkerResponse =
   | { id: number; ok: true; value?: unknown }

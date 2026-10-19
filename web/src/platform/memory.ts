@@ -4,7 +4,7 @@
 
 import type { LogMeta } from '../core/model'
 import { readLogFile, writeLogHeader } from '../core/index'
-import type { KQSOPlatform, LogSummary } from './types'
+import type { KQSOPlatform, LogSummary, RefTileStore } from './types'
 
 interface Entry {
   content: string
@@ -16,6 +16,7 @@ export class MemoryPlatform implements KQSOPlatform {
   private readonly logs = new Map<string, Entry>()
   private readonly settings = new Map<string, string>()
   private callDb = ''
+  private readonly tiles = new Map<string, string>() // reference tiles by field
   private counter = 0
 
   async listLogs(): Promise<LogSummary[]> {
@@ -80,6 +81,17 @@ export class MemoryPlatform implements KQSOPlatform {
 
   async writeCallDb(text: string): Promise<void> {
     this.callDb = text
+  }
+
+  readonly refTiles: RefTileStore = {
+    read: async (field) => this.tiles.get(field) ?? '',
+    write: async (field, text) => {
+      this.tiles.set(field, text)
+    },
+    list: async () => [...this.tiles.keys()],
+    remove: async (field) => {
+      this.tiles.delete(field)
+    },
   }
 
   keepAwake(): void {

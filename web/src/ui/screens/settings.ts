@@ -13,7 +13,7 @@ import type { Screen } from '../app'
 import { el, button, fieldRow, switchOn, tilePicker } from '../dom'
 import { connect } from '../wavelog'
 import { wavelogErrorText } from '../wavelog-text'
-import { t } from '../i18n'
+import { lang, t } from '../i18n'
 import { BUNDLED_DB_SETTING, BUNDLED_IDS, bundledInfo } from '../bundled-db'
 import { MAP_LABELS_SETTING } from './map'
 import { RADAR_SETTING } from '../radar'
@@ -25,6 +25,8 @@ import type { KeyerController } from '../keyer'
 import { RIG_SETTINGS } from '../rig'
 import type { RigController } from '../rig'
 import { UPDATE_SETTINGS, checksUpdates } from '../update'
+import { fieldsAround, parseField } from '../../core/refdb'
+import { REFS_URL, downloadTile, removeTile, storedTiles } from '../refsync'
 
 export interface SettingsNav {
   back(): void
@@ -85,6 +87,7 @@ export class SettingsScreen implements Screen {
       this.displayModeSetting(),
       this.helpSetting(),
       await this.callDbSetting(),
+      ...(this.platform.refTiles ? [await this.refsSetting()] : []),
       await this.wavelogSetting(),
       await this.mapLabelsSetting(),
       await this.radarSetting(),
@@ -204,6 +207,102 @@ export class SettingsScreen implements Screen {
     )
 
     wrap.append(el('span', 'field-label', t('settings.db')), el('div', undefined, t('settings.dbBundled')), seg, sets, ownLine, actions, status)
+    return wrap
+  }
+
+  /** Offline references for New log: the stored fields (each deletable), downloading the
+   *  area around the position or a typed field / locator, and where the data comes from. */
+  private async refsSetting(): Promise<HTMLElement> {
+    const wrap = el('div', 'setting')
+    const list = el('div', 'refs-list')
+    const status = el('div', 'about')
+    const say = (text: string): void => {
+      status.textContent = text
+    }
+    const num = (n: number): string => n.toLocaleString(lang)
+
+    const showList = async (): Promise<void> => {
+      const tiles = await storedTiles(this.platform)
+      if (tiles.length === 0) {
+        list.replaceChildren(el('div', 'about', t('settings.refsNone')))
+        return
+      }
+      list.replaceChildren(
+        ...tiles.map((tile) => {
+          const row = el('div', 'refs-row')
+          row.append(
+            el('span', 'refs-row__text', t('settings.refsTile', { field: tile.field, n: num(tile.count), d: tile.updated })),
+            button(t('common.delete'), () => {
+              void removeTile(this.platform, tile.field).then(showList)
+            }, 'btn btn--small'),
+          )
+          return row
+        }),
+      )
+    }
+
+    // Downloads one field after another; the buttons are off meanwhile.
+    const busy: HTMLButtonElement[] = []
+    const fetchFields = async (fields: readonly string[]): Promise<void> => {
+      for (const b of busy) b.disabled = true
+      const got: string[] = []
+      const failed: string[] = []
+      for (const f of fields) {
+        say(t('settings.refsDownloading', { field: f }))
+        ;((await downloadTile(this.platform, f)) ? got : failed).push(f)
+      }
+      await showList()
+      say(
+        [
+          got.length > 0 ? t('settings.refsDownloaded', { fields: got.join(', ') }) : '',
+          failed.length > 0 ? t('settings.refsFailed', { fields: failed.join(', ') }) : '',
+        ].filter(Boolean).join(' '),
+      )
+      for (const b of busy) b.disabled = false
+    }
+
+    const area = fieldRow(t('settings.refsArea'), '', { placeholder: 'JN69' })
+    const fetchArea = button(t('settings.refsAreaDownload'), () => {
+      const field = parseField(area.input.value)
+      if (!field) {
+        say(t('settings.refsAreaBad'))
+        return
+      }
+      void fetchFields([field])
+    }, 'btn')
+    busy.push(fetchArea)
+    const actions = el('div', 'segmented')
+    actions.append(fetchArea)
+
+    const getPosition = this.platform.getPosition
+    if (getPosition) {
+      const around = button(t('settings.refsAround'), () => {
+        say(t('newlog.locating'))
+        getPosition()
+          .then((p) => fetchFields(fieldsAround(p.lat, p.lon, 25)))
+          .catch(() => say(t('settings.refsNoPosition')))
+      }, 'btn')
+      busy.push(around)
+      actions.prepend(around)
+    }
+
+    const sources = el('div', 'about')
+    const a = el('a', undefined, t('settings.refsSources'))
+    a.href = `${REFS_URL}LICENSE.txt`
+    a.target = '_blank'
+    a.rel = 'noopener'
+    sources.append(a)
+
+    await showList()
+    wrap.append(
+      el('span', 'field-label', t('settings.refs')),
+      el('div', undefined, t('settings.refsAbout')),
+      list,
+      area.row,
+      actions,
+      status,
+      sources,
+    )
     return wrap
   }
 

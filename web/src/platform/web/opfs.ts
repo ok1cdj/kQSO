@@ -4,7 +4,7 @@
 
 import type { LogMeta } from '../../core/model'
 import { readLogFile, writeLogHeader } from '../../core/index'
-import type { GeoPosition, KQSOPlatform, KeyerTransport, LogSummary } from '../types'
+import type { GeoPosition, KQSOPlatform, KeyerTransport, LogSummary, RefTileStore } from '../types'
 import { browserPosition, geolocationAvailable } from './geo'
 import { WebBluetoothKeyer, webBluetoothAvailable } from './keyer'
 import type { RequestBody, WorkerRequest, WorkerResponse } from './protocol'
@@ -146,6 +146,17 @@ export class WebPlatform implements KQSOPlatform {
 
   async writeCallDb(text: string): Promise<void> {
     await this.call<void>({ op: 'writeCallDb', content: text })
+  }
+
+  readonly refTiles: RefTileStore = {
+    read: (field) => this.call<string>({ op: 'readRefTile', field }),
+    write: async (field, text) => {
+      await this.call<void>({ op: 'writeRefTile', field, content: text })
+    },
+    list: () => this.call<string[]>({ op: 'listRefTiles' }),
+    remove: async (field) => {
+      await this.call<void>({ op: 'removeRefTile', field })
+    },
   }
 
   async shareLog(logId: string, filename: string): Promise<void> {

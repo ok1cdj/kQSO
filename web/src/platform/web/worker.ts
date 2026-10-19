@@ -15,13 +15,24 @@ const adi = (id: string): string => `${id}.adi`
 const journal = (id: string): string => `${id}.journal`
 const SETTINGS = '_settings.json' // not a *.adi, so it never shows up in listIds()
 const CALLDB = '_calldb.tsv' // callsign DB live layer — likewise not a log
+const REFS = 'refs' // reference tiles, refs/JO.tsv; a directory, so listIds() skips it
+const FIELD = /^[A-R]{2}$/
 
 function root(): Promise<FileSystemDirectoryHandle> {
   return navigator.storage.getDirectory()
 }
 
-async function writeFile(name: string, content: string, append: boolean): Promise<void> {
-  const dir = await root()
+async function refsDir(): Promise<FileSystemDirectoryHandle> {
+  return (await root()).getDirectoryHandle(REFS, { create: true })
+}
+
+function tile(field: string): string {
+  if (!FIELD.test(field)) throw new Error(`bad field: ${field}`)
+  return `${field}.tsv`
+}
+
+async function writeFile(name: string, content: string, append: boolean, dir?: FileSystemDirectoryHandle): Promise<void> {
+  dir ??= await root()
   const fh = await dir.getFileHandle(name, { create: true })
   const h = await fh.createSyncAccessHandle()
   try {
@@ -34,8 +45,8 @@ async function writeFile(name: string, content: string, append: boolean): Promis
   }
 }
 
-async function readFile(name: string): Promise<string> {
-  const dir = await root()
+async function readFile(name: string, dir?: FileSystemDirectoryHandle): Promise<string> {
+  dir ??= await root()
   let fh: FileSystemFileHandle
   try {
     fh = await dir.getFileHandle(name, { create: false })
@@ -53,8 +64,8 @@ async function readFile(name: string): Promise<string> {
   }
 }
 
-async function remove(name: string): Promise<void> {
-  const dir = await root()
+async function remove(name: string, dir?: FileSystemDirectoryHandle): Promise<void> {
+  dir ??= await root()
   try {
     await dir.removeEntry(name)
   } catch {
@@ -69,6 +80,15 @@ async function listIds(): Promise<string[]> {
     if (name.endsWith('.adi')) ids.push(name.slice(0, -4))
   }
   return ids
+}
+
+async function listTiles(): Promise<string[]> {
+  const fields: string[] = []
+  for await (const name of (await refsDir()).keys()) {
+    const f = name.slice(0, -4)
+    if (name.endsWith('.tsv') && FIELD.test(f)) fields.push(f)
+  }
+  return fields
 }
 
 async function handle(req: WorkerRequest): Promise<unknown> {
@@ -101,6 +121,14 @@ async function handle(req: WorkerRequest): Promise<unknown> {
       return readFile(CALLDB)
     case 'writeCallDb':
       return writeFile(CALLDB, req.content, false)
+    case 'readRefTile':
+      return readFile(tile(req.field), await refsDir())
+    case 'writeRefTile':
+      return writeFile(tile(req.field), req.content, false, await refsDir())
+    case 'listRefTiles':
+      return listTiles()
+    case 'removeRefTile':
+      return remove(tile(req.field), await refsDir())
   }
 }
 
