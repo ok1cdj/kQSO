@@ -14,6 +14,19 @@ export interface WhatsNewEntry {
 /** Newest first. */
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    version: '1.10',
+    cs: [
+      'Můj lokátor z polohy: tlačítko se zaměřovačem v Novém logu. Poloha se nikam neukládá ani neposílá.',
+      'Nejbližší reference: v logu Aktivace ukáže zaměřovač nejbližší vrcholy SOTA a GMA, parky POTA a WWFF a rozhledny TOTA, klepnutím je přidáš. Funguje i bez signálu: okolí se stáhne samo, další oblasti v Nastavení → Reference offline.',
+      'Víc referencí v jedné aktivaci (vrchol + parky + WWFF …), oddělených mezerou. Export nabídne celý log i soubor pro každý program, pojmenovaný podle jeho pravidel.',
+    ],
+    en: [
+      'My locator from the position: the crosshair button in New Log. The position is never stored or sent.',
+      'Nearest references: in an Activation log the crosshair lists the nearest SOTA and GMA summits, POTA and WWFF parks and TOTA towers; a tap adds one. Works without signal: the area around you downloads by itself, more in Settings → Offline references.',
+      'Several references in one activation (summit + parks + WWFF …), separated by spaces. Export offers the whole log and a file for each program, named as it asks.',
+    ],
+  },
+  {
     version: '1.9',
     cs: [
       'Jakýkoli Icom přes klíčovač M5-ESP32-keyer (beta, firmware 2.1.0+): Nastavení → Rádio → Přes klíčovač. Pásmo, mód a kmitočet z rádia, napsané pásmo / mód nebo F… ho přeladí. Model se pozná podle CI-V adresy (IC-706, IC-910, IC-9700, IC-7300 …); pásmo, které rádio neumí, přepne jen deník.',

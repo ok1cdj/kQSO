@@ -1,0 +1,1 @@
+Můj lokátor z polohy jedním klepnutím. V Aktivaci nejbližší vrcholy SOTA/GMA, parky POTA/WWFF a rozhledny TOTA, i offline: okolí se stáhne samo, další oblasti v Nastavení. Víc referencí v jedné aktivaci (vrchol + parky + WWFF) a export zvlášť pro každý program, pojmenovaný podle jeho pravidel. GMA regiony (G/HCE, OY/EY …) se poznají jako GMA.
