@@ -1,7 +1,7 @@
-// Settings. Display mode is the first item. Also: a link to the
-// "How to log" help, the callsign database (bundled sets, own layer, export/import),
-// the active storage backend, and About. Language follows
-// navigator.language with no in-app switch.
+// Settings, one page ordered by how often it's used: display, map, Wavelog; then the
+// one-time / technical parts folded with a state line (callsign database, offline
+// references, radio CI-V, M5 keyer); storage, and About with the "How to log" help.
+// Language follows navigator.language with no in-app switch.
 
 import { LiveDb, WAVELOG_SETTINGS, apiBase, dbDate, userHeader, MACRO_SLOTS, ESM_ONLY_SLOTS, infoLabel, cqLabel, WPM_MAX, WPM_MIN, withMacro, resetMacros, xvertBands, rigHasBand, RIG_MODELS, parseMHz, bandForFreq } from '../../core/index'
 import type { ProfileId, RunMode, WavelogStation, Xvert } from '../../core/index'
@@ -10,7 +10,7 @@ import type { KQSOPlatform } from '../../platform/index'
 import { currentDisplayMode, currentThemeMode, setDisplayMode, setThemeMode } from '../../theme/mode'
 import type { DisplayMode, ThemeMode } from '../../theme/mode'
 import type { Screen } from '../app'
-import { el, button, fieldRow, switchOn, tilePicker } from '../dom'
+import { el, button, fieldRow, strokeIcon, switchOn, tilePicker } from '../dom'
 import { connect } from '../wavelog'
 import { wavelogErrorText } from '../wavelog-text'
 import { lang, t } from '../i18n'
@@ -53,6 +53,11 @@ const PROFILE_TILES: ReadonlyArray<readonly [ProfileId, 'newlog.profileAktivace'
   ['sat', 'newlog.profileSat'],
 ]
 
+const CHEVRON = 'M9 6l6 6-6 6'
+
+/** Folded sections open in this run of the app: Help / What's new and back keeps them open. */
+const openFolds = new Set<string>()
+
 export class SettingsScreen implements Screen {
   private readonly root = el('div', 'screen screen--list')
   private unsubscribe: (() => void) | undefined
@@ -85,12 +90,10 @@ export class SettingsScreen implements Screen {
     this.root.replaceChildren(
       bar,
       this.displayModeSetting(),
-      this.helpSetting(),
+      await this.mapSetting(),
+      await this.wavelogSetting(),
       await this.callDbSetting(),
       ...(this.platform.refTiles ? [await this.refsSetting()] : []),
-      await this.wavelogSetting(),
-      await this.mapLabelsSetting(),
-      await this.radarSetting(),
       ...(this.rig.available ? [await this.rigSetting()] : []),
       ...(this.keyer.available ? [await this.keyerSetting()] : []),
       this.storageSetting(persisted),
@@ -101,6 +104,25 @@ export class SettingsScreen implements Screen {
         : [await this.statsSetting()]),
       this.about(),
     )
+  }
+
+  /** A folded section: the summary row is the title, a state line and a chevron. */
+  private fold(id: string, title: string, state: HTMLElement, ...body: Node[]): HTMLElement {
+    const d = el('details', 'setting setting--fold')
+    d.open = openFolds.has(id)
+    d.addEventListener('toggle', () => {
+      if (d.open) openFolds.add(id)
+      else openFolds.delete(id)
+    })
+    const head = el('span', 'setting__head')
+    state.classList.add('about')
+    head.append(el('span', 'field-label', title), state)
+    const summary = el('summary')
+    summary.append(head, strokeIcon(CHEVRON, 'icon'))
+    const content = el('div', 'setting__body')
+    content.append(...body)
+    d.append(summary, content)
+    return d
   }
 
   /** Standard / E-ink, and under it the standard-mode theme (hidden in e-ink, which is always black on white). */
@@ -148,16 +170,23 @@ export class SettingsScreen implements Screen {
 
   /** Callsign DB: bundled-set switch + versions, own layer size, export/import/delete. */
   private async callDbSetting(): Promise<HTMLElement> {
-    const wrap = el('div', 'setting')
     const live = LiveDb.fromText(await this.platform.readCallDb())
     const status = el('div', 'about')
     const ownLine = el('div', undefined, t('settings.dbOwn', { n: live.size }))
 
     const seg = el('div', 'segmented')
     const on = (await this.platform.getSetting(BUNDLED_DB_SETTING)) !== '0'
+    let bundledOn = on
+    const state = el('span')
+    const paintState = (): void => {
+      state.textContent = t('settings.dbSummary', { on: t(bundledOn ? 'common.yes' : 'common.no').toLowerCase(), n: live.size })
+    }
+    paintState()
     const mk = (value: '1' | '0', label: string): HTMLButtonElement => {
       const b = button(label, () => {
         void this.platform.setSetting(BUNDLED_DB_SETTING, value)
+        bundledOn = value === '1'
+        paintState()
         for (const x of Array.from(seg.querySelectorAll<HTMLButtonElement>('button'))) {
           x.setAttribute('aria-pressed', String(x === b))
         }
@@ -176,6 +205,7 @@ export class SettingsScreen implements Screen {
     const save = async (): Promise<void> => {
       await this.platform.writeCallDb(live.toText(userHeader(new Date())))
       ownLine.textContent = t('settings.dbOwn', { n: live.size })
+      paintState()
     }
     const actions = el('div', 'segmented')
     actions.append(
@@ -206,14 +236,13 @@ export class SettingsScreen implements Screen {
       }, 'btn'),
     )
 
-    wrap.append(el('span', 'field-label', t('settings.db')), el('div', undefined, t('settings.dbBundled')), seg, sets, ownLine, actions, status)
-    return wrap
+    return this.fold('db', t('settings.db'), state, el('div', undefined, t('settings.dbBundled')), seg, sets, ownLine, actions, status)
   }
 
   /** Offline references for New log: the stored fields (each deletable), downloading the
    *  area around the position or a typed field / locator, and where the data comes from. */
   private async refsSetting(): Promise<HTMLElement> {
-    const wrap = el('div', 'setting')
+    const state = el('span')
     const list = el('div', 'refs-list')
     const status = el('div', 'about')
     const say = (text: string): void => {
@@ -223,6 +252,11 @@ export class SettingsScreen implements Screen {
 
     const showList = async (): Promise<void> => {
       const tiles = await storedTiles(this.platform)
+      const names = tiles.map((tile) => tile.field)
+      state.textContent =
+        tiles.length === 0
+          ? t('settings.refsSummaryNone')
+          : t('settings.refsSummary', { n: tiles.length, fields: names.slice(0, 4).join(', ') + (names.length > 4 ? ' …' : '') })
       if (tiles.length === 0) {
         list.replaceChildren(el('div', 'about', t('settings.refsNone')))
         return
@@ -296,16 +330,7 @@ export class SettingsScreen implements Screen {
     sources.append(a)
 
     await showList()
-    wrap.append(
-      el('span', 'field-label', t('settings.refs')),
-      el('div', undefined, t('settings.refsAbout')),
-      list,
-      area.row,
-      actions,
-      status,
-      sources,
-    )
-    return wrap
+    return this.fold('refs', t('settings.refs'), state, el('div', undefined, t('settings.refsAbout')), list, area.row, actions, status, sources)
   }
 
   /**
@@ -392,12 +417,6 @@ export class SettingsScreen implements Screen {
     return wrap
   }
 
-  private helpSetting(): HTMLElement {
-    const wrap = el('div', 'setting')
-    wrap.append(button(`${t('settings.help')} ›`, () => this.nav.openHelp(), 'btn'))
-    return wrap
-  }
-
   /** Web only: anonymous usage statistics (stats.ts) on/off, default on. */
   private async statsSetting(): Promise<HTMLElement> {
     const wrap = el('div', 'setting')
@@ -414,18 +433,17 @@ export class SettingsScreen implements Screen {
     return wrap
   }
 
-  /** QSO map: the calls next to the dots on/off, default on. */
-  private async mapLabelsSetting(): Promise<HTMLElement> {
+  /** Map: the calls next to the QSO dots (default on) and the rain radar on the VKV map
+   *  (default OFF, off = no network). */
+  private async mapSetting(): Promise<HTMLElement> {
     const wrap = el('div', 'setting')
-    wrap.append(el('span', 'field-label', t('settings.mapLabels')), await this.yesNo(MAP_LABELS_SETTING))
-    return wrap
-  }
-
-  /** VKV map: the rain radar on/off, default OFF (off = no network). */
-  private async radarSetting(): Promise<HTMLElement> {
-    const wrap = el('div', 'setting')
-    const seg = await this.yesNo(RADAR_SETTING, undefined, false)
-    wrap.append(el('span', 'field-label', t('settings.radar')), seg, el('div', 'about', t('settings.radarHint')))
+    wrap.append(
+      el('span', 'field-label', t('settings.mapLabels')),
+      await this.yesNo(MAP_LABELS_SETTING),
+      el('span', 'field-label', t('settings.radar')),
+      await this.yesNo(RADAR_SETTING, undefined, false),
+      el('div', 'about', t('settings.radarHint')),
+    )
     return wrap
   }
 
@@ -438,7 +456,7 @@ export class SettingsScreen implements Screen {
   private async keyerSetting(): Promise<HTMLElement> {
     const k = this.keyer
     const r = this.rig
-    const wrap = el('div', 'setting')
+    const state = el('span')
     const body = el('div', 'keyer-settings')
     // The switch is CW keying by the M5 keyer; speed, ESM and macros serve a radio keying CW over CI-V too.
     const atom = el('div', 'keyer-settings')
@@ -449,7 +467,10 @@ export class SettingsScreen implements Screen {
       cw.hidden = !k.enabled && !r.enabled
     }
     const seg = await this.yesNo(KEYER_SETTINGS.enabled, (on) => {
-      void k.setEnabled(on, false).then(show) // yesNo has saved it
+      void k.setEnabled(on, false).then(() => {
+        show()
+        paint()
+      }) // yesNo has saved it
       atom.hidden = !on && !viaKeyer()
     }, false)
     this.unsubscribeRigCw?.()
@@ -475,6 +496,9 @@ export class SettingsScreen implements Screen {
         status.textContent = k.name ? `${k.name} · ${t('settings.keyerOff')}` : t('settings.keyerOff')
       }
       speedValue.textContent = `${k.defaultWpm} WPM`
+      state.textContent = [atom.hidden ? t('settings.keyerSummaryOff') : status.textContent, cw.hidden ? undefined : `${k.defaultWpm} WPM`]
+        .filter((x) => x !== undefined)
+        .join(' · ')
     }
     this.unsubscribe?.()
     const unK = k.subscribe(paint)
@@ -514,16 +538,7 @@ export class SettingsScreen implements Screen {
       this.macroEditor(),
     )
     body.append(cw)
-    wrap.append(
-      el('span', 'field-label', t('settings.keyerDevice')),
-      guide,
-      atom,
-      el('span', 'field-label', t('settings.keyer')),
-      seg,
-      el('div', 'about', t('settings.keyerHint')),
-      body,
-    )
-    return wrap
+    return this.fold('keyer', t('settings.keyerDevice'), state, guide, atom, el('span', 'field-label', t('settings.keyer')), seg, el('div', 'about', t('settings.keyerHint')), body)
   }
 
   /** Radio over CI-V: on / off; the IC-705's own Bluetooth (APK) or any Icom through the
@@ -531,12 +546,12 @@ export class SettingsScreen implements Screen {
    *  Forget; what the radio is on; transverters. */
   private async rigSetting(): Promise<HTMLElement> {
     const r = this.rig
-    const wrap = el('div', 'setting')
+    const state = el('span')
     const body = el('div', 'keyer-settings')
     body.hidden = !r.enabled
     const seg = await this.yesNo(RIG_SETTINGS.enabled, (on) => {
       body.hidden = !on
-      void r.setEnabled(on, false) // yesNo has saved it
+      void r.setEnabled(on, false).then(() => paint()) // yesNo has saved it
     }, false)
 
     // IC-705 Bluetooth | via the keyer — only where both exist (APK).
@@ -614,6 +629,7 @@ export class SettingsScreen implements Screen {
       } else {
         status.textContent = r.name ? `${r.name} · ${t('settings.rigOff')}` : t('settings.rigOff')
       }
+      state.textContent = r.enabled ? status.textContent : t('settings.rigSummaryOff')
     }
     this.unsubscribeRig?.()
     const unR = r.subscribe(paint)
@@ -630,8 +646,7 @@ export class SettingsScreen implements Screen {
       button(t('settings.keyerForget'), () => void r.forget(), 'btn'),
     )
     body.append(source, modelBox, options, status, keyerNote, link, xvertBox)
-    wrap.append(el('span', 'field-label', t('settings.rig')), seg, el('div', 'about', t('settings.rigHint')), body)
-    return wrap
+    return this.fold('rig', t('settings.rig'), state, seg, el('div', 'about', t('settings.rigHint')), body)
   }
 
   /** Transverters: XVERT on / off, and per band the RF frequency that is which IF on the
@@ -789,7 +804,12 @@ export class SettingsScreen implements Screen {
     }
     stores.append(`${t('settings.aboutApps')} `, link('Google Play', PLAY_URL))
     if (APP_STORE_URL) stores.append(' · ', link('App Store', APP_STORE_URL))
-    wrap.append(stores, button(t('settings.whatsNew'), () => this.nav.openWhatsNew(), 'btn btn--small'))
+    const links = el('div', 'segmented')
+    links.append(
+      button(`${t('settings.help')} ›`, () => this.nav.openHelp(), 'btn btn--small'),
+      button(`${t('settings.whatsNew')} ›`, () => this.nav.openWhatsNew(), 'btn btn--small'),
+    )
+    wrap.append(stores, links)
     return wrap
   }
 }

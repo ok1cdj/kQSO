@@ -699,6 +699,10 @@ body {
   display: flex;
   gap: 0.4rem;
 }
+/* [hidden] must win over display:flex (rig source / link / options, Wavelog stations). */
+.segmented[hidden] {
+  display: none;
+}
 /* Offline references: one row per downloaded field, Delete at the end. */
 .refs-list {
   display: flex;
@@ -716,6 +720,39 @@ body {
 }
 .segmented .btn {
   flex: 1;
+}
+/* Folded settings section: the summary is the whole tappable row — title, state, chevron. */
+.setting--fold > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  cursor: pointer;
+  list-style: none;
+}
+.setting--fold > summary::-webkit-details-marker {
+  display: none;
+}
+.setting__head {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.setting--fold > summary .icon {
+  flex: none;
+  transition: transform var(--transition);
+}
+.setting--fold[open] > summary .icon {
+  transform: rotate(90deg);
+}
+.setting--fold[open] > summary {
+  margin-bottom: 0.3rem;
+}
+.setting__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 /* Keyer settings: the part under the CW keying switch. */
 .keyer-settings,
