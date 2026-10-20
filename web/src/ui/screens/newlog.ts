@@ -2,8 +2,8 @@
 // Band/mode are dropdowns (no typing). References (several: SOTA + POTA parks + …)
 // accept slash or dash, separated by spaces or commas. Operator
 // call + locator prefill from the last remembered values (saved on create); each
-// log still keeps its own meta in the .adi. A VHF contest picks its category here
-// (SO / MO / CHECK, IARU R1 or national, LP / 6 hours).
+// log still keeps its own meta in the .adi. A VHF contest picks here what changes the
+// logging: the contest (scoring) and a 6-hour entry; SO / MO / CHECK at the EDI export.
 
 import {
   BANDS,
@@ -130,15 +130,10 @@ export class NewLogScreen implements Screen {
     const mode = selectRow(t('newlog.mode'), MODE_OPTIONS, prev.defaultSignal.mode)
     // One log per satellite pass — the bird is chosen here, not on the logging screen.
     const sat = tilePicker(t('newlog.satellite'), SAT_TILES, prev.satLabel ?? rememberedSat.label)
-    // VHF contest category: SO / MO / CHECK and the variant from the last contest log; the
-    // contest from today's date (IARU weekends, Provozní aktiv, FM pohár), changeable.
-    const contest = contestForDate(new Date())
+    // VHF contest: the contest from today's date (Provozní aktiv, FM pohár, else IARU) and
+    // the full contest, changeable; SO / MO / CHECK carried from the last contest log.
     const prevCat = prev.profile === 'vkv' ? prev.category : undefined
-    const category = categoryPicker({
-      ops: prevCat?.ops ?? 'SO',
-      contest,
-      variant: contest === 'iaru' && prevCat?.contest === 'iaru' ? prevCat.variant : 'full',
-    })
+    const category = categoryPicker({ ops: prevCat?.ops ?? 'SO', contest: contestForDate(new Date()), variant: 'full' }, false)
     const categoryBox = el('div', 'form-group')
     categoryBox.append(...category.rows)
 

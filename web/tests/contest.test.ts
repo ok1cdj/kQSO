@@ -274,7 +274,7 @@ describe('large-square rings (Provozní aktiv, FM pohár)', () => {
     expect(b2!.odx).toMatchObject({ call: 'OK2KZR' })
     expect(b2!.odx!.km).toBeGreaterThan(200)
   })
-  it('national / IARU / no category: km', () => {
+  it('IARU / no category: km', () => {
     expect(scoringFor(undefined)).toEqual({ rings: false, multiplier: false })
     expect(scoringFor({ ops: 'SO', contest: 'iaru', variant: '6h' }).rings).toBe(false)
     const [b2] = scoreLog(log, 'JO70FC')

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { categoryFromSection, contestForDate, ediAscii, ediBand, ediBands, ediFileName, ediSection, equipmentFor, isIaruContestDate, isSixHours, parseEdiSettings, serializeEdiSettings, writeEdi } from '../src/core/edi'
+import { categoryFromSection, contestForDate, ediAscii, ediBand, ediBands, ediFileName, ediSection, equipmentFor, isSixHours, parseEdiSettings, serializeEdiSettings, writeEdi } from '../src/core/edi'
 import type { EdiEquipment, EdiStation } from '../src/core/edi'
 import type { ContestCategory, EdiContest, LogMeta, Qso } from '../src/core/model'
 import { readLogFile, writeLogFile } from '../src/core/adif/logfile'
@@ -12,7 +12,7 @@ const meta: LogMeta = {
   defaultSignal: { band: '2m', mode: 'SSB' },
 }
 const contest: EdiContest = { contest: 'Provozní aktiv', section: 'so', operators: '' }
-const SO: ContestCategory = { ops: 'SO', contest: 'national', variant: 'full' }
+const SO: ContestCategory = { ops: 'SO', contest: 'iaru', variant: 'full' }
 const station: EdiStation = { name: 'Ondřej Koloničný', email: 'ok1cdj@example.org' }
 const eq2m: EdiEquipment = { power: '50 W', antenna: '9 el. Yagi', antennaHeight: '', tx: '', rx: '' }
 const eq70: EdiEquipment = { power: '25', antenna: '21 el. Yagi', antennaHeight: '12;650', tx: 'IC-9700', rx: 'IC-9700 + LNA' }
@@ -50,7 +50,7 @@ describe('writeEdi', () => {
       'PExch=',
       'PAdr1=',
       'PAdr2=',
-      'PSect=SO',
+      'PSect=SO-LP', // 50 W on 145 MHz
       'PBand=145 MHz',
       'PClub=',
       'RName=Ondrej Kolonicny',
@@ -129,75 +129,63 @@ describe('EDI helpers', () => {
 })
 
 describe('category → PSect and the ČRK file name', () => {
-  const cat = (ops: ContestCategory['ops'], iaru: boolean, variant: ContestCategory['variant']): ContestCategory => ({ ops, contest: iaru ? 'iaru' : 'national', variant })
+  const cat = (ops: ContestCategory['ops'], variant: ContestCategory['variant'] = 'full'): ContestCategory => ({ ops, contest: 'iaru', variant })
 
-  it('national contest: SO / MO / CHECK only, LP left to SPowe', () => {
-    expect(ediSection(cat('SO', false, 'full'), '2m')).toBe('SO')
-    expect(ediSection(cat('MO', false, 'lp'), '70cm')).toBe('MO')
-    expect(ediSection(cat('CHECK', false, 'full'), '23cm')).toBe('CHECK')
+  it('145 / 435 MHz: LP by the power (≤ 100 W), QRP not written', () => {
+    expect(ediSection(cat('SO'), '2m', '500')).toBe('SO')
+    expect(ediSection(cat('SO'), '2m', '101 W')).toBe('SO')
+    expect(ediSection(cat('SO'), '2m', '100 W')).toBe('SO-LP')
+    expect(ediSection(cat('MO'), '70cm', '5')).toBe('MO-LP')
+    expect(ediSection(cat('SO'), '2m', '')).toBe('SO')
+    expect(ediSection(cat('SO'), '2m')).toBe('SO')
   })
-  it('IARU: LP and 6H on 145 / 435 MHz, 6H plain on 50 / 70 MHz, higher bands SO / MO', () => {
-    expect(ediSection(cat('SO', true, 'lp'), '2m')).toBe('SO-LP')
-    expect(ediSection(cat('MO', true, 'lp'), '70cm')).toBe('MO-LP')
-    expect(ediSection(cat('SO', true, '6h'), '2m')).toBe('6H SO')
-    expect(ediSection(cat('MO', true, '6h'), '70cm')).toBe('6H MO')
-    expect(ediSection(cat('SO', true, '6h'), '6m')).toBe('6H')
-    expect(ediSection(cat('SO', true, 'lp'), '6m')).toBe('SO')
-    expect(ediSection(cat('MO', true, '6h'), '23cm')).toBe('MO')
-    expect(ediSection(cat('CHECK', true, '6h'), '2m')).toBe('CHECK')
+  it('other bands: SO / MO whatever the power; CHECK everywhere', () => {
+    expect(ediSection(cat('SO'), '6m', '10')).toBe('SO')
+    expect(ediSection(cat('MO'), '23cm', '10')).toBe('MO')
+    expect(ediSection(cat('CHECK'), '2m', '10')).toBe('CHECK')
+    expect(ediSection(cat('CHECK', '6h'), '2m')).toBe('CHECK')
+  })
+  it('6 hours: "6H SO / MO" on 145 / 435 MHz whatever the power, plain 6H on 50 / 70 MHz', () => {
+    expect(ediSection(cat('SO', '6h'), '2m', '50')).toBe('6H SO')
+    expect(ediSection(cat('MO', '6h'), '70cm', '500')).toBe('6H MO')
+    expect(ediSection(cat('SO', '6h'), '6m')).toBe('6H')
+    expect(ediSection(cat('MO', '6h'), '23cm')).toBe('MO')
+  })
+  it('VKV PA and FM pohár: SO / MO, the power class from SPowe', () => {
+    expect(ediSection({ ops: 'SO', contest: 'pa', variant: 'full' }, '2m', '50')).toBe('SO')
+    expect(ediSection({ ops: 'SO', contest: 'fm', variant: 'full' }, '70cm', '5')).toBe('SO')
   })
   it('6 hours applies only where the section is a 6H one', () => {
-    expect(isSixHours(cat('SO', true, '6h'), '2m')).toBe(true)
-    expect(isSixHours(cat('SO', true, '6h'), '23cm')).toBe(false)
-    expect(isSixHours(cat('SO', false, '6h'), '2m')).toBe(false)
+    expect(isSixHours(cat('SO', '6h'), '2m')).toBe(true)
+    expect(isSixHours(cat('SO', '6h'), '23cm')).toBe(false)
+    expect(isSixHours(cat('SO'), '2m')).toBe(false)
+    expect(isSixHours({ ops: 'SO', contest: 'pa', variant: '6h' }, '2m')).toBe(false)
     expect(isSixHours(undefined, '2m')).toBe(false)
   })
   it('file name: number for category + band, the call without /P', () => {
-    expect(ediFileName(cat('SO', false, 'full'), '2m', 'OK1CDJ/P')).toBe('01OK1CDJ.edi')
-    expect(ediFileName(cat('MO', true, 'lp'), '70cm', 'OK1KHL')).toBe('04OK1KHL.edi')
-    expect(ediFileName(cat('MO', false, 'full'), '9cm', 'OK1KHL/P')).toBe('10OK1KHL.edi')
-    expect(ediFileName(cat('SO', true, '6h'), '2m', 'OK1CDJ')).toBe('61OK1CDJ.edi')
-    expect(ediFileName(cat('MO', true, '6h'), '70cm', 'OK1CDJ')).toBe('64OK1CDJ.edi')
-    expect(ediFileName(cat('SO', true, '6h'), '23cm', 'OK1CDJ')).toBe('05OK1CDJ.edi')
-    expect(ediFileName(cat('MO', false, 'full'), '6m', 'OK1CDJ')).toBe('51OK1CDJ.edi')
+    expect(ediFileName(cat('SO'), '2m', 'OK1CDJ/P')).toBe('01OK1CDJ.edi')
+    expect(ediFileName(cat('MO'), '70cm', 'OK1KHL')).toBe('04OK1KHL.edi')
+    expect(ediFileName(cat('MO'), '9cm', 'OK1KHL/P')).toBe('10OK1KHL.edi')
+    expect(ediFileName(cat('SO', '6h'), '2m', 'OK1CDJ')).toBe('61OK1CDJ.edi')
+    expect(ediFileName(cat('MO', '6h'), '70cm', 'OK1CDJ')).toBe('64OK1CDJ.edi')
+    expect(ediFileName(cat('SO', '6h'), '23cm', 'OK1CDJ')).toBe('05OK1CDJ.edi')
+    expect(ediFileName(cat('MO'), '6m', 'OK1CDJ')).toBe('51OK1CDJ.edi')
   })
   it('no number in the table: call and band', () => {
-    expect(ediFileName(cat('SO', false, 'full'), '4m', 'OK1CDJ/P')).toBe('OK1CDJ-4m.edi')
-    expect(ediFileName(cat('SO', true, '6h'), '6m', 'OK1CDJ')).toBe('OK1CDJ-6m.edi')
-    expect(ediFileName(cat('CHECK', false, 'full'), '2m', 'OK1CDJ')).toBe('OK1CDJ-2m-CHECK.edi')
+    expect(ediFileName(cat('SO'), '4m', 'OK1CDJ/P')).toBe('OK1CDJ-4m.edi')
+    expect(ediFileName(cat('SO', '6h'), '6m', 'OK1CDJ')).toBe('OK1CDJ-6m.edi')
+    expect(ediFileName(cat('CHECK'), '2m', 'OK1CDJ')).toBe('OK1CDJ-2m-CHECK.edi')
   })
-  it('PSect in the file follows the category per band', () => {
-    const six = cat('SO', true, '6h')
-    expect(writeEdi(meta, log, '2m', contest, six, station, eq2m)).toContain('PSect=6H SO\r\n')
-    expect(writeEdi(meta, log, '70cm', contest, cat('MO', true, 'lp'), station, eq70)).toContain('PSect=MO-LP\r\n')
+  it('PSect in the file follows the category and the band\'s power', () => {
+    expect(writeEdi(meta, log, '2m', contest, cat('SO', '6h'), station, eq2m)).toContain('PSect=6H SO\r\n')
+    expect(writeEdi(meta, log, '70cm', contest, cat('MO'), station, eq70)).toContain('PSect=MO-LP\r\n')
+    expect(writeEdi(meta, log, '70cm', contest, cat('MO'), station, { ...eq70, power: '750' })).toContain('PSect=MO\r\n')
   })
-  it('older logs: the category from the stored PSect', () => {
-    expect(categoryFromSection('SO')).toEqual(cat('SO', false, 'full'))
-    expect(categoryFromSection('mo-lp')).toEqual(cat('MO', true, 'lp'))
-    expect(categoryFromSection('6H')).toEqual(cat('SO', true, '6h'))
-    expect(categoryFromSection('')).toEqual(cat('SO', false, 'full'))
-  })
-})
-
-describe('IARU R1 contest dates (ČRK rules point 2)', () => {
-  const d = (y: number, m: number, day: number): Date => new Date(Date.UTC(y, m - 1, day, 15))
-  it('first full weekend of September and October', () => {
-    expect(isIaruContestDate(d(2026, 9, 5))).toBe(true) // Saturday
-    expect(isIaruContestDate(d(2026, 9, 6))).toBe(true) // Sunday
-    expect(isIaruContestDate(d(2026, 10, 3))).toBe(true)
-    expect(isIaruContestDate(d(2026, 10, 4))).toBe(true)
-    expect(isIaruContestDate(d(2026, 9, 12))).toBe(false)
-    expect(isIaruContestDate(d(2026, 9, 4))).toBe(false) // Friday
-  })
-  it('Sunday the 1st belongs to the previous month\'s weekend, not this one', () => {
-    expect(isIaruContestDate(d(2024, 9, 1))).toBe(false) // Sunday 1 Sept 2024
-    expect(isIaruContestDate(d(2024, 9, 7))).toBe(true)
-  })
-  it('50 MHz: third Saturday in June', () => {
-    expect(isIaruContestDate(d(2026, 6, 20))).toBe(true)
-    expect(isIaruContestDate(d(2026, 6, 21))).toBe(true)
-    expect(isIaruContestDate(d(2026, 6, 13))).toBe(false)
-    expect(isIaruContestDate(d(2026, 7, 4))).toBe(false) // Polní den: national
+  it('older logs: the category from the stored PSect (IARU; LP follows the power)', () => {
+    expect(categoryFromSection('SO')).toEqual(cat('SO'))
+    expect(categoryFromSection('mo-lp')).toEqual(cat('MO'))
+    expect(categoryFromSection('6H')).toEqual(cat('SO', '6h'))
+    expect(categoryFromSection('')).toEqual(cat('SO'))
   })
 })
 
@@ -206,16 +194,15 @@ describe('which contest a date is', () => {
   it('Provozní aktiv: third Sunday', () => {
     expect(contestForDate(d(2026, 10, 18))).toBe('pa')
     expect(contestForDate(d(2026, 11, 15))).toBe('pa')
-    expect(contestForDate(d(2026, 10, 11))).toBe('national')
   })
   it('FM pohár: second Saturday', () => {
     expect(contestForDate(d(2026, 11, 14))).toBe('fm')
     expect(contestForDate(d(2026, 12, 12))).toBe('fm')
-    expect(contestForDate(d(2026, 11, 7))).toBe('national')
   })
-  it('IARU weekends; a June Sunday that is both is Provozní aktiv', () => {
+  it('IARU otherwise; a June Sunday that is both is Provozní aktiv', () => {
     expect(contestForDate(d(2026, 9, 5))).toBe('iaru')
-    expect(contestForDate(d(2026, 6, 20))).toBe('iaru') // 50 MHz Saturday
+    expect(contestForDate(d(2026, 7, 4))).toBe('iaru') // Polní den
+    expect(contestForDate(d(2026, 11, 7))).toBe('iaru')
     expect(contestForDate(d(2026, 6, 21))).toBe('pa') // 3rd Sunday
   })
 })
@@ -235,11 +222,10 @@ describe('Provozní aktiv in the EDI', () => {
 })
 
 describe('contest fields in the log header', () => {
-  it('the category round-trips; IARU-only variants are dropped nationally', () => {
+  it('the category round-trips', () => {
     for (const category of [
-      { ops: 'SO', contest: 'national', variant: 'full' },
+      { ops: 'SO', contest: 'iaru', variant: 'full' },
       { ops: 'MO', contest: 'iaru', variant: '6h' },
-      { ops: 'SO', contest: 'iaru', variant: 'lp' },
       { ops: 'CHECK', contest: 'iaru', variant: 'full' },
       { ops: 'SO', contest: 'pa', variant: 'full' },
       { ops: 'MO', contest: 'fm', variant: 'full' },
@@ -247,6 +233,12 @@ describe('contest fields in the log header', () => {
       expect(readLogFile(writeLogFile({ ...meta, category }, log)).meta.category).toEqual(category)
     }
     expect(readLogFile(writeLogFile(meta, log)).meta.category).toBeUndefined()
+  })
+  it('a "national" log of a development build reads as IARU, its LP dropped', () => {
+    const text = writeLogFile({ ...meta, category: { ops: 'MO', contest: 'iaru', variant: 'full' } }, log)
+    const as = (v: string): string => text.replace('<APP_KQSO_CATEGORY:7>MO IARU', `<APP_KQSO_CATEGORY:${v.length}>${v}`)
+    expect(readLogFile(as('MO LP')).meta.category).toEqual({ ops: 'MO', contest: 'iaru', variant: 'full' })
+    expect(readLogFile(as('SO')).meta.category).toEqual({ ops: 'SO', contest: 'iaru', variant: 'full' })
   })
   it('round-trip through the ADIF header', () => {
     const withEdi: LogMeta = { ...meta, edi: { contest: 'Polní den', section: 'MO', operators: 'OK1ABC' } }

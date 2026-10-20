@@ -1,8 +1,9 @@
-// The VHF contest category picker, shared by New log and the EDI export: who operates
-// (SO / MO / CHECK), which contest (national, IARU R1, VKV Provozní aktiv, FM pohár) and
-// in an IARU one the variant (full power, LP, 6 hours). The scoring, PSect and the file
-// name per band follow from it (core/contest.ts, core/edi.ts). FM pohár has no SO / MO —
-// its categories are QRP / QRO by the power.
+// The VHF contest category picker, shared by New log and the EDI export: which contest
+// (IARU R1, VKV Provozní aktiv, FM pohár), in an IARU one whether it is a 6-hour entry,
+// and at the export who operates (SO / MO / CHECK). New log asks only what changes the
+// logging (scoring, the 6-hour clock); the rest belongs to the export. LP / QRP is never
+// chosen — it follows the power per band (core/edi.ts). FM pohár has no SO / MO — its
+// categories are QRP / QRO by the power.
 
 import type { ContestCategory, ContestKind } from '../core/index'
 import { el, tilePicker } from './dom'
@@ -13,11 +14,22 @@ export interface CategoryPicker {
   value(): ContestCategory
 }
 
-export function categoryPicker(initial: ContestCategory, onChange?: (c: ContestCategory) => void): CategoryPicker {
+/** `withOps`: show SO / MO / CHECK (the export); otherwise `initial.ops` is kept as is. */
+export function categoryPicker(initial: ContestCategory, withOps: boolean, onChange?: (c: ContestCategory) => void): CategoryPicker {
   const changed = (): void => {
     sync()
     onChange?.(value())
   }
+  const kind = tilePicker(
+    t('cat.contest'),
+    [
+      { value: 'iaru', title: 'IARU R1', sub: t('cat.iaruSub') },
+      { value: 'pa', title: t('cat.pa'), sub: t('cat.paSub') },
+      { value: 'fm', title: t('cat.fm'), sub: t('cat.fmSub') },
+    ],
+    initial.contest,
+    changed,
+  )
   const ops = tilePicker(
     t('cat.ops'),
     [
@@ -28,22 +40,10 @@ export function categoryPicker(initial: ContestCategory, onChange?: (c: ContestC
     initial.ops,
     changed,
   )
-  const kind = tilePicker(
-    t('cat.contest'),
-    [
-      { value: 'national', title: t('cat.national') },
-      { value: 'iaru', title: 'IARU R1' },
-      { value: 'pa', title: t('cat.pa'), sub: t('cat.paSub') },
-      { value: 'fm', title: t('cat.fm'), sub: t('cat.fmSub') },
-    ],
-    initial.contest,
-    changed,
-  )
   const variant = tilePicker(
     t('cat.variant'),
     [
       { value: 'full', title: t('cat.full') },
-      { value: 'lp', title: 'LP', sub: '≤ 100 W' },
       { value: '6h', title: t('cat.sixH') },
     ],
     initial.variant,
@@ -56,13 +56,13 @@ export function categoryPicker(initial: ContestCategory, onChange?: (c: ContestC
     const o = contest === 'fm' ? 'SO' : (ops.value() as ContestCategory['ops'])
     return { ops: o, contest, variant: contest === 'iaru' && o !== 'CHECK' ? (variant.value() as ContestCategory['variant']) : 'full' }
   }
-  const HINT = { national: 'cat.hintNational', iaru: 'cat.hintIaru', pa: 'cat.hintPa', fm: 'cat.hintFm' } as const
+  const HINT = { iaru: 'cat.hintIaru', pa: 'cat.hintPa', fm: 'cat.hintFm' } as const
   const sync = (): void => {
     const c = value()
-    ops.row.hidden = c.contest === 'fm'
+    ops.row.hidden = !withOps || c.contest === 'fm'
     variant.row.hidden = c.contest !== 'iaru' || c.ops === 'CHECK'
     hint.textContent = c.ops === 'CHECK' ? '' : t(HINT[c.contest])
   }
   sync()
-  return { rows: [kind.row, ops.row, variant.row, hint], value }
+  return { rows: [kind.row, variant.row, ops.row, hint], value }
 }

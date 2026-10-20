@@ -96,16 +96,29 @@ export function ediBand(band: string): string | undefined {
 /** Bands with the LP and 6-hour categories (IARU R1, ČRK): 145 and 435 MHz. */
 export const LP_6H_BANDS: readonly string[] = ['2m', '70cm']
 
+/** LP: at most 100 W PEP (IARU R1, ČRK point 5); QRP (≤ 5 W) the evaluator sorts by SPowe. */
+export const LP_MAX_W = 100
+
+/** Watts from the power field ("100", "100 W"); undefined when empty / not a number. */
+export function powerWatts(power: string): number | undefined {
+  const m = /^\s*(\d+)\s*(W)?\s*$/i.exec(power)
+  return m ? Number(m[1]) : undefined
+}
+
 /**
- * PSect for one band. CHECK everywhere. In an IARU R1 contest 145/435 MHz take SO-LP /
- * MO-LP or "6H SO" / "6H MO" (the ČRK form; the robot makes it 6H for IARU), 50/70 MHz
- * the plain 6H; higher bands know only SO / MO. Nationally LP / QRP is not written —
- * the evaluator sorts by SPowe.
+ * PSect for one band. CHECK everywhere. In an IARU R1 contest 145/435 MHz take "6H SO" /
+ * "6H MO" (the ČRK form; the robot makes it 6H for IARU), or SO-LP / MO-LP when the power
+ * is at most 100 W (LP is declared, QRP follows SPowe); 50/70 MHz the plain 6H; other
+ * bands know only SO / MO. VKV PA and FM pohár: SO / MO, the power class from SPowe.
  */
-export function ediSection(c: ContestCategory, band: string): string {
+export function ediSection(c: ContestCategory, band: string, power = ''): string {
   if (c.ops === 'CHECK') return 'CHECK'
-  if (c.contest !== 'iaru' || c.variant === 'full') return c.ops
-  if (LP_6H_BANDS.includes(band)) return c.variant === 'lp' ? `${c.ops}-LP` : `6H ${c.ops}`
+  if (c.contest !== 'iaru') return c.ops
+  if (LP_6H_BANDS.includes(band)) {
+    if (c.variant === '6h') return `6H ${c.ops}`
+    const w = powerWatts(power)
+    return w !== undefined && w <= LP_MAX_W ? `${c.ops}-LP` : c.ops
+  }
   if ((band === '6m' || band === '4m') && c.variant === '6h') return '6H'
   return c.ops
 }
@@ -145,32 +158,17 @@ export function ediFileName(c: ContestCategory, band: string, myCall: string): s
 export function categoryFromSection(section: string): ContestCategory {
   const s = section.toUpperCase()
   const ops = s.includes('CHECK') ? 'CHECK' : s.includes('MO') ? 'MO' : 'SO'
-  const variant = s.includes('6H') ? '6h' : s.includes('LP') ? 'lp' : 'full'
-  return { ops, contest: variant !== 'full' ? 'iaru' : 'national', variant }
-}
-
-/** The IARU R1 contests ČRK runs (rules point 2): 50 MHz on the third Saturday in June,
- *  VHF and UHF / µW on the first full weekend of September / October. True on the
- *  Saturday or Sunday (UTC) of one of them. */
-export function isIaruContestDate(d: Date): boolean {
-  const month = d.getUTCMonth()
-  const day = d.getUTCDate()
-  const dow = d.getUTCDay() // 0 Sunday, 6 Saturday
-  const sat = dow === 6 ? day : dow === 0 ? day - 1 : undefined
-  if (sat === undefined) return false
-  if (month === 5) return sat >= 15 && sat <= 21
-  return (month === 8 || month === 9) && sat >= 1 && sat <= 7
+  return { ops, contest: 'iaru', variant: s.includes('6H') ? '6h' : 'full' }
 }
 
 /** The contest a date (UTC) most likely is, to prefill New log: VKV Provozní aktiv on the
- *  third Sunday (08–11 UTC), FM pohár on the second Saturday, the IARU R1 weekends;
- *  national otherwise. On a Sunday that is both (June) Provozní aktiv wins. */
+ *  third Sunday (08–11 UTC), FM pohár on the second Saturday, IARU R1 otherwise. */
 export function contestForDate(d: Date): ContestKind {
   const day = d.getUTCDate()
   const dow = d.getUTCDay()
   if (dow === 0 && day >= 15 && day <= 21) return 'pa'
   if (dow === 6 && day >= 8 && day <= 14) return 'fm'
-  return isIaruContestDate(d) ? 'iaru' : 'national'
+  return 'iaru'
 }
 
 const MODE_CODE: Readonly<Record<string, string>> = { SSB: '1', CW: '2', FM: '6' }
@@ -247,7 +245,7 @@ export function writeEdi(
     'PExch=',
     'PAdr1=',
     'PAdr2=',
-    `PSect=${ediSection(category, band)}`,
+    `PSect=${ediSection(category, band, eq.power)}`,
     `PBand=${ediBand(band) ?? ''}`,
     'PClub=',
     free('RName', station.name),

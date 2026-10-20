@@ -11,6 +11,7 @@
 
 import {
   LP_6H_BANDS,
+  LP_MAX_W,
   categoryFromSection,
   ediBand,
   ediBands,
@@ -19,6 +20,7 @@ import {
   equipmentFor,
   contestForDate,
   parseEdiSettings,
+  powerWatts,
   readLogFile,
   serializeEdiSettings,
   writeEdi,
@@ -39,8 +41,6 @@ export interface EdiExportNav {
 /** Settings key for the remembered station + per-band equipment (JSON, core/edi.ts). */
 export const EDI_STATION_SETTING = 'ediStation'
 
-/** LP in an IARU contest: at most 100 W PEP (rules: IARU R1, ČRK point 5). */
-const LP_MAX_W = 100
 /** FM pohár: QRP up to 5 W, QRO above. */
 const QRP_MAX_W = 5
 const PA_ROBOT = 'https://vkvpa.hamradio.cz'
@@ -81,7 +81,7 @@ export class EdiExportScreen implements Screen {
     const initial: ContestCategory =
       meta.category ?? (prev?.section ? categoryFromSection(prev.section) : { ops: 'SO', contest: contestForDate(first), variant: 'full' })
     const refresh: Array<() => void> = [] // band headings (PSect, score) and FM summaries follow the category
-    const category = categoryPicker(initial, () => {
+    const category = categoryPicker(initial, true, () => {
       syncOps()
       paintLinks()
       for (const r of refresh) r()
@@ -170,14 +170,11 @@ export class EdiExportScreen implements Screen {
           invalid.show()
           return
         }
-        if (cat.contest === 'iaru' && cat.variant === 'lp' && LP_6H_BANDS.includes(b.band) && Number(e.power.replace(/\D/g, '')) > LP_MAX_W) {
-          powerErr.show(t('edi.lpPower', { max: LP_MAX_W }))
-          return
-        }
         void this.export(qsos, b.band, c, cat, st, e, status)
       }
 
       const heading = el('h2', 'form-section')
+      const lpHint = el('p', 'about')
       // FM pohár: the summary for the web form, to copy.
       const fmBox = el('div', 'edi-fm')
       const fmText = el('pre', 'edi-fm__text')
@@ -193,20 +190,23 @@ export class EdiExportScreen implements Screen {
         const cat = category.value()
         const s = scoreOf(b.band) ?? b
         const score = s.multipliers !== undefined ? t('edi.scoreMult', { points: s.points, mult: s.multipliers, total: s.total }) : String(s.total)
-        heading.textContent = t('edi.band', { band: ediName, section: ediSection(cat, b.band), qsos: s.qsos, points: score })
+        heading.textContent = t('edi.band', { band: ediName, section: ediSection(cat, b.band, power.input.value), qsos: s.qsos, points: score })
+        // IARU 145 / 435 MHz: the section follows the power — say so under the field.
+        const w = powerWatts(power.input.value)
+        lpHint.hidden = !(cat.contest === 'iaru' && cat.variant === 'full' && cat.ops !== 'CHECK' && LP_6H_BANDS.includes(b.band) && w !== undefined)
+        lpHint.textContent = w !== undefined && w <= LP_MAX_W ? t('edi.lpBy', { max: LP_MAX_W }) : t('edi.fullBy', { max: LP_MAX_W })
         fmBox.hidden = cat.contest !== 'fm'
         if (cat.contest === 'fm') fmText.textContent = fmSummary(meta.myCall, meta.myGrid, FM_BAND[b.band] ?? ediName, power.input.value, s)
       }
       paintBand()
       refresh.push(paintBand)
-      power.input.addEventListener('input', () => {
-        if (category.value().contest === 'fm') paintBand()
-      })
+      power.input.addEventListener('input', paintBand)
       const block = el('div', 'edi-band')
       block.append(
         heading,
         fmBox,
         power.row,
+        lpHint,
         antenna.row,
         height.row,
         tx.row,
