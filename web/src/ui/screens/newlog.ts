@@ -2,7 +2,8 @@
 // Band/mode are dropdowns (no typing). References (several: SOTA + POTA parks + …)
 // accept slash or dash, separated by spaces or commas. Operator
 // call + locator prefill from the last remembered values (saved on create); each
-// log still keeps its own meta in the .adi.
+// log still keeps its own meta in the .adi. A VHF contest picks its category here
+// (SO / MO / CHECK, IARU R1 or national, LP / 6 hours).
 
 import {
   BANDS,
@@ -10,6 +11,7 @@ import {
   PROFILES,
   SATELLITES,
   isFullLocator,
+  isIaruContestDate,
   latLonToGrid,
   matchBand,
   matchMode,
@@ -27,6 +29,7 @@ import type { Screen } from '../app'
 import { el, button, fieldError, fieldRow, selectRow, strokeIcon, tilePicker } from '../dom'
 import type { Tile } from '../dom'
 import { lang, t } from '../i18n'
+import { categoryPicker } from '../contest-category'
 import { ensureTiles } from '../refsync'
 import { trackEvent } from '../stats'
 
@@ -127,6 +130,17 @@ export class NewLogScreen implements Screen {
     const mode = selectRow(t('newlog.mode'), MODE_OPTIONS, prev.defaultSignal.mode)
     // One log per satellite pass — the bird is chosen here, not on the logging screen.
     const sat = tilePicker(t('newlog.satellite'), SAT_TILES, prev.satLabel ?? rememberedSat.label)
+    // VHF contest category: SO / MO / CHECK and the variant from the last contest log; IARU
+    // R1 from today's date (the IARU weekends), changeable.
+    const iaru = isIaruContestDate(new Date())
+    const prevCat = prev.profile === 'vkv' ? prev.category : undefined
+    const category = categoryPicker({
+      ops: prevCat?.ops ?? 'SO',
+      iaru,
+      variant: iaru && prevCat?.iaru ? prevCat.variant : 'full',
+    })
+    const categoryBox = el('div', 'form-group')
+    categoryBox.append(...category.rows)
 
     let refs: MyRefsResult = { ok: true, refs: [] } // My reference, parsed on Create
     const collect = (): LogMeta => {
@@ -146,6 +160,7 @@ export class NewLogScreen implements Screen {
               },
       }
       if (profileId === 'sat') meta.satLabel = chosenSat.label
+      if (profileId === 'vkv') meta.category = category.value()
       if (profileId === 'aktivace' && refs.ok && refs.refs.length > 0) meta.myRefs = refs.refs
       return meta
     }
@@ -182,6 +197,7 @@ export class NewLogScreen implements Screen {
       band.row,
       mode.row,
       sat.row,
+      categoryBox,
       actions,
     )
 
@@ -194,6 +210,7 @@ export class NewLogScreen implements Screen {
       mode.row.hidden = isSat
       sat.row.hidden = !isSat
       myRef.row.hidden = profileId !== 'aktivace'
+      categoryBox.hidden = profileId !== 'vkv'
       showNear()
     }
     // Picking VHF contest starts it on 2m SSB (still changeable below). Only on a tap:

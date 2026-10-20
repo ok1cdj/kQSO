@@ -1,16 +1,31 @@
 // EDI export for a VHF-contest log (REG1TEST): a short prefilled form, then
 // one block per band — the rules want one file per band, and each band has its own
-// equipment (power, antenna, antenna height, TX, RX). Contest fields (name, section,
-// operators) are stored in the log header; the station (name, e-mail) and each band's
-// equipment in Settings, saved as they are typed, so the next contest is prefilled
-// band by band. The ADIF log stays whole.
+// equipment (power, antenna, antenna height, TX, RX). The category (from New log,
+// changeable here) gives each band its PSect and the ČRK file name (01OK1XXX.edi).
+// Contest fields (name, category, operators) are stored in the log header; the station
+// (name, e-mail) and each band's equipment in Settings, saved as they are typed, so the
+// next contest is prefilled band by band. The ADIF log stays whole.
 
-import { ediBand, ediBands, equipmentFor, parseEdiSettings, readLogFile, serializeEdiSettings, writeEdi, writeLogFile } from '../../core/index'
-import type { EdiContest, EdiEquipment, EdiSettings, EdiStation, LogMeta, Qso } from '../../core/index'
+import {
+  LP_6H_BANDS,
+  categoryFromSection,
+  ediBand,
+  ediBands,
+  ediFileName,
+  ediSection,
+  equipmentFor,
+  isIaruContestDate,
+  parseEdiSettings,
+  readLogFile,
+  serializeEdiSettings,
+  writeEdi,
+  writeLogFile,
+} from '../../core/index'
+import type { ContestCategory, EdiContest, EdiEquipment, EdiSettings, EdiStation, LogMeta, Qso } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
-import { el, button, fieldError, fieldRow, tilePicker } from '../dom'
-import type { Tile } from '../dom'
+import { categoryPicker } from '../contest-category'
+import { el, button, fieldError, fieldRow } from '../dom'
 import { t } from '../i18n'
 import { trackEvent } from '../stats'
 
@@ -21,8 +36,8 @@ export interface EdiExportNav {
 /** Settings key for the remembered station + per-band equipment (JSON, core/edi.ts). */
 export const EDI_STATION_SETTING = 'ediStation'
 
-// IARU R1 sections for 144 MHz and up (SO/MO, low power, 6 hours).
-const SECTIONS = ['SO', 'SO-LP', 'MO', 'MO-LP', '6H'] as const
+/** LP in an IARU contest: at most 100 W PEP (rules: IARU R1, ČRK point 5). */
+const LP_MAX_W = 100
 
 export class EdiExportScreen implements Screen {
   private readonly root = el('form', 'screen screen--form')
@@ -50,14 +65,18 @@ export class EdiExportScreen implements Screen {
 
     const contest = fieldRow(t('edi.contest'), prev?.contest ?? meta.name)
     const contestErr = fieldError(contest, t('edi.required'))
-    const tiles: Tile[] = SECTIONS.map((s) => ({ value: s, title: s }))
-    if (prev?.section && !SECTIONS.includes(prev.section as (typeof SECTIONS)[number])) {
-      tiles.push({ value: prev.section, title: prev.section }) // keep a custom section from an older export
-    }
-    const section = tilePicker(t('edi.section'), tiles, prev?.section || 'SO', () => syncOps())
+    // The log's category; a log exported before categories existed: from its PSect.
+    const first = qsos[0]?.timeOn ?? new Date()
+    const initial: ContestCategory =
+      meta.category ?? (prev?.section ? categoryFromSection(prev.section) : { ops: 'SO', iaru: isIaruContestDate(first), variant: 'full' })
+    const headings: Array<() => void> = [] // band headings show the band's PSect
+    const category = categoryPicker(initial, () => {
+      syncOps()
+      for (const h of headings) h()
+    })
     const operators = fieldRow(t('edi.operators'), prev?.operators ?? '', { placeholder: 'OK1ABC;OK1XYZ' })
     const syncOps = (): void => {
-      operators.row.hidden = !section.value().startsWith('MO')
+      operators.row.hidden = category.value().ops !== 'MO'
     }
     syncOps()
 
@@ -70,10 +89,11 @@ export class EdiExportScreen implements Screen {
     for (const f of [name, email]) f.input.addEventListener('change', () => void this.remember({ station: readStation() }))
 
     const readContest = (): EdiContest | null => {
+      const cat = category.value()
       const c: EdiContest = {
         contest: contest.input.value.trim(),
-        section: section.value(),
-        operators: section.value().startsWith('MO') ? operators.input.value.trim().toUpperCase() : '',
+        section: ediSection(cat, '2m'), // what kQSO ≤ 1.10 shows; the file takes it per band
+        operators: cat.ops === 'MO' ? operators.input.value.trim().toUpperCase() : '',
       }
       if (!c.contest) {
         contestErr.show()
@@ -120,12 +140,23 @@ export class EdiExportScreen implements Screen {
           invalid.show()
           return
         }
-        void this.export(qsos, b.band, c, st, e, status)
+        const cat = category.value()
+        if (cat.iaru && cat.variant === 'lp' && LP_6H_BANDS.includes(b.band) && Number(e.power.replace(/\D/g, '')) > LP_MAX_W) {
+          powerErr.show(t('edi.lpPower', { max: LP_MAX_W }))
+          return
+        }
+        void this.export(qsos, b.band, c, cat, st, e, status)
       }
 
+      const heading = el('h2', 'form-section')
+      const paintHeading = (): void => {
+        heading.textContent = t('edi.band', { band: ediName, section: ediSection(category.value(), b.band), qsos: b.qsos, points: b.points })
+      }
+      paintHeading()
+      headings.push(paintHeading)
       const block = el('div', 'edi-band')
       block.append(
-        el('h2', 'form-section', t('edi.band', { band: ediName, qsos: b.qsos, points: b.points })),
+        heading,
         power.row,
         antenna.row,
         height.row,
@@ -140,7 +171,7 @@ export class EdiExportScreen implements Screen {
     this.root.replaceChildren(
       el('div', 'bar', `${t('edi.title')} · ${meta.name}`),
       contest.row,
-      section.row,
+      ...category.rows,
       operators.row,
       el('h2', 'form-section', t('edi.stationTitle')),
       name.row,
@@ -164,6 +195,7 @@ export class EdiExportScreen implements Screen {
     qsos: readonly Qso[],
     band: string,
     contest: EdiContest,
+    category: ContestCategory,
     station: EdiStation,
     eq: EdiEquipment,
     status: HTMLElement,
@@ -171,12 +203,12 @@ export class EdiExportScreen implements Screen {
     // Remember everything first, so a re-export or the next contest is prefilled.
     await this.remember({ station })
     await this.remember({ band, eq })
-    if (JSON.stringify(this.meta.edi) !== JSON.stringify(contest)) {
-      this.meta = { ...this.meta, edi: contest }
+    if (JSON.stringify(this.meta.edi) !== JSON.stringify(contest) || JSON.stringify(this.meta.category) !== JSON.stringify(category)) {
+      this.meta = { ...this.meta, edi: contest, category }
       await this.platform.rewriteLog(this.logId, writeLogFile(this.meta, qsos))
     }
-    const file = `${this.logId}-${band}.edi`
-    await this.platform.exportText(writeEdi(this.meta, qsos, band, contest, station, eq), file)
+    const file = ediFileName(category, band, this.meta.myCall)
+    await this.platform.exportText(writeEdi(this.meta, qsos, band, contest, category, station, eq), file)
     trackEvent('export', { format: 'edi', band })
     status.textContent = t('edi.exported', { file })
   }

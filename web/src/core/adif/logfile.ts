@@ -3,7 +3,7 @@
 // truth). QSO records follow. Uploaders ignore APP_ header fields, so the same
 // file is also the export.
 
-import type { AwardReference, LogMeta, ProfileId, Qso, Signal } from '../model'
+import type { AwardReference, ContestCategory, LogMeta, ProfileId, Qso, Signal } from '../model'
 import { formatRefList, parseRefList } from './fields'
 import { writeAdif, writeField, writeQso } from './writer'
 import { readAdif } from './reader'
@@ -22,6 +22,7 @@ const A = {
   EDI_CONTEST: 'APP_KQSO_EDI_CONTEST',
   EDI_SECTION: 'APP_KQSO_EDI_SECTION',
   EDI_OPS: 'APP_KQSO_EDI_OPS',
+  CATEGORY: 'APP_KQSO_CATEGORY',
 } as const
 
 const PROFILE_IDS: readonly ProfileId[] = ['vkv', 'aktivace', 'obecny', 'sat']
@@ -42,6 +43,7 @@ function metaFields(meta: LogMeta): string[] {
   if (s.bandRx !== undefined) out.push(writeField(A.DEFBANDRX, s.bandRx))
   if (s.modeRx !== undefined) out.push(writeField(A.DEFMODERX, s.modeRx))
   if (meta.satLabel !== undefined) out.push(writeField(A.SATLABEL, meta.satLabel))
+  if (meta.category) out.push(writeField(A.CATEGORY, formatCategory(meta.category)))
   if (meta.edi) {
     out.push(writeField(A.EDI_CONTEST, meta.edi.contest), writeField(A.EDI_SECTION, meta.edi.section))
     if (meta.edi.operators) out.push(writeField(A.EDI_OPS, meta.edi.operators))
@@ -86,11 +88,26 @@ function metaFromHeader(h: Record<string, string>): LogMeta {
   }
   const satLabel = h[A.SATLABEL]
   if (satLabel !== undefined) meta.satLabel = satLabel
+  const category = parseCategory(h[A.CATEGORY])
+  if (category) meta.category = category
   const ediContest = h[A.EDI_CONTEST]
   if (ediContest !== undefined) {
     meta.edi = { contest: ediContest, section: h[A.EDI_SECTION] ?? '', operators: h[A.EDI_OPS] ?? '' }
   }
   return meta
+}
+
+/** "MO IARU 6H": ops, then IARU when it is one, then LP / 6H when not full power. */
+function formatCategory(c: ContestCategory): string {
+  return [c.ops, ...(c.iaru ? ['IARU'] : []), ...(c.variant === 'full' ? [] : [c.variant.toUpperCase()])].join(' ')
+}
+
+function parseCategory(text: string | undefined): ContestCategory | undefined {
+  const words = (text ?? '').toUpperCase().split(/\s+/)
+  const ops = words.find((w): w is ContestCategory['ops'] => w === 'SO' || w === 'MO' || w === 'CHECK')
+  if (!ops) return undefined
+  const iaru = words.includes('IARU')
+  return { ops, iaru, variant: !iaru ? 'full' : words.includes('6H') ? '6h' : words.includes('LP') ? 'lp' : 'full' }
 }
 
 export interface ParsedLogFile {

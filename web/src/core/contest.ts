@@ -1,10 +1,11 @@
 // VHF contest scoring (IARU R1): 1 point per km (locator.ts), each station once per
 // band — a repeat on the same band is a dupe with 0 points, whatever the mode. The
-// first QSO in a large square (JO60) on a band is a "new WWL". Pure; used by the QSO
-// list, the EDI export and the logging preview.
+// first QSO in a large square (JO60) on a band is a "new WWL". Also the 6-hour window
+// and the statistics per hour and per large square. Pure; used by the QSO list, the
+// EDI export, the statistics and the logging header.
 
 import type { Qso } from './model'
-import { qsoPoints } from './locator'
+import { bearingDeg, qrbKm, qsoPoints } from './locator'
 
 export interface ScoredQso {
   readonly qso: Qso
@@ -78,4 +79,120 @@ export function contestStats(bands: readonly BandScore[]): ContestStats {
     .sort((a, b) => b.points - a.points || a.index - b.index)
     .slice(0, TOP_N)
   return { qsos, points, avg: qsos === 0 ? 0 : Math.round((points / qsos) * 10) / 10, top }
+}
+
+const HOUR = 3_600_000
+const SIX_HOURS = 6 * HOUR
+const BREAK = 2 * HOUR
+
+/** The 6-hour category's window (ČRK / IARU R1): part 1 starts with the first QSO; the
+ *  first gap of 2 hours or more between QSOs is the break, the next QSO starts part 2,
+ *  which gets what part 1 left of the 6 hours. */
+export interface SixHourWindow {
+  readonly start: Date
+  readonly breakAt?: Date // the last QSO before the break
+  readonly part2?: Date // the first QSO after it
+  readonly end: Date // when the 6 hours run out
+}
+
+/** The window for a band's QSO times (any order); undefined without a QSO. */
+export function sixHourWindow(times: readonly Date[]): SixHourWindow | undefined {
+  const t = times.map((d) => d.getTime()).sort((a, b) => a - b)
+  if (t.length === 0) return undefined
+  const start = t[0]!
+  for (let i = 1; i < t.length; i++) {
+    if (t[i]! - t[i - 1]! >= BREAK) {
+      const used = Math.min(t[i - 1]! - start, SIX_HOURS)
+      return { start: new Date(start), breakAt: new Date(t[i - 1]!), part2: new Date(t[i]!), end: new Date(t[i]! + SIX_HOURS - used) }
+    }
+  }
+  return { start: new Date(start), end: new Date(start + SIX_HOURS) }
+}
+
+/** Which part of the window a QSO time falls in: 1, 2, or undefined outside it. */
+export function sixHourPart(w: SixHourWindow, d: Date): 1 | 2 | undefined {
+  const t = d.getTime()
+  if (!w.part2 || t <= w.breakAt!.getTime()) return t - w.start.getTime() <= SIX_HOURS ? 1 : undefined
+  return w.end > w.part2 && t <= w.end.getTime() ? 2 : undefined // nothing left after a part 1 of 6 h
+}
+
+export type SixHourPhase = 'idle' | 'part1' | 'break' | 'part2' | 'over'
+
+/** Live state for the logging header: the phase and the time left of the 6 hours. In a
+ *  pause of 2 hours or more part 1 is over and the rest waits for part 2. */
+export function sixHourStatus(times: readonly Date[], now: Date): { readonly phase: SixHourPhase; readonly leftMs: number } {
+  const w = sixHourWindow(times)
+  if (!w) return { phase: 'idle', leftMs: SIX_HOURS }
+  const n = now.getTime()
+  if (w.part2) {
+    const left = w.end.getTime() - n
+    return left > 0 ? { phase: 'part2', leftMs: left } : { phase: 'over', leftMs: 0 }
+  }
+  const last = Math.max(...times.map((d) => d.getTime()))
+  const used = last - w.start.getTime()
+  if (n - last >= BREAK && used < SIX_HOURS) return { phase: 'break', leftMs: SIX_HOURS - used }
+  const left = w.end.getTime() - n
+  return left > 0 ? { phase: 'part1', leftMs: left } : { phase: 'over', leftMs: 0 }
+}
+
+export interface HourStats {
+  readonly hour: Date // start of the UTC hour
+  readonly qsos: number // valid (non-dupe) QSOs in the hour
+  readonly points: number
+  readonly totalQsos: number // running totals up to and including this hour
+  readonly totalPoints: number
+  readonly outside: number // valid QSOs outside the 6-hour window (6H entries only)
+}
+
+/** One band per UTC hour from the first QSO's hour to the last's — empty hours included,
+ *  so a pause shows. Dupes don't count. With a 6-hour window, QSOs outside it are
+ *  counted in `outside` (the points stay: the log is sent whole, the robot strikes them). */
+export function hourlyStats(band: BandScore, window?: SixHourWindow): HourStats[] {
+  const valid = band.rows.filter((r) => !r.dupe)
+  if (valid.length === 0) return []
+  const hourOf = (r: ScoredQso): number => Math.floor(r.qso.timeOn.getTime() / HOUR)
+  const first = Math.min(...valid.map(hourOf))
+  const last = Math.max(...valid.map(hourOf))
+  const out: HourStats[] = []
+  let totalQsos = 0
+  let totalPoints = 0
+  for (let h = first; h <= last; h++) {
+    const rows = valid.filter((r) => hourOf(r) === h)
+    const points = rows.reduce((sum, r) => sum + r.points, 0)
+    totalQsos += rows.length
+    totalPoints += points
+    const outside = window ? rows.filter((r) => sixHourPart(window, r.qso.timeOn) === undefined).length : 0
+    out.push({ hour: new Date(h * HOUR), qsos: rows.length, points, totalQsos, totalPoints, outside })
+  }
+  return out
+}
+
+export interface SquareStats {
+  readonly square: string // large square, e.g. JO70
+  readonly calls: readonly string[] // distinct stations worked there, in log order
+  readonly km?: number // from my locator to the square's centre
+  readonly az?: number
+}
+
+/** One band's large squares with the stations worked in each (no dupes), most first. */
+export function squareStats(band: BandScore, myGrid: string): SquareStats[] {
+  const squares = new Map<string, string[]>()
+  for (const r of band.rows) {
+    const sq = r.qso.grid?.slice(0, 4).toUpperCase()
+    if (r.dupe || !sq || sq.length < 4) continue
+    const calls = squares.get(sq) ?? []
+    const call = r.qso.call.toUpperCase()
+    if (!calls.includes(call)) calls.push(call)
+    squares.set(sq, calls)
+  }
+  return [...squares]
+    .map(([square, calls]) => {
+      const s: { -readonly [K in keyof SquareStats]: SquareStats[K] } = { square, calls }
+      const km = qrbKm(myGrid, square)
+      const az = bearingDeg(myGrid, square)
+      if (km !== undefined) s.km = Math.round(km)
+      if (az !== undefined) s.az = az
+      return s
+    })
+    .sort((a, b) => b.calls.length - a.calls.length || a.square.localeCompare(b.square))
 }

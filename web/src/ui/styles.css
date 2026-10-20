@@ -61,6 +61,15 @@ body {
   flex-direction: column;
   gap: 0.5rem;
 }
+/* A block of form fields shown or hidden together (New log: the contest category). */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.form-group[hidden] {
+  display: none;
+}
 
 /* --- header (logging) ----------------------------------------------------- */
 
@@ -231,6 +240,16 @@ body {
 }
 .hdr-az--guess {
   color: var(--ghost);
+}
+/* 6-hour entry: time left; greyed in the break, struck out when the 6 hours are used. */
+.hdr-6h {
+  white-space: nowrap;
+}
+.hdr-6h--break {
+  color: var(--ghost);
+}
+.hdr-6h--over {
+  text-decoration: line-through;
 }
 /* CW keyer: RUN / S&P in the header; dashed grey with ✕ while not connected (tap = connect). */
 .hdr-keyer {
@@ -648,6 +667,34 @@ body {
 .stats-top li {
   padding: 0.15rem 0;
   white-space: pre;
+}
+/* Statistics: section labels, the per-hour table and the large squares (tap = stations). */
+.stats-label {
+  margin-top: 0.6rem;
+}
+.stats-note {
+  padding: 0.2rem;
+}
+.stats-table,
+.stats-squares {
+  flex: none; /* full height in the scrolling list, not a squeezed inner scroller */
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  white-space: pre;
+  overflow-x: auto;
+  padding: 0.2rem;
+}
+.stats-table__head {
+  border-bottom: var(--border-w) solid var(--line);
+}
+.stats-squares summary {
+  padding: 0.25rem 0;
+  cursor: pointer;
+}
+.stats-calls {
+  white-space: normal;
+  padding: 0 0 0.4rem 1.2rem;
+  color: var(--muted);
 }
 
 /* Tile picker (New Log): on-brand tiles instead of a native <select> — used for

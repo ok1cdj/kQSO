@@ -87,7 +87,17 @@ export interface LogMeta {
   readonly myRefs?: readonly AwardReference[] // "Moje reference" — Aktivace only; SOTA + POTA parks + …
   readonly defaultSignal: Signal // "Pásmo / mód" — sticky seed
   readonly satLabel?: string // Satellite: chosen bird (DB label, e.g. "AO-7 A") — one log per pass
+  readonly category?: ContestCategory // VHF contest: chosen in New log, changeable at the EDI export
   readonly edi?: EdiContest // VHF contest: filled at the first EDI export, kept for the next one
+}
+
+/** VHF contest entry: who operates, IARU R1 contest or national (ČRK), and the variant —
+ *  LP and 6 hours exist only in IARU contests (nationally LP follows SPowe). PSect and
+ *  the ČRK file name are derived per band from this (core/edi.ts). */
+export interface ContestCategory {
+  readonly ops: 'SO' | 'MO' | 'CHECK'
+  readonly iaru: boolean
+  readonly variant: 'full' | 'lp' | '6h'
 }
 
 /** Per-contest EDI header fields (REG1TEST TName / PSect / MOpe1), stored in the log. */

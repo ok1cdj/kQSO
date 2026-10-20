@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { bearingDeg, gridCenter, qrbKm, qsoPoints } from '../src/core/locator'
-import { contestStats, scoreLog } from '../src/core/contest'
+import { contestStats, hourlyStats, scoreLog, sixHourPart, sixHourStatus, sixHourWindow, squareStats } from '../src/core/contest'
 import { isDupe } from '../src/core/dupe'
 import type { Qso } from '../src/core/model'
 
@@ -145,5 +145,99 @@ describe('contestStats', () => {
 
   it('empty log', () => {
     expect(contestStats([])).toEqual({ qsos: 0, points: 0, avg: 0, top: [] })
+  })
+})
+
+const at = (hh: number, mm = 0): Date => new Date(Date.UTC(2026, 8, 5, hh, mm))
+const H = 3_600_000
+
+describe('6-hour window', () => {
+  it('no break: 6 hours from the first QSO', () => {
+    const w = sixHourWindow([at(15), at(14), at(16)])!
+    expect(w.start).toEqual(at(14))
+    expect(w.end).toEqual(at(20))
+    expect(w.part2).toBeUndefined()
+    expect(sixHourPart(w, at(20))).toBe(1)
+    expect(sixHourPart(w, at(20, 1))).toBeUndefined()
+  })
+  it('the first gap of 2 h or more is the break; part 2 gets the rest', () => {
+    // Part 1 14:00–16:30 (2.5 h), pause, part 2 from 19:00 → 3.5 h left → ends 22:30.
+    const w = sixHourWindow([at(14), at(15), at(16, 30), at(19), at(20), at(21), at(22, 30), at(23)])!
+    expect(w.breakAt).toEqual(at(16, 30))
+    expect(w.part2).toEqual(at(19))
+    expect(w.end).toEqual(at(22, 30))
+    expect([at(14), at(16, 30), at(19), at(22, 30), at(23)].map((d) => sixHourPart(w, d))).toEqual([1, 1, 2, 2, undefined])
+  })
+  it('a gap just under 2 h is no break; a later one is', () => {
+    const w = sixHourWindow([at(14), at(15, 59), at(16), at(18)])!
+    expect(w.part2).toEqual(at(18))
+  })
+  it('part 1 longer than 6 h leaves nothing for part 2', () => {
+    const w = sixHourWindow([at(8), at(9), at(10), at(11), at(12), at(13), at(14), at(15), at(18)])!
+    expect(sixHourPart(w, at(14))).toBe(1)
+    expect(sixHourPart(w, at(15))).toBeUndefined()
+    expect(sixHourPart(w, at(18))).toBeUndefined()
+  })
+  it('no QSO → no window', () => {
+    expect(sixHourWindow([])).toBeUndefined()
+  })
+})
+
+describe('6-hour status for the logging header', () => {
+  it('idle before the first QSO', () => {
+    expect(sixHourStatus([], at(14))).toEqual({ phase: 'idle', leftMs: 6 * H })
+  })
+  it('part 1 counts down from the first QSO', () => {
+    expect(sixHourStatus([at(14)], at(15, 30))).toEqual({ phase: 'part1', leftMs: 4.5 * H })
+  })
+  it('a pause of 2 h is the break: the rest waits for part 2', () => {
+    expect(sixHourStatus([at(14), at(15)], at(17))).toEqual({ phase: 'break', leftMs: 5 * H })
+  })
+  it('part 2 counts down to the end of the window', () => {
+    expect(sixHourStatus([at(14), at(15), at(18)], at(19))).toEqual({ phase: 'part2', leftMs: 4 * H })
+  })
+  it('over when the 6 hours are used', () => {
+    const hourly = [14, 15, 16, 17, 18, 19, 20].map((h) => at(h))
+    expect(sixHourStatus(hourly, at(20, 1)).phase).toBe('over')
+    expect(sixHourStatus([at(14), at(15), at(18)], at(23)).phase).toBe('over')
+  })
+})
+
+describe('statistics per hour and per large square', () => {
+  const qa = (call: string, grid: string, d: Date): Qso => ({ ...q(call, '2m', 'SSB', grid), timeOn: d })
+  const log = [
+    qa('OZ9SIG', 'JO65ER', at(14, 5)),
+    qa('DL5BBF', 'JO42LT', at(14, 50)),
+    qa('OZ9SIG', 'JO65ER', at(15, 10)), // dupe
+    qa('OZ1AAA', 'JO65AA', at(16, 20)),
+  ]
+  const [band] = scoreLog(log, 'JO65FR')
+
+  it('every hour from the first to the last, empty ones too; dupes left out', () => {
+    const h = hourlyStats(band!)
+    expect(h.map((r) => [r.hour.getUTCHours(), r.qsos, r.totalQsos])).toEqual([
+      [14, 2, 2],
+      [15, 0, 2],
+      [16, 1, 3],
+    ])
+    expect(h[0]!.points).toBe(6 + 396)
+    expect(h[2]!.totalPoints).toBe(h[0]!.points + h[2]!.points)
+    expect(h.every((r) => r.outside === 0)).toBe(true)
+  })
+  it('QSOs outside the 6-hour window are counted per hour', () => {
+    const w = sixHourWindow([at(10)])! // ends at 16:00
+    expect(hourlyStats(band!, w).map((r) => r.outside)).toEqual([0, 0, 1])
+  })
+  it('large squares with distinct stations, most first, distance and azimuth to the centre', () => {
+    const s = squareStats(band!, 'JO65FR')
+    expect(s.map((x) => [x.square, x.calls])).toEqual([
+      ['JO65', ['OZ9SIG', 'OZ1AAA']],
+      ['JO42', ['DL5BBF']],
+    ])
+    expect(s[1]!.km).toBeGreaterThan(300)
+    expect(s[1]!.az).toBeGreaterThan(180)
+  })
+  it('no QSOs → no rows', () => {
+    expect(hourlyStats({ band: '2m', rows: [], qsos: 0, points: 0, wwls: 0 })).toEqual([])
   })
 })

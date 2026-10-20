@@ -2,7 +2,7 @@
 // as the contest rules require. 7-bit ASCII, CRLF, lines ≤ 75 characters. The ADIF
 // log stays the single source of truth; this is a derived export.
 
-import type { EdiContest, LogMeta, Qso } from './model'
+import type { ContestCategory, EdiContest, LogMeta, Qso } from './model'
 import { scoreLog } from './contest'
 import type { BandScore } from './contest'
 
@@ -71,16 +71,17 @@ export function equipmentFor(s: EdiSettings, band: string): EdiEquipment {
   return s.bands[band] ?? s.fallback ?? EMPTY_EQUIPMENT
 }
 
-// PBand values from the REG1TEST band table, keyed by our band dictionary.
+// PBand values as the ČRK general rules (point 6) name the bands — point 20 allows only
+// these — keyed by our band dictionary.
 const PBAND: Readonly<Record<string, string>> = {
   '6m': '50 MHz',
   '4m': '70 MHz',
-  '2m': '144 MHz',
-  '70cm': '432 MHz',
-  '23cm': '1,3 GHz',
-  '13cm': '2,3 GHz',
-  '9cm': '3,4 GHz',
-  '6cm': '5,7 GHz',
+  '2m': '145 MHz',
+  '70cm': '435 MHz',
+  '23cm': '1.3 GHz',
+  '13cm': '2.4 GHz',
+  '9cm': '3.4 GHz',
+  '6cm': '5.7 GHz',
   '3cm': '10 GHz',
   '1.25cm': '24 GHz',
   '6mm': '47 GHz',
@@ -90,6 +91,75 @@ const PBAND: Readonly<Record<string, string>> = {
 /** The EDI band label for a band key, or undefined when the band is not an EDI band. */
 export function ediBand(band: string): string | undefined {
   return PBAND[band]
+}
+
+/** Bands with the LP and 6-hour categories (IARU R1, ČRK): 145 and 435 MHz. */
+export const LP_6H_BANDS: readonly string[] = ['2m', '70cm']
+
+/**
+ * PSect for one band. CHECK everywhere. In an IARU R1 contest 145/435 MHz take SO-LP /
+ * MO-LP or "6H SO" / "6H MO" (the ČRK form; the robot makes it 6H for IARU), 50/70 MHz
+ * the plain 6H; higher bands know only SO / MO. Nationally LP / QRP is not written —
+ * the evaluator sorts by SPowe.
+ */
+export function ediSection(c: ContestCategory, band: string): string {
+  if (c.ops === 'CHECK') return 'CHECK'
+  if (!c.iaru || c.variant === 'full') return c.ops
+  if (LP_6H_BANDS.includes(band)) return c.variant === 'lp' ? `${c.ops}-LP` : `6H ${c.ops}`
+  if ((band === '6m' || band === '4m') && c.variant === '6h') return '6H'
+  return c.ops
+}
+
+/** Whether the band's entry is a 6-hour one (the 6-hour window applies to its QSOs). */
+export function isSixHours(c: ContestCategory | undefined, band: string): boolean {
+  return c !== undefined && c.ops !== 'CHECK' && c.iaru && c.variant === '6h' && ediSection(c, band).startsWith('6H')
+}
+
+// ČRK file number (rules point 19): [SO, MO] per band; 6 hours on 145 / 435 MHz.
+const FILE_NO: Readonly<Record<string, readonly [string, string]>> = {
+  '2m': ['01', '02'],
+  '70cm': ['03', '04'],
+  '23cm': ['05', '06'],
+  '13cm': ['07', '08'],
+  '9cm': ['09', '10'],
+  '6cm': ['11', '12'],
+  '3cm': ['13', '14'],
+  '1.25cm': ['15', '16'],
+  '6mm': ['17', '18'],
+  '4mm': ['19', '20'],
+  '6m': ['50', '51'],
+}
+const FILE_NO_6H: Readonly<Record<string, readonly [string, string]>> = { '2m': ['61', '62'], '70cm': ['63', '64'] }
+
+/** ČRK file name: number for category + band, then the licensed call (no /P), e.g.
+ *  01OK1XXX.edi. Without a number (CHECK, 70 MHz, 6H on 50 MHz): OK1XXX-4m.edi. */
+export function ediFileName(c: ContestCategory, band: string, myCall: string): string {
+  const call = baseCall(myCall)
+  const sixH = isSixHours(c, band)
+  const no = c.ops === 'CHECK' ? undefined : (sixH ? FILE_NO_6H : FILE_NO)[band]?.[c.ops === 'MO' ? 1 : 0]
+  if (!no) return `${call}-${band}${c.ops === 'CHECK' ? '-CHECK' : ''}.edi`
+  return `${no}${call}.edi`
+}
+
+/** Category of a log exported before kQSO had categories, from its stored PSect. */
+export function categoryFromSection(section: string): ContestCategory {
+  const s = section.toUpperCase()
+  const ops = s.includes('CHECK') ? 'CHECK' : s.includes('MO') ? 'MO' : 'SO'
+  const variant = s.includes('6H') ? '6h' : s.includes('LP') ? 'lp' : 'full'
+  return { ops, iaru: variant !== 'full', variant }
+}
+
+/** The IARU R1 contests ČRK runs (rules point 2): 50 MHz on the third Saturday in June,
+ *  VHF and UHF / µW on the first full weekend of September / October. True on the
+ *  Saturday or Sunday (UTC) of one of them. */
+export function isIaruContestDate(d: Date): boolean {
+  const month = d.getUTCMonth()
+  const day = d.getUTCDate()
+  const dow = d.getUTCDay() // 0 Sunday, 6 Saturday
+  const sat = dow === 6 ? day : dow === 0 ? day - 1 : undefined
+  if (sat === undefined) return false
+  if (month === 5) return sat >= 15 && sat <= 21
+  return (month === 8 || month === 9) && sat >= 1 && sat <= 7
 }
 
 const MODE_CODE: Readonly<Record<string, string>> = { SSB: '1', CW: '2', FM: '6' }
@@ -147,6 +217,7 @@ export function writeEdi(
   qsos: readonly Qso[],
   band: string,
   contest: EdiContest,
+  category: ContestCategory,
   station: EdiStation,
   eq: EdiEquipment,
 ): string {
@@ -164,7 +235,7 @@ export function writeEdi(
     'PExch=',
     'PAdr1=',
     'PAdr2=',
-    free('PSect', contest.section.toUpperCase()),
+    `PSect=${ediSection(category, band)}`,
     `PBand=${ediBand(band) ?? ''}`,
     'PClub=',
     free('RName', station.name),

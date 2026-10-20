@@ -10,6 +10,7 @@ export type {
   LogProfile,
   BundledDbId,
   LogMeta,
+  ContestCategory,
   EdiContest,
   StickyState,
   TokenClass,
@@ -112,9 +113,24 @@ export {
   COLOR_PALETTE,
 } from './radar'
 export type { RadarFrame, RadarPalette, TileRef } from './radar'
-export { contestStats, scoreLog } from './contest'
-export type { BandScore, ContestStats, ScoredQso } from './contest'
-export { writeEdi, ediBand, ediBands, ediAscii, parseEdiSettings, serializeEdiSettings, equipmentFor, EMPTY_EQUIPMENT } from './edi'
+export { contestStats, scoreLog, sixHourWindow, sixHourPart, sixHourStatus, hourlyStats, squareStats } from './contest'
+export type { BandScore, ContestStats, ScoredQso, SixHourWindow, SixHourPhase, HourStats, SquareStats } from './contest'
+export {
+  writeEdi,
+  ediBand,
+  ediBands,
+  ediAscii,
+  ediSection,
+  ediFileName,
+  isSixHours,
+  categoryFromSection,
+  isIaruContestDate,
+  LP_6H_BANDS,
+  parseEdiSettings,
+  serializeEdiSettings,
+  equipmentFor,
+  EMPTY_EQUIPMENT,
+} from './edi'
 export type { EdiStation, EdiEquipment, EdiSettings } from './edi'
 export { announceUpdate, checksGitHub, compareVersions, parseVersion } from './version'
 export { WHATS_NEW, notesSince, seenBaseline } from './whatsnew'

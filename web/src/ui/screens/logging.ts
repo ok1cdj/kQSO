@@ -36,8 +36,10 @@ import {
   satelliteByLabel,
   SATELLITES,
   PROFILES,
+  isSixHours,
+  sixHourStatus,
 } from '../../core/index'
-import type { CoreState, SuggestionSource, LogMeta, PartialQso, Qso, KeyerCommand, MacroSlot } from '../../core/index'
+import type { CoreState, SuggestionSource, LogMeta, PartialQso, Qso, KeyerCommand, MacroSlot, SixHourPhase } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
 import { el, button } from '../dom'
@@ -105,6 +107,10 @@ export class LoggingScreen implements Screen {
   private rigShown = '' // what the header last showed from the radio (re-render on change only: e-ink)
   private rigUp = false // the radio was driving this log at the last sync
   private loaded = false // init() has read the log
+  // 6-hour entry: the header badge (time left), refreshed once a minute — e-ink friendly.
+  private sixHEl: HTMLElement | undefined
+  private sixHPhase: SixHourPhase | undefined // last seen phase: a banner on part 2 / over
+  private sixHTimer: ReturnType<typeof setInterval> | undefined
 
   constructor(
     private readonly platform: KQSOPlatform,
@@ -137,6 +143,7 @@ export class LoggingScreen implements Screen {
     this.unsubscribeRig?.()
     this.exitTx()
     this.recentResize?.disconnect()
+    clearInterval(this.sixHTimer)
     this.platform.keepAwake(false)
   }
 
@@ -161,6 +168,10 @@ export class LoggingScreen implements Screen {
       this.state = { ...this.state, sticky: applySatellite(this.state.sticky, sat, qsos.length > 0 ? this.state.sticky.mode : 'SSB') }
     }
     this.loaded = true
+    if (this.meta.category?.variant === '6h') {
+      this.sixHPhase = this.sixH()?.phase // no banner for what happened before opening the log
+      this.sixHTimer = setInterval(() => this.tickSixH(), 60_000)
+    }
     this.syncRig()
     this.platform.keepAwake(true)
     await this.offerRecovery()
@@ -280,6 +291,7 @@ export class LoggingScreen implements Screen {
       this.live.record(committed.call, committed.grid, dbDate(committed.timeOn))
       await this.platform.writeCallDb(this.live.toText(userHeader(new Date())))
       this.banner.hidden = true
+      this.tickSixH()
     } else if (this.state.hasStarted && this.state.partial.call) {
       await this.platform.writeJournal(this.logId, serialize(this.state.partial))
     }
@@ -563,6 +575,38 @@ export class LoggingScreen implements Screen {
     this.banner.hidden = false
   }
 
+  /** 6-hour entry on the current band: the phase and time left; undefined otherwise. */
+  private sixH(): ReturnType<typeof sixHourStatus> | undefined {
+    const band = this.state.sticky.band
+    if (!PROFILES[this.meta.profile].contest || !isSixHours(this.meta.category, band)) return undefined
+    return sixHourStatus(
+      this.qsos.filter((q) => q.signal.band === band).map((q) => q.timeOn),
+      new Date(),
+    )
+  }
+
+  /** Update the 6H badge in place (no full re-render: e-ink) and tell once when part 2
+   *  starts after the break and when the 6 hours are used up. */
+  private tickSixH(): void {
+    const st = this.sixH()
+    if (this.sixHEl && st) {
+      const [text, cls] = sixHBadge(st)
+      if (this.sixHEl.textContent !== text) this.sixHEl.textContent = text
+      this.sixHEl.className = cls
+    }
+    const phase = st?.phase
+    if (phase === this.sixHPhase) return
+    const was = this.sixHPhase
+    this.sixHPhase = phase
+    if (phase === 'part2' && was === 'break') this.sixHNotice(t('logging.sixHPart2', { left: hm(st!.leftMs) }))
+    else if (phase === 'over' && was !== undefined) this.sixHNotice(t('logging.sixHOver'))
+  }
+
+  private sixHNotice(text: string): void {
+    this.banner.replaceChildren(el('span', undefined, `${text} `), button('OK', () => (this.banner.hidden = true)))
+    this.banner.hidden = false
+  }
+
   // --- rendering -------------------------------------------------------------
 
   private renderAll(): void {
@@ -618,6 +662,14 @@ export class LoggingScreen implements Screen {
       const known = p.grid === undefined && p.call !== undefined ? this.db.lookup(p.call)?.loc : undefined
       const az = bearingDeg(this.meta.myGrid, p.grid ?? known ?? '')
       if (az !== undefined) mid.append(el('b', known ? 'hdr-az hdr-az--guess' : 'hdr-az', `${az}°`))
+    }
+    // 6-hour entry: the time left (in brackets during the break, struck out when used up).
+    const six = this.sixH()
+    this.sixHEl = undefined
+    if (six) {
+      const [text, cls] = sixHBadge(six)
+      this.sixHEl = el('b', cls, text)
+      mid.append(this.sixHEl)
     }
     this.hdr.replaceChildren(
       this.navLogsButton(),
@@ -968,4 +1020,17 @@ function serialize(p: PartialQso): string {
 
 function revive(p: PartialQso): PartialQso {
   return p.timeOn ? { ...p, timeOn: new Date(p.timeOn as unknown as string) } : p
+}
+
+/** "3:42" from milliseconds (hours:minutes, rounded down). */
+function hm(ms: number): string {
+  const m = Math.floor(ms / 60_000)
+  return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`
+}
+
+/** The 6H header badge: text and class for the phase. */
+function sixHBadge(st: { readonly phase: SixHourPhase; readonly leftMs: number }): [string, string] {
+  if (st.phase === 'over') return ['6H 0:00', 'hdr-6h hdr-6h--over']
+  if (st.phase === 'break') return [`6H (${hm(st.leftMs)})`, 'hdr-6h hdr-6h--break']
+  return [`6H ${hm(st.leftMs)}`, 'hdr-6h']
 }

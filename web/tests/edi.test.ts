@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { ediAscii, ediBand, ediBands, equipmentFor, parseEdiSettings, serializeEdiSettings, writeEdi } from '../src/core/edi'
+import { categoryFromSection, ediAscii, ediBand, ediBands, ediFileName, ediSection, equipmentFor, isIaruContestDate, isSixHours, parseEdiSettings, serializeEdiSettings, writeEdi } from '../src/core/edi'
 import type { EdiEquipment, EdiStation } from '../src/core/edi'
-import type { EdiContest, LogMeta, Qso } from '../src/core/model'
+import type { ContestCategory, EdiContest, LogMeta, Qso } from '../src/core/model'
 import { readLogFile, writeLogFile } from '../src/core/adif/logfile'
 
 const meta: LogMeta = {
@@ -12,6 +12,7 @@ const meta: LogMeta = {
   defaultSignal: { band: '2m', mode: 'SSB' },
 }
 const contest: EdiContest = { contest: 'Provozní aktiv', section: 'so', operators: '' }
+const SO: ContestCategory = { ops: 'SO', iaru: false, variant: 'full' }
 const station: EdiStation = { name: 'Ondřej Koloničný', email: 'ok1cdj@example.org' }
 const eq2m: EdiEquipment = { power: '50 W', antenna: '9 el. Yagi', antennaHeight: '', tx: '', rx: '' }
 const eq70: EdiEquipment = { power: '25', antenna: '21 el. Yagi', antennaHeight: '12;650', tx: 'IC-9700', rx: 'IC-9700 + LNA' }
@@ -40,7 +41,7 @@ const log: Qso[] = [
 
 describe('writeEdi', () => {
   it('golden file for the 2m band', () => {
-    expect(writeEdi(meta, log, '2m', contest, station, eq2m).split('\r\n')).toEqual([
+    expect(writeEdi(meta, log, '2m', contest, SO, station, eq2m).split('\r\n')).toEqual([
       '[REG1TEST;1]',
       'TName=Provozni aktiv',
       'TDate=20260905;20260905',
@@ -50,7 +51,7 @@ describe('writeEdi', () => {
       'PAdr1=',
       'PAdr2=',
       'PSect=SO',
-      'PBand=144 MHz',
+      'PBand=145 MHz',
       'PClub=',
       'RName=Ondrej Kolonicny',
       'RCall=OK1CDJ',
@@ -88,8 +89,8 @@ describe('writeEdi', () => {
   })
 
   it('one file per band: 70cm has its own records, mode code FM = 6', () => {
-    const edi = writeEdi(meta, log, '70cm', contest, station, eq70)
-    expect(edi).toContain('PBand=432 MHz')
+    const edi = writeEdi(meta, log, '70cm', contest, SO, station, eq70)
+    expect(edi).toContain('PBand=435 MHz')
     // Each band carries its own equipment.
     for (const l of ['STXEq=IC-9700', 'SPowe=25', 'SRXEq=IC-9700 + LNA', 'SAnte=21 el. Yagi', 'SAntH=12;650']) {
       expect(edi).toContain(l + '\r\n')
@@ -99,7 +100,7 @@ describe('writeEdi', () => {
 
   it('7-bit ASCII, CRLF only, every line ≤ 75 characters', () => {
     const long = { ...eq2m, antenna: 'Á'.repeat(200) }
-    const edi = writeEdi(meta, log, '2m', { ...contest, operators: 'ok1abc;ok1xyz' }, station, long)
+    const edi = writeEdi(meta, log, '2m', { ...contest, operators: 'ok1abc;ok1xyz' }, SO, station, long)
     expect(/^[\r\n\x20-\x7e]*$/.test(edi)).toBe(true)
     expect(edi.replace(/\r\n/g, '')).not.toMatch(/[\r\n]/)
     for (const line of edi.split('\r\n')) expect(line.length).toBeLessThanOrEqual(75)
@@ -108,9 +109,11 @@ describe('writeEdi', () => {
 })
 
 describe('EDI helpers', () => {
-  it('band labels from the REG1TEST table; HF has none', () => {
-    expect(ediBand('2m')).toBe('144 MHz')
-    expect(ediBand('23cm')).toBe('1,3 GHz')
+  it('band labels as the ČRK rules name them; HF has none', () => {
+    expect(ediBand('2m')).toBe('145 MHz')
+    expect(ediBand('70cm')).toBe('435 MHz')
+    expect(ediBand('23cm')).toBe('1.3 GHz')
+    expect(ediBand('13cm')).toBe('2.4 GHz')
     expect(ediBand('1.25cm')).toBe('24 GHz')
     expect(ediBand('4mm')).toBe('76 GHz')
     expect(ediBand('40m')).toBeUndefined()
@@ -125,7 +128,91 @@ describe('EDI helpers', () => {
   })
 })
 
+describe('category → PSect and the ČRK file name', () => {
+  const cat = (ops: ContestCategory['ops'], iaru: boolean, variant: ContestCategory['variant']): ContestCategory => ({ ops, iaru, variant })
+
+  it('national contest: SO / MO / CHECK only, LP left to SPowe', () => {
+    expect(ediSection(cat('SO', false, 'full'), '2m')).toBe('SO')
+    expect(ediSection(cat('MO', false, 'lp'), '70cm')).toBe('MO')
+    expect(ediSection(cat('CHECK', false, 'full'), '23cm')).toBe('CHECK')
+  })
+  it('IARU: LP and 6H on 145 / 435 MHz, 6H plain on 50 / 70 MHz, higher bands SO / MO', () => {
+    expect(ediSection(cat('SO', true, 'lp'), '2m')).toBe('SO-LP')
+    expect(ediSection(cat('MO', true, 'lp'), '70cm')).toBe('MO-LP')
+    expect(ediSection(cat('SO', true, '6h'), '2m')).toBe('6H SO')
+    expect(ediSection(cat('MO', true, '6h'), '70cm')).toBe('6H MO')
+    expect(ediSection(cat('SO', true, '6h'), '6m')).toBe('6H')
+    expect(ediSection(cat('SO', true, 'lp'), '6m')).toBe('SO')
+    expect(ediSection(cat('MO', true, '6h'), '23cm')).toBe('MO')
+    expect(ediSection(cat('CHECK', true, '6h'), '2m')).toBe('CHECK')
+  })
+  it('6 hours applies only where the section is a 6H one', () => {
+    expect(isSixHours(cat('SO', true, '6h'), '2m')).toBe(true)
+    expect(isSixHours(cat('SO', true, '6h'), '23cm')).toBe(false)
+    expect(isSixHours(cat('SO', false, '6h'), '2m')).toBe(false)
+    expect(isSixHours(undefined, '2m')).toBe(false)
+  })
+  it('file name: number for category + band, the call without /P', () => {
+    expect(ediFileName(cat('SO', false, 'full'), '2m', 'OK1CDJ/P')).toBe('01OK1CDJ.edi')
+    expect(ediFileName(cat('MO', true, 'lp'), '70cm', 'OK1KHL')).toBe('04OK1KHL.edi')
+    expect(ediFileName(cat('MO', false, 'full'), '9cm', 'OK1KHL/P')).toBe('10OK1KHL.edi')
+    expect(ediFileName(cat('SO', true, '6h'), '2m', 'OK1CDJ')).toBe('61OK1CDJ.edi')
+    expect(ediFileName(cat('MO', true, '6h'), '70cm', 'OK1CDJ')).toBe('64OK1CDJ.edi')
+    expect(ediFileName(cat('SO', true, '6h'), '23cm', 'OK1CDJ')).toBe('05OK1CDJ.edi')
+    expect(ediFileName(cat('MO', false, 'full'), '6m', 'OK1CDJ')).toBe('51OK1CDJ.edi')
+  })
+  it('no number in the table: call and band', () => {
+    expect(ediFileName(cat('SO', false, 'full'), '4m', 'OK1CDJ/P')).toBe('OK1CDJ-4m.edi')
+    expect(ediFileName(cat('SO', true, '6h'), '6m', 'OK1CDJ')).toBe('OK1CDJ-6m.edi')
+    expect(ediFileName(cat('CHECK', false, 'full'), '2m', 'OK1CDJ')).toBe('OK1CDJ-2m-CHECK.edi')
+  })
+  it('PSect in the file follows the category per band', () => {
+    const six = cat('SO', true, '6h')
+    expect(writeEdi(meta, log, '2m', contest, six, station, eq2m)).toContain('PSect=6H SO\r\n')
+    expect(writeEdi(meta, log, '70cm', contest, cat('MO', true, 'lp'), station, eq70)).toContain('PSect=MO-LP\r\n')
+  })
+  it('older logs: the category from the stored PSect', () => {
+    expect(categoryFromSection('SO')).toEqual(cat('SO', false, 'full'))
+    expect(categoryFromSection('mo-lp')).toEqual(cat('MO', true, 'lp'))
+    expect(categoryFromSection('6H')).toEqual(cat('SO', true, '6h'))
+    expect(categoryFromSection('')).toEqual(cat('SO', false, 'full'))
+  })
+})
+
+describe('IARU R1 contest dates (ČRK rules point 2)', () => {
+  const d = (y: number, m: number, day: number): Date => new Date(Date.UTC(y, m - 1, day, 15))
+  it('first full weekend of September and October', () => {
+    expect(isIaruContestDate(d(2026, 9, 5))).toBe(true) // Saturday
+    expect(isIaruContestDate(d(2026, 9, 6))).toBe(true) // Sunday
+    expect(isIaruContestDate(d(2026, 10, 3))).toBe(true)
+    expect(isIaruContestDate(d(2026, 10, 4))).toBe(true)
+    expect(isIaruContestDate(d(2026, 9, 12))).toBe(false)
+    expect(isIaruContestDate(d(2026, 9, 4))).toBe(false) // Friday
+  })
+  it('Sunday the 1st belongs to the previous month\'s weekend, not this one', () => {
+    expect(isIaruContestDate(d(2024, 9, 1))).toBe(false) // Sunday 1 Sept 2024
+    expect(isIaruContestDate(d(2024, 9, 7))).toBe(true)
+  })
+  it('50 MHz: third Saturday in June', () => {
+    expect(isIaruContestDate(d(2026, 6, 20))).toBe(true)
+    expect(isIaruContestDate(d(2026, 6, 21))).toBe(true)
+    expect(isIaruContestDate(d(2026, 6, 13))).toBe(false)
+    expect(isIaruContestDate(d(2026, 7, 4))).toBe(false) // Polní den: national
+  })
+})
+
 describe('contest fields in the log header', () => {
+  it('the category round-trips; IARU-only variants are dropped nationally', () => {
+    for (const category of [
+      { ops: 'SO', iaru: false, variant: 'full' },
+      { ops: 'MO', iaru: true, variant: '6h' },
+      { ops: 'SO', iaru: true, variant: 'lp' },
+      { ops: 'CHECK', iaru: true, variant: 'full' },
+    ] as const) {
+      expect(readLogFile(writeLogFile({ ...meta, category }, log)).meta.category).toEqual(category)
+    }
+    expect(readLogFile(writeLogFile(meta, log)).meta.category).toBeUndefined()
+  })
   it('round-trip through the ADIF header', () => {
     const withEdi: LogMeta = { ...meta, edi: { contest: 'Polní den', section: 'MO', operators: 'OK1ABC' } }
     expect(readLogFile(writeLogFile(withEdi, log)).meta.edi).toEqual(withEdi.edi)
