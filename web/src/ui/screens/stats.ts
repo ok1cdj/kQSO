@@ -3,7 +3,7 @@
 // there) and the band's top 10 QSOs by points (bands are never mixed), plus the total
 // for a multi-band log.
 
-import { contestStats, hourlyStats, isSixHours, readLogFile, scoreLog, sixHourWindow, squareStats } from '../../core/index'
+import { contestStats, hourlyStats, isSixHours, readLogFile, scoreLog, scoringFor, sixHourWindow, squareStats } from '../../core/index'
 import type { BandScore, ContestStats, HourStats, SixHourWindow, SquareStats } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
@@ -32,7 +32,7 @@ export class StatsScreen implements Screen {
 
   private async render(): Promise<void> {
     const { meta, qsos } = readLogFile(await this.platform.readLog(this.logId))
-    const bands = scoreLog(qsos, meta.myGrid)
+    const bands = scoreLog(qsos, meta.myGrid, scoringFor(meta.category))
 
     const bar = el('div', 'bar')
     bar.append(
@@ -45,7 +45,7 @@ export class StatsScreen implements Screen {
     const blocks: HTMLElement[] = []
     for (const b of bands) {
       const st = contestStats([b])
-      blocks.push(el('div', 'qsosum', summary(b.band, st)))
+      blocks.push(el('div', 'qsosum', summary(b.band, st, b.multipliers)))
       const window = isSixHours(meta.category, b.band) ? sixHourWindow(b.rows.map((r) => r.qso.timeOn)) : undefined
       if (window) blocks.push(el('div', 'about stats-note', windowLine(window)))
       blocks.push(...hoursBlock(hourlyStats(b, window), window !== undefined))
@@ -58,8 +58,10 @@ export class StatsScreen implements Screen {
   }
 }
 
-function summary(label: string, s: ContestStats): string {
-  return t('stats.line', { band: label, qsos: s.qsos, points: s.points, avg: s.avg.toFixed(1) })
+/** Band / total line; Provozní aktiv shows points × large squares = score. */
+function summary(label: string, s: ContestStats, mult?: number): string {
+  const points = mult !== undefined ? t('edi.scoreMult', { points: s.points, mult, total: s.total }) : s.points !== s.total ? `${s.points} → ${s.total}` : s.points
+  return t('stats.line', { band: label, qsos: s.qsos, points, avg: s.avg.toFixed(1) })
 }
 
 const hhmm = (d: Date): string => `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`

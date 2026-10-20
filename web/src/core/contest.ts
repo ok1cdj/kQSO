@@ -1,11 +1,49 @@
-// VHF contest scoring (IARU R1): 1 point per km (locator.ts), each station once per
-// band — a repeat on the same band is a dupe with 0 points, whatever the mode. The
-// first QSO in a large square (JO60) on a band is a "new WWL". Also the 6-hour window
-// and the statistics per hour and per large square. Pure; used by the QSO list, the
-// EDI export, the statistics and the logging header.
+// VHF contest scoring, each station once per band — a repeat on the same band is a dupe
+// with 0 points, whatever the mode. IARU R1 / ČRK: 1 point per km (locator.ts). VKV
+// Provozní aktiv and FM pohár: large-square rings — own square 2, the ring around it 3,
+// each further ring one more; Provozní aktiv multiplies by the large squares worked on
+// the band (own one always included). The first QSO in a large square (JO60) on a band
+// is a "new WWL". Also the 6-hour window and the statistics per hour and per large
+// square. Pure; used by the QSO list, the EDI export, the statistics and the logging.
 
-import type { Qso } from './model'
+import type { ContestCategory, Qso } from './model'
 import { bearingDeg, qrbKm, qsoPoints } from './locator'
+
+/** How a contest scores: km (IARU / national) or large-square rings, × squares or not. */
+export interface Scoring {
+  readonly rings: boolean
+  readonly multiplier: boolean
+}
+
+export const KM_SCORING: Scoring = { rings: false, multiplier: false }
+
+/** The scoring of a log's contest; km when the log has no category. */
+export function scoringFor(c: ContestCategory | undefined): Scoring {
+  if (c?.contest === 'pa') return { rings: true, multiplier: true }
+  if (c?.contest === 'fm') return { rings: true, multiplier: false }
+  return KM_SCORING
+}
+
+/** Large square → column / row index (JN69 → 9·10+6, 13·10+9); undefined if invalid. */
+function squareIndex(grid: string): { x: number; y: number } | undefined {
+  const m = /^([A-R])([A-R])(\d)(\d)/.exec(grid.toUpperCase())
+  if (!m) return undefined
+  return { x: (m[1]!.charCodeAt(0) - 65) * 10 + Number(m[3]), y: (m[2]!.charCodeAt(0) - 65) * 10 + Number(m[4]) }
+}
+
+/** Ring points: 2 in the own large square, 3 in the ring around it, one more per ring
+ *  (JN69 → JN68, JO50, JO70 … 3). Undefined when a locator is missing / invalid. */
+export function ringPoints(myGrid: string, theirGrid: string): number | undefined {
+  const a = squareIndex(myGrid)
+  const b = squareIndex(theirGrid)
+  if (!a || !b) return undefined
+  return 2 + Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y))
+}
+
+/** A QSO's points under a scoring. */
+export function contestPoints(myGrid: string, theirGrid: string, s: Scoring): number | undefined {
+  return s.rings ? ringPoints(myGrid, theirGrid) : qsoPoints(myGrid, theirGrid)
+}
 
 export interface ScoredQso {
   readonly qso: Qso
@@ -21,11 +59,13 @@ export interface BandScore {
   readonly qsos: number // valid (non-dupe) QSOs
   readonly points: number
   readonly wwls: number // distinct large squares worked
+  readonly multipliers?: number // Provozní aktiv: large squares worked + the own one
+  readonly total: number // the band's score: points, × multipliers when the contest has them
   readonly odx?: { readonly call: string; readonly grid: string; readonly km: number }
 }
 
 /** Score a log per band, in the order bands first appear. */
-export function scoreLog(qsos: readonly Qso[], myGrid: string): BandScore[] {
+export function scoreLog(qsos: readonly Qso[], myGrid: string, scoring: Scoring = KM_SCORING): BandScore[] {
   const bands = new Map<string, { rows: ScoredQso[]; calls: Set<string>; wwls: Set<string> }>()
   qsos.forEach((qso, index) => {
     const band = qso.signal.band
@@ -34,7 +74,7 @@ export function scoreLog(qsos: readonly Qso[], myGrid: string): BandScore[] {
     const call = qso.call.toUpperCase()
     const dupe = b.calls.has(call)
     b.calls.add(call)
-    const pts = qso.grid ? qsoPoints(myGrid, qso.grid) : undefined
+    const pts = qso.grid ? contestPoints(myGrid, qso.grid, scoring) : undefined
     const wwl = qso.grid?.slice(0, 4).toUpperCase()
     const newWwl = !dupe && pts !== undefined && wwl !== undefined && !b.wwls.has(wwl)
     if (newWwl) b.wwls.add(wwl!)
@@ -43,17 +83,24 @@ export function scoreLog(qsos: readonly Qso[], myGrid: string): BandScore[] {
 
   return [...bands].map(([band, b]) => {
     const valid = b.rows.filter((r) => !r.dupe)
+    // ODX by distance (km + 1, as the EDI wants it), whatever the contest scores by.
     let odx: BandScore['odx']
     for (const r of valid) {
-      if (r.points > 0 && (!odx || r.points > odx.km)) odx = { call: r.qso.call, grid: r.qso.grid!, km: r.points }
+      const km = r.qso.grid && r.points > 0 ? qsoPoints(myGrid, r.qso.grid) : undefined
+      if (km !== undefined && (!odx || km > odx.km)) odx = { call: r.qso.call, grid: r.qso.grid!, km }
     }
+    const points = valid.reduce((sum, r) => sum + r.points, 0)
+    const own = myGrid.slice(0, 4).toUpperCase()
+    const multipliers = scoring.multiplier ? new Set([...b.wwls, ...(squareIndex(own) ? [own] : [])]).size : undefined
     const score: { -readonly [K in keyof BandScore]: BandScore[K] } = {
       band,
       rows: b.rows,
       qsos: valid.length,
-      points: valid.reduce((sum, r) => sum + r.points, 0),
+      points,
       wwls: b.wwls.size,
+      total: points * (multipliers ?? 1),
     }
+    if (multipliers !== undefined) score.multipliers = multipliers
     if (odx) score.odx = odx
     return score
   })
@@ -62,6 +109,7 @@ export function scoreLog(qsos: readonly Qso[], myGrid: string): BandScore[] {
 export interface ContestStats {
   readonly qsos: number // valid (non-dupe) QSOs
   readonly points: number
+  readonly total: number // the score: points, × multipliers per band where the contest has them
   readonly avg: number // points per valid QSO, 1 decimal; 0 for no QSO
   readonly top: readonly ScoredQso[] // highest points first, dupes excluded
 }
@@ -73,12 +121,13 @@ const TOP_N = 10
 export function contestStats(bands: readonly BandScore[]): ContestStats {
   const qsos = bands.reduce((n, b) => n + b.qsos, 0)
   const points = bands.reduce((n, b) => n + b.points, 0)
+  const total = bands.reduce((n, b) => n + b.total, 0)
   const top = bands
     .flatMap((b) => b.rows)
     .filter((r) => !r.dupe && r.points > 0)
     .sort((a, b) => b.points - a.points || a.index - b.index)
     .slice(0, TOP_N)
-  return { qsos, points, avg: qsos === 0 ? 0 : Math.round((points / qsos) * 10) / 10, top }
+  return { qsos, points, total, avg: qsos === 0 ? 0 : Math.round((points / qsos) * 10) / 10, top }
 }
 
 const HOUR = 3_600_000

@@ -38,6 +38,8 @@ import {
   PROFILES,
   isSixHours,
   sixHourStatus,
+  scoringFor,
+  ringPoints,
 } from '../../core/index'
 import type { CoreState, SuggestionSource, LogMeta, PartialQso, Qso, KeyerCommand, MacroSlot, SixHourPhase } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
@@ -99,9 +101,9 @@ export class LoggingScreen implements Screen {
   private readonly recentEl = el('ol', 'recent') // wide layout only (hidden in portrait by CSS)
   private recentResize: ResizeObserver | undefined
   private recentWidth = 0
+  private recentBand = '' // VHF contest: the band the recent list shows (re-render on a change)
   private readonly banner = el('div', 'banner')
   private readonly onKeydown = (e: KeyboardEvent): void => this.onHardwareKey(e)
-  private recentBand = '' // VHF contest: the band the recent list shows (re-render on a change)
   private readonly onWideChange = (): void => this.renderStrip()
   private unsubscribeKeyer: (() => void) | undefined
   private unsubscribeRig: (() => void) | undefined
@@ -614,9 +616,9 @@ export class LoggingScreen implements Screen {
     // Dry-run the current line onto the accumulated QSO once; the header (azimuth)
     // and the preview both show what will actually be saved.
     const dry = parseLine(this.line, this.state.sticky, this.state.partial, PROFILES[this.meta.profile])
+    if (PROFILES[this.meta.profile].contest && this.state.sticky.band !== this.recentBand) this.renderRecent()
     this.renderHeader(dry.partial)
     this.renderLine()
-    if (PROFILES[this.meta.profile].contest && this.state.sticky.band !== this.recentBand) this.renderRecent()
     this.renderPreview(dry)
     this.renderStrip()
   }
@@ -764,16 +766,20 @@ export class LoggingScreen implements Screen {
       if (profile.serialAfterCall || profile.fixedBand || p.grid !== undefined) {
         chips.push(fieldChip('LOC', p.grid ?? '—', p.grid === undefined))
       }
-      // VHF contest: the QSO's points (= km + 1, IARU R1) as soon as the locator is known.
-      const qrb = profile.contest && p.grid !== undefined ? qsoPoints(this.meta.myGrid, p.grid) : undefined
-      if (qrb !== undefined) chips.push(fieldChip('QRB', `${qrb} km`))
+      // VHF contest: the QSO's points (= km + 1, IARU R1) as soon as the locator is known;
+      // Provozní aktiv / FM pohár score by large-square rings — those points next to it.
+      if (profile.contest && p.grid !== undefined) chips.push(...this.pointChips(p.grid))
       if (p.theirRef) chips.push(fieldChip('REF', p.theirRef.value))
       if (p.name) chips.push(fieldChip('NAME', p.name))
     } else if (p.grid !== undefined) {
       // VHF contest: the locator heard first; the QSO waits for the call.
       chips.push(fieldChip('CALL', '—', true), fieldChip('LOC', p.grid))
-      const qrb = profile.contest ? qsoPoints(this.meta.myGrid, p.grid) : undefined
-      if (qrb !== undefined) chips.push(fieldChip('QRB', `${qrb} km`))
+      if (profile.contest) chips.push(...this.pointChips(p.grid))
+    }
+    // FM pohár: only FM on 145 / 433 MHz counts — say so before the QSO is logged.
+    if (profile.contest && this.meta.category?.contest === 'fm') {
+      const s = this.state.sticky
+      if (s.mode !== 'FM' || (s.band !== '2m' && s.band !== '70cm')) chips.push(fieldChip('FM', t('logging.fmOnly'), true))
     }
     for (const t of tokens) if (t.cls.type === 'unknown') chips.push(unknownChip(t.raw))
     // With the macros / voice memories in the strip, the database's suggestions go here.
@@ -782,6 +788,16 @@ export class LoggingScreen implements Screen {
     if (loc) chips.push(this.suggestButton(`+ ${loc}`, () => this.fillGrid(loc), 'suggest suggest--ghost suggest--inline'))
     if (inline) for (const b of this.callsAtLocator('suggest suggest--inline')) chips.push(b)
     this.previewEl.replaceChildren(...chips)
+  }
+
+  /** QRB in km, and the ring points where the contest scores by large squares. */
+  private pointChips(grid: string): HTMLElement[] {
+    const km = qsoPoints(this.meta.myGrid, grid)
+    if (km === undefined) return []
+    const chips = [fieldChip('QRB', `${km} km`)]
+    const rings = scoringFor(this.meta.category).rings ? ringPoints(this.meta.myGrid, grid) : undefined
+    if (rings !== undefined) chips.push(fieldChip(t('logging.pts'), String(rings)))
+    return chips
   }
 
   /** The callsign database's locator for the call just entered, while none is typed. */

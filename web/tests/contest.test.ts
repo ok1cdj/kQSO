@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { bearingDeg, gridCenter, qrbKm, qsoPoints } from '../src/core/locator'
-import { contestStats, hourlyStats, scoreLog, sixHourPart, sixHourStatus, sixHourWindow, squareStats } from '../src/core/contest'
+import { contestStats, hourlyStats, ringPoints, scoreLog, scoringFor, sixHourPart, sixHourStatus, sixHourWindow, squareStats } from '../src/core/contest'
 import { isDupe } from '../src/core/dupe'
 import type { Qso } from '../src/core/model'
 
@@ -144,7 +144,7 @@ describe('contestStats', () => {
   })
 
   it('empty log', () => {
-    expect(contestStats([])).toEqual({ qsos: 0, points: 0, avg: 0, top: [] })
+    expect(contestStats([])).toEqual({ qsos: 0, points: 0, total: 0, avg: 0, top: [] })
   })
 })
 
@@ -238,6 +238,46 @@ describe('statistics per hour and per large square', () => {
     expect(s[1]!.az).toBeGreaterThan(180)
   })
   it('no QSOs → no rows', () => {
-    expect(hourlyStats({ band: '2m', rows: [], qsos: 0, points: 0, wwls: 0 })).toEqual([])
+    expect(hourlyStats({ band: '2m', rows: [], qsos: 0, points: 0, wwls: 0, total: 0 })).toEqual([])
+  })
+})
+
+describe('large-square rings (Provozní aktiv, FM pohár)', () => {
+  it('the FM pohár example: JN69 own 2, the ring around it 3, then 4', () => {
+    expect(ringPoints('JN69AA', 'JN69XX')).toBe(2)
+    for (const g of ['JN68', 'JN58', 'JN59', 'JO50', 'JO60', 'JO70', 'JN79', 'JN78']) expect(ringPoints('JN69', g)).toBe(3)
+    expect(ringPoints('JN69', 'JN89')).toBe(4)
+    expect(ringPoints('JN69', 'JO71')).toBe(4) // over the field boundary
+    expect(ringPoints('JN69', 'IO91')).toBe(2 + 7) // London: seven squares west, two north
+    expect(ringPoints('JN69', '')).toBeUndefined()
+  })
+
+  const qa = (call: string, band: string, grid: string): Qso => q(call, band, 'FM', grid)
+  const log = [qa('OK1KHL', '2m', 'JO60RN'), qa('OK2KZR', '2m', 'JN99AJ'), qa('OK1KHL', '2m', 'JO60RN'), qa('OK1OPT', '2m', 'JO70FD'), qa('OK1KHL', '70cm', 'JO60RN')]
+
+  it('FM pohár: ring points summed, no multipliers', () => {
+    const [b2, b70] = scoreLog(log, 'JO70FC', scoringFor({ ops: 'SO', contest: 'fm', variant: 'full' }))
+    expect(b2!.rows.map((r) => r.points)).toEqual([3, 4, 0, 2]) // JO60 3, JN99 4, dupe, JO70 own 2
+    expect(b2!).toMatchObject({ points: 9, total: 9 })
+    expect(b2!.multipliers).toBeUndefined()
+    expect(b70!.total).toBe(3)
+  })
+  it('Provozní aktiv: points × large squares, the own one always counts', () => {
+    const [b2] = scoreLog(log, 'JO70FC', scoringFor({ ops: 'SO', contest: 'pa', variant: 'full' }))
+    expect(b2!).toMatchObject({ points: 9, wwls: 3, multipliers: 3, total: 27 })
+    const [away] = scoreLog([qa('OK1KHL', '2m', 'JO60RN')], 'JO70FC', scoringFor({ ops: 'SO', contest: 'pa', variant: 'full' }))
+    expect(away!).toMatchObject({ points: 3, wwls: 1, multipliers: 2, total: 6 }) // JO60 + own JO70
+    expect(contestStats([b2!, away!]).total).toBe(33)
+  })
+  it('ODX stays by distance whatever the scoring', () => {
+    const [b2] = scoreLog(log, 'JO70FC', scoringFor({ ops: 'SO', contest: 'fm', variant: 'full' }))
+    expect(b2!.odx).toMatchObject({ call: 'OK2KZR' })
+    expect(b2!.odx!.km).toBeGreaterThan(200)
+  })
+  it('national / IARU / no category: km', () => {
+    expect(scoringFor(undefined)).toEqual({ rings: false, multiplier: false })
+    expect(scoringFor({ ops: 'SO', contest: 'iaru', variant: '6h' }).rings).toBe(false)
+    const [b2] = scoreLog(log, 'JO70FC')
+    expect(b2!.total).toBe(b2!.points)
   })
 })

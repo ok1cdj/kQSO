@@ -11,7 +11,7 @@ import {
   PROFILES,
   SATELLITES,
   isFullLocator,
-  isIaruContestDate,
+  contestForDate,
   latLonToGrid,
   matchBand,
   matchMode,
@@ -130,14 +130,14 @@ export class NewLogScreen implements Screen {
     const mode = selectRow(t('newlog.mode'), MODE_OPTIONS, prev.defaultSignal.mode)
     // One log per satellite pass — the bird is chosen here, not on the logging screen.
     const sat = tilePicker(t('newlog.satellite'), SAT_TILES, prev.satLabel ?? rememberedSat.label)
-    // VHF contest category: SO / MO / CHECK and the variant from the last contest log; IARU
-    // R1 from today's date (the IARU weekends), changeable.
-    const iaru = isIaruContestDate(new Date())
+    // VHF contest category: SO / MO / CHECK and the variant from the last contest log; the
+    // contest from today's date (IARU weekends, Provozní aktiv, FM pohár), changeable.
+    const contest = contestForDate(new Date())
     const prevCat = prev.profile === 'vkv' ? prev.category : undefined
     const category = categoryPicker({
       ops: prevCat?.ops ?? 'SO',
-      iaru,
-      variant: iaru && prevCat?.iaru ? prevCat.variant : 'full',
+      contest,
+      variant: contest === 'iaru' && prevCat?.contest === 'iaru' ? prevCat.variant : 'full',
     })
     const categoryBox = el('div', 'form-group')
     categoryBox.append(...category.rows)

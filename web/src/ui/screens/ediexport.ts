@@ -1,7 +1,10 @@
 // EDI export for a VHF-contest log (REG1TEST): a short prefilled form, then
 // one block per band — the rules want one file per band, and each band has its own
 // equipment (power, antenna, antenna height, TX, RX). The category (from New log,
-// changeable here) gives each band its PSect and the ČRK file name (01OK1XXX.edi).
+// changeable here) gives each band its PSect, its score (km, or large-square rings for
+// Provozní aktiv × squares / FM pohár) and the ČRK file name (01OK1XXX.edi). FM pohár is
+// reported through a web form: each band then shows the summary to copy, and the EDI
+// is the log the top three send for checking.
 // Contest fields (name, category, operators) are stored in the log header; the station
 // (name, e-mail) and each band's equipment in Settings, saved as they are typed, so the
 // next contest is prefilled band by band. The ADIF log stays whole.
@@ -14,14 +17,14 @@ import {
   ediFileName,
   ediSection,
   equipmentFor,
-  isIaruContestDate,
+  contestForDate,
   parseEdiSettings,
   readLogFile,
   serializeEdiSettings,
   writeEdi,
   writeLogFile,
 } from '../../core/index'
-import type { ContestCategory, EdiContest, EdiEquipment, EdiSettings, EdiStation, LogMeta, Qso } from '../../core/index'
+import type { BandScore, ContestCategory, EdiContest, EdiEquipment, EdiSettings, EdiStation, LogMeta, Qso } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
 import { categoryPicker } from '../contest-category'
@@ -38,6 +41,14 @@ export const EDI_STATION_SETTING = 'ediStation'
 
 /** LP in an IARU contest: at most 100 W PEP (rules: IARU R1, ČRK point 5). */
 const LP_MAX_W = 100
+/** FM pohár: QRP up to 5 W, QRO above. */
+const QRP_MAX_W = 5
+const PA_ROBOT = 'https://vkvpa.hamradio.cz'
+const FM_FORM = 'https://fmpohar.nagano.cz/addrep.php'
+/** FM pohár names its bands 145 and 433 MHz (its categories I–IV). */
+const FM_BAND: Readonly<Record<string, string>> = { '2m': '145 MHz', '70cm': '433 MHz' }
+
+const pad2 = (n: number): string => String(n).padStart(2, '0')
 
 export class EdiExportScreen implements Screen {
   private readonly root = el('form', 'screen screen--form')
@@ -68,12 +79,28 @@ export class EdiExportScreen implements Screen {
     // The log's category; a log exported before categories existed: from its PSect.
     const first = qsos[0]?.timeOn ?? new Date()
     const initial: ContestCategory =
-      meta.category ?? (prev?.section ? categoryFromSection(prev.section) : { ops: 'SO', iaru: isIaruContestDate(first), variant: 'full' })
-    const headings: Array<() => void> = [] // band headings show the band's PSect
+      meta.category ?? (prev?.section ? categoryFromSection(prev.section) : { ops: 'SO', contest: contestForDate(first), variant: 'full' })
+    const refresh: Array<() => void> = [] // band headings (PSect, score) and FM summaries follow the category
     const category = categoryPicker(initial, () => {
       syncOps()
-      for (const h of headings) h()
+      paintLinks()
+      for (const r of refresh) r()
     })
+    // Where the log goes: Provozní aktiv's robot, FM pohár's form.
+    const links = el('p', 'about')
+    const paintLinks = (): void => {
+      const c = category.value().contest
+      links.replaceChildren()
+      if (c === 'pa' || c === 'fm') {
+        const a = el('a', undefined, c === 'pa' ? t('edi.paRobot') : t('edi.fmForm'))
+        a.href = c === 'pa' ? PA_ROBOT : FM_FORM
+        a.target = '_blank'
+        a.rel = 'noopener'
+        links.append(a)
+      }
+      links.hidden = links.childElementCount === 0
+    }
+    paintLinks()
     const operators = fieldRow(t('edi.operators'), prev?.operators ?? '', { placeholder: 'OK1ABC;OK1XYZ' })
     const syncOps = (): void => {
       operators.row.hidden = category.value().ops !== 'MO'
@@ -104,6 +131,7 @@ export class EdiExportScreen implements Screen {
 
     const blocks: HTMLElement[] = []
     const scores = ediBands(qsos, meta.myGrid)
+    const scoreOf = (band: string): BandScore | undefined => ediBands(qsos, meta.myGrid, category.value()).find((x) => x.band === band)
     if (scores.length === 0) blocks.push(el('p', 'empty', t('edi.noBands')))
     for (const b of scores) {
       const ediName = ediBand(b.band)!
@@ -135,13 +163,14 @@ export class EdiExportScreen implements Screen {
         if (!c) return
         const st = readStation()
         const e = readEq()
-        const invalid = !st.email ? emailErr : !/^\d+(\s*W)?$/i.test(e.power) ? powerErr : !e.antenna ? antennaErr : null
+        const cat = category.value()
+        const fm = cat.contest === 'fm' // FM pohár: the log only for checking — just the power
+        const invalid = !st.email && !fm ? emailErr : !/^\d+(\s*W)?$/i.test(e.power) ? powerErr : !e.antenna && !fm ? antennaErr : null
         if (invalid) {
           invalid.show()
           return
         }
-        const cat = category.value()
-        if (cat.iaru && cat.variant === 'lp' && LP_6H_BANDS.includes(b.band) && Number(e.power.replace(/\D/g, '')) > LP_MAX_W) {
+        if (cat.contest === 'iaru' && cat.variant === 'lp' && LP_6H_BANDS.includes(b.band) && Number(e.power.replace(/\D/g, '')) > LP_MAX_W) {
           powerErr.show(t('edi.lpPower', { max: LP_MAX_W }))
           return
         }
@@ -149,14 +178,34 @@ export class EdiExportScreen implements Screen {
       }
 
       const heading = el('h2', 'form-section')
-      const paintHeading = (): void => {
-        heading.textContent = t('edi.band', { band: ediName, section: ediSection(category.value(), b.band), qsos: b.qsos, points: b.points })
+      // FM pohár: the summary for the web form, to copy.
+      const fmBox = el('div', 'edi-fm')
+      const fmText = el('pre', 'edi-fm__text')
+      const fmStatus = el('span', 'about')
+      fmBox.append(
+        fmText,
+        button(t('edi.fmCopy'), () => {
+          void copyText(fmText.textContent ?? '').then((ok) => (fmStatus.textContent = ok ? t('edi.fmCopied') : t('edi.fmCopyFailed')))
+        }, 'btn btn--small'),
+        fmStatus,
+      )
+      const paintBand = (): void => {
+        const cat = category.value()
+        const s = scoreOf(b.band) ?? b
+        const score = s.multipliers !== undefined ? t('edi.scoreMult', { points: s.points, mult: s.multipliers, total: s.total }) : String(s.total)
+        heading.textContent = t('edi.band', { band: ediName, section: ediSection(cat, b.band), qsos: s.qsos, points: score })
+        fmBox.hidden = cat.contest !== 'fm'
+        if (cat.contest === 'fm') fmText.textContent = fmSummary(meta.myCall, meta.myGrid, FM_BAND[b.band] ?? ediName, power.input.value, s)
       }
-      paintHeading()
-      headings.push(paintHeading)
+      paintBand()
+      refresh.push(paintBand)
+      power.input.addEventListener('input', () => {
+        if (category.value().contest === 'fm') paintBand()
+      })
       const block = el('div', 'edi-band')
       block.append(
         heading,
+        fmBox,
         power.row,
         antenna.row,
         height.row,
@@ -172,6 +221,7 @@ export class EdiExportScreen implements Screen {
       el('div', 'bar', `${t('edi.title')} · ${meta.name}`),
       contest.row,
       ...category.rows,
+      links,
       operators.row,
       el('h2', 'form-section', t('edi.stationTitle')),
       name.row,
@@ -211,5 +261,29 @@ export class EdiExportScreen implements Screen {
     await this.platform.exportText(writeEdi(this.meta, qsos, band, contest, category, station, eq), file)
     trackEvent('export', { format: 'edi', band })
     status.textContent = t('edi.exported', { file })
+  }
+}
+
+/** FM pohár report for one band: category by the power, QSOs and points, then the QSOs
+ *  (time UTC, call, locator, points) — for the web form. */
+function fmSummary(call: string, grid: string, band: string, power: string, s: BandScore): string {
+  const w = Number(power.replace(/\D/g, ''))
+  const cat = power.trim() === '' ? 'QRP / QRO?' : w <= QRP_MAX_W ? 'QRP' : 'QRO'
+  const rows = s.rows
+    .filter((r) => !r.dupe)
+    .map((r) => {
+      const d = r.qso.timeOn
+      return `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())} ${r.qso.call.padEnd(10)} ${(r.qso.grid ?? '').padEnd(6)} ${String(r.points).padStart(3)}`
+    })
+  return [`FM pohár · ${call.toUpperCase()} · ${grid.toUpperCase()} · ${band} ${cat}`, t('edi.fmLine', { qsos: s.qsos, points: s.total }), '', ...rows].join('\n')
+}
+
+/** Copy to the clipboard; false where the WebView / browser refuses. */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    return false
   }
 }

@@ -5,7 +5,7 @@
 // On the web (tablets, phones) the rows are aligned in columns when they fit the
 // width; the APK (the narrow Kompakt) and any narrower screen keep the compact row.
 
-import { PROFILES, readLogFile, scoreLog } from '../../core/index'
+import { PROFILES, readLogFile, scoreLog, scoringFor } from '../../core/index'
 import type { BandScore, Qso, ScoredQso } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
@@ -60,7 +60,7 @@ export class QsoListScreen implements Screen {
     if (profile.map) bar.append(button(t('qsolist.map'), () => this.nav.toMap(), 'btn btn--small'))
     if (profile.contest) bar.append(button(t('qsolist.stats'), () => this.nav.toStats(), 'btn btn--small'))
 
-    const bands = profile.contest ? scoreLog(qsos, meta.myGrid) : []
+    const bands = profile.contest ? scoreLog(qsos, meta.myGrid, scoringFor(meta.category)) : []
     for (const b of bands) for (const r of b.rows) this.scored.set(r.index, r)
     this.qsos = qsos
 
@@ -135,7 +135,8 @@ function rowCells(q: Qso, s: ScoredQso | undefined): string[] {
 }
 
 function scoreLine(b: BandScore): string {
-  const line = t('qsolist.score', { band: b.band, qsos: b.qsos, points: b.points, wwls: b.wwls })
+  const points = b.multipliers !== undefined ? t('edi.scoreMult', { points: b.points, mult: b.multipliers, total: b.total }) : b.points
+  const line = t('qsolist.score', { band: b.band, qsos: b.qsos, points, wwls: b.wwls })
   return b.odx ? line + t('qsolist.odx', { call: b.odx.call, km: b.odx.km }) : line
 }
 

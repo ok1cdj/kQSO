@@ -2,8 +2,8 @@
 // as the contest rules require. 7-bit ASCII, CRLF, lines ≤ 75 characters. The ADIF
 // log stays the single source of truth; this is a derived export.
 
-import type { ContestCategory, EdiContest, LogMeta, Qso } from './model'
-import { scoreLog } from './contest'
+import type { ContestCategory, ContestKind, EdiContest, LogMeta, Qso } from './model'
+import { scoreLog, scoringFor } from './contest'
 import type { BandScore } from './contest'
 
 /** Station fields of the EDI header that are the same on every band, kept in Settings. */
@@ -104,7 +104,7 @@ export const LP_6H_BANDS: readonly string[] = ['2m', '70cm']
  */
 export function ediSection(c: ContestCategory, band: string): string {
   if (c.ops === 'CHECK') return 'CHECK'
-  if (!c.iaru || c.variant === 'full') return c.ops
+  if (c.contest !== 'iaru' || c.variant === 'full') return c.ops
   if (LP_6H_BANDS.includes(band)) return c.variant === 'lp' ? `${c.ops}-LP` : `6H ${c.ops}`
   if ((band === '6m' || band === '4m') && c.variant === '6h') return '6H'
   return c.ops
@@ -112,7 +112,7 @@ export function ediSection(c: ContestCategory, band: string): string {
 
 /** Whether the band's entry is a 6-hour one (the 6-hour window applies to its QSOs). */
 export function isSixHours(c: ContestCategory | undefined, band: string): boolean {
-  return c !== undefined && c.ops !== 'CHECK' && c.iaru && c.variant === '6h' && ediSection(c, band).startsWith('6H')
+  return c !== undefined && c.ops !== 'CHECK' && c.contest === 'iaru' && c.variant === '6h' && ediSection(c, band).startsWith('6H')
 }
 
 // ČRK file number (rules point 19): [SO, MO] per band; 6 hours on 145 / 435 MHz.
@@ -146,7 +146,7 @@ export function categoryFromSection(section: string): ContestCategory {
   const s = section.toUpperCase()
   const ops = s.includes('CHECK') ? 'CHECK' : s.includes('MO') ? 'MO' : 'SO'
   const variant = s.includes('6H') ? '6h' : s.includes('LP') ? 'lp' : 'full'
-  return { ops, iaru: variant !== 'full', variant }
+  return { ops, contest: variant !== 'full' ? 'iaru' : 'national', variant }
 }
 
 /** The IARU R1 contests ČRK runs (rules point 2): 50 MHz on the third Saturday in June,
@@ -160,6 +160,17 @@ export function isIaruContestDate(d: Date): boolean {
   if (sat === undefined) return false
   if (month === 5) return sat >= 15 && sat <= 21
   return (month === 8 || month === 9) && sat >= 1 && sat <= 7
+}
+
+/** The contest a date (UTC) most likely is, to prefill New log: VKV Provozní aktiv on the
+ *  third Sunday (08–11 UTC), FM pohár on the second Saturday, the IARU R1 weekends;
+ *  national otherwise. On a Sunday that is both (June) Provozní aktiv wins. */
+export function contestForDate(d: Date): ContestKind {
+  const day = d.getUTCDate()
+  const dow = d.getUTCDay()
+  if (dow === 0 && day >= 15 && day <= 21) return 'pa'
+  if (dow === 6 && day >= 8 && day <= 14) return 'fm'
+  return isIaruContestDate(d) ? 'iaru' : 'national'
 }
 
 const MODE_CODE: Readonly<Record<string, string>> = { SSB: '1', CW: '2', FM: '6' }
@@ -206,9 +217,10 @@ function record(q: Qso, points: number, newWwl: boolean, dupe: boolean): string 
   ].join(';')
 }
 
-/** Per-band score of a log, for the export screen (only bands EDI knows). */
-export function ediBands(qsos: readonly Qso[], myGrid: string): BandScore[] {
-  return scoreLog(qsos, myGrid).filter((b) => ediBand(b.band) !== undefined)
+/** Per-band score of a log under its contest's scoring, for the export screen (only
+ *  bands EDI knows). */
+export function ediBands(qsos: readonly Qso[], myGrid: string, category?: ContestCategory): BandScore[] {
+  return scoreLog(qsos, myGrid, scoringFor(category)).filter((b) => ediBand(b.band) !== undefined)
 }
 
 /** REG1TEST text for one band of a log. */
@@ -221,7 +233,7 @@ export function writeEdi(
   station: EdiStation,
   eq: EdiEquipment,
 ): string {
-  const score = scoreLog(qsos, meta.myGrid).find((b) => b.band === band)
+  const score = scoreLog(qsos, meta.myGrid, scoringFor(category)).find((b) => b.band === band)
   const rows = score?.rows ?? []
   const dates = rows.map((r) => ymd(r.qso.timeOn)).sort()
   const odx = score?.odx
@@ -256,13 +268,13 @@ export function writeEdi(
     free('SAntH', eq.antennaHeight),
     `CQSOs=${score?.qsos ?? 0};1`,
     `CQSOP=${score?.points ?? 0}`,
-    `CWWLs=${score?.wwls ?? 0};0;1`,
+    `CWWLs=${score?.multipliers ?? score?.wwls ?? 0};0;1`, // Provozní aktiv: the own square counts too
     'CWWLB=0',
     'CExcs=0;0;1',
     'CExcB=0',
     'CDXCs=0;0;1',
     'CDXCB=0',
-    `CToSc=${score?.points ?? 0}`,
+    `CToSc=${score?.total ?? 0}`,
     odx ? `CODXC=${odx.call.toUpperCase()};${odx.grid.toUpperCase()};${odx.km}` : 'CODXC=',
     '[Remarks]',
     `[QSORecords;${rows.length}]`,

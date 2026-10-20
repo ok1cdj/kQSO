@@ -97,17 +97,20 @@ function metaFromHeader(h: Record<string, string>): LogMeta {
   return meta
 }
 
-/** "MO IARU 6H": ops, then IARU when it is one, then LP / 6H when not full power. */
+const CONTEST_WORD: Readonly<Record<ContestCategory['contest'], string>> = { national: '', iaru: 'IARU', pa: 'PA', fm: 'FM' }
+
+/** "MO IARU 6H", "SO PA": ops, then the contest unless national, then LP / 6H when not full power. */
 function formatCategory(c: ContestCategory): string {
-  return [c.ops, ...(c.iaru ? ['IARU'] : []), ...(c.variant === 'full' ? [] : [c.variant.toUpperCase()])].join(' ')
+  return [c.ops, CONTEST_WORD[c.contest], ...(c.variant === 'full' ? [] : [c.variant.toUpperCase()])].filter(Boolean).join(' ')
 }
 
 function parseCategory(text: string | undefined): ContestCategory | undefined {
   const words = (text ?? '').toUpperCase().split(/\s+/)
   const ops = words.find((w): w is ContestCategory['ops'] => w === 'SO' || w === 'MO' || w === 'CHECK')
   if (!ops) return undefined
-  const iaru = words.includes('IARU')
-  return { ops, iaru, variant: !iaru ? 'full' : words.includes('6H') ? '6h' : words.includes('LP') ? 'lp' : 'full' }
+  const contest = words.includes('IARU') ? 'iaru' : words.includes('PA') ? 'pa' : words.includes('FM') ? 'fm' : 'national'
+  const variant = contest !== 'iaru' ? 'full' : words.includes('6H') ? '6h' : words.includes('LP') ? 'lp' : 'full'
+  return { ops, contest, variant }
 }
 
 export interface ParsedLogFile {

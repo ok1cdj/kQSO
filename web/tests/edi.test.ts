@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { categoryFromSection, ediAscii, ediBand, ediBands, ediFileName, ediSection, equipmentFor, isIaruContestDate, isSixHours, parseEdiSettings, serializeEdiSettings, writeEdi } from '../src/core/edi'
+import { categoryFromSection, contestForDate, ediAscii, ediBand, ediBands, ediFileName, ediSection, equipmentFor, isIaruContestDate, isSixHours, parseEdiSettings, serializeEdiSettings, writeEdi } from '../src/core/edi'
 import type { EdiEquipment, EdiStation } from '../src/core/edi'
 import type { ContestCategory, EdiContest, LogMeta, Qso } from '../src/core/model'
 import { readLogFile, writeLogFile } from '../src/core/adif/logfile'
@@ -12,7 +12,7 @@ const meta: LogMeta = {
   defaultSignal: { band: '2m', mode: 'SSB' },
 }
 const contest: EdiContest = { contest: 'Provozní aktiv', section: 'so', operators: '' }
-const SO: ContestCategory = { ops: 'SO', iaru: false, variant: 'full' }
+const SO: ContestCategory = { ops: 'SO', contest: 'national', variant: 'full' }
 const station: EdiStation = { name: 'Ondřej Koloničný', email: 'ok1cdj@example.org' }
 const eq2m: EdiEquipment = { power: '50 W', antenna: '9 el. Yagi', antennaHeight: '', tx: '', rx: '' }
 const eq70: EdiEquipment = { power: '25', antenna: '21 el. Yagi', antennaHeight: '12;650', tx: 'IC-9700', rx: 'IC-9700 + LNA' }
@@ -129,7 +129,7 @@ describe('EDI helpers', () => {
 })
 
 describe('category → PSect and the ČRK file name', () => {
-  const cat = (ops: ContestCategory['ops'], iaru: boolean, variant: ContestCategory['variant']): ContestCategory => ({ ops, iaru, variant })
+  const cat = (ops: ContestCategory['ops'], iaru: boolean, variant: ContestCategory['variant']): ContestCategory => ({ ops, contest: iaru ? 'iaru' : 'national', variant })
 
   it('national contest: SO / MO / CHECK only, LP left to SPowe', () => {
     expect(ediSection(cat('SO', false, 'full'), '2m')).toBe('SO')
@@ -201,13 +201,48 @@ describe('IARU R1 contest dates (ČRK rules point 2)', () => {
   })
 })
 
+describe('which contest a date is', () => {
+  const d = (y: number, m: number, day: number): Date => new Date(Date.UTC(y, m - 1, day, 9))
+  it('Provozní aktiv: third Sunday', () => {
+    expect(contestForDate(d(2026, 10, 18))).toBe('pa')
+    expect(contestForDate(d(2026, 11, 15))).toBe('pa')
+    expect(contestForDate(d(2026, 10, 11))).toBe('national')
+  })
+  it('FM pohár: second Saturday', () => {
+    expect(contestForDate(d(2026, 11, 14))).toBe('fm')
+    expect(contestForDate(d(2026, 12, 12))).toBe('fm')
+    expect(contestForDate(d(2026, 11, 7))).toBe('national')
+  })
+  it('IARU weekends; a June Sunday that is both is Provozní aktiv', () => {
+    expect(contestForDate(d(2026, 9, 5))).toBe('iaru')
+    expect(contestForDate(d(2026, 6, 20))).toBe('iaru') // 50 MHz Saturday
+    expect(contestForDate(d(2026, 6, 21))).toBe('pa') // 3rd Sunday
+  })
+})
+
+describe('Provozní aktiv in the EDI', () => {
+  it('ring points per QSO, CToSc = points × squares incl. the own one', () => {
+    const pa: ContestCategory = { ops: 'SO', contest: 'pa', variant: 'full' }
+    const edi = writeEdi(meta, log, '2m', contest, pa, station, eq2m)
+    // JO65FR: OZ9SIG JO65 own 2; OY9JD IP62 ten squares west → 12; OZ9SIG dupe 0.
+    expect(edi).toContain(';JO65ER;2;;N;;\r\n')
+    expect(edi).toContain(';IP62OA;12;;N;;\r\n')
+    expect(edi).toContain('CWWLs=2;0;1\r\n')
+    expect(edi).toContain('CQSOP=14\r\n')
+    expect(edi).toContain('CToSc=28\r\n')
+    expect(edi).toContain('PSect=SO\r\n')
+  })
+})
+
 describe('contest fields in the log header', () => {
   it('the category round-trips; IARU-only variants are dropped nationally', () => {
     for (const category of [
-      { ops: 'SO', iaru: false, variant: 'full' },
-      { ops: 'MO', iaru: true, variant: '6h' },
-      { ops: 'SO', iaru: true, variant: 'lp' },
-      { ops: 'CHECK', iaru: true, variant: 'full' },
+      { ops: 'SO', contest: 'national', variant: 'full' },
+      { ops: 'MO', contest: 'iaru', variant: '6h' },
+      { ops: 'SO', contest: 'iaru', variant: 'lp' },
+      { ops: 'CHECK', contest: 'iaru', variant: 'full' },
+      { ops: 'SO', contest: 'pa', variant: 'full' },
+      { ops: 'MO', contest: 'fm', variant: 'full' },
     ] as const) {
       expect(readLogFile(writeLogFile({ ...meta, category }, log)).meta.category).toEqual(category)
     }

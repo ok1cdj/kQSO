@@ -11,6 +11,7 @@ export type {
   BundledDbId,
   LogMeta,
   ContestCategory,
+  ContestKind,
   EdiContest,
   StickyState,
   TokenClass,
@@ -113,8 +114,8 @@ export {
   COLOR_PALETTE,
 } from './radar'
 export type { RadarFrame, RadarPalette, TileRef } from './radar'
-export { contestStats, scoreLog, sixHourWindow, sixHourPart, sixHourStatus, hourlyStats, squareStats } from './contest'
-export type { BandScore, ContestStats, ScoredQso, SixHourWindow, SixHourPhase, HourStats, SquareStats } from './contest'
+export { contestStats, scoreLog, scoringFor, contestPoints, ringPoints, KM_SCORING, sixHourWindow, sixHourPart, sixHourStatus, hourlyStats, squareStats } from './contest'
+export type { BandScore, ContestStats, Scoring, ScoredQso, SixHourWindow, SixHourPhase, HourStats, SquareStats } from './contest'
 export {
   writeEdi,
   ediBand,
@@ -125,6 +126,7 @@ export {
   isSixHours,
   categoryFromSection,
   isIaruContestDate,
+  contestForDate,
   LP_6H_BANDS,
   parseEdiSettings,
   serializeEdiSettings,

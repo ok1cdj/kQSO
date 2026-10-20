@@ -1,8 +1,10 @@
 // The VHF contest category picker, shared by New log and the EDI export: who operates
-// (SO / MO / CHECK), IARU R1 contest or national, and in an IARU one the variant (full
-// power, LP, 6 hours). PSect and the file name per band follow from it (core/edi.ts).
+// (SO / MO / CHECK), which contest (national, IARU R1, VKV Provozní aktiv, FM pohár) and
+// in an IARU one the variant (full power, LP, 6 hours). The scoring, PSect and the file
+// name per band follow from it (core/contest.ts, core/edi.ts). FM pohár has no SO / MO —
+// its categories are QRP / QRO by the power.
 
-import type { ContestCategory } from '../core/index'
+import type { ContestCategory, ContestKind } from '../core/index'
 import { el, tilePicker } from './dom'
 import { t } from './i18n'
 
@@ -31,8 +33,10 @@ export function categoryPicker(initial: ContestCategory, onChange?: (c: ContestC
     [
       { value: 'national', title: t('cat.national') },
       { value: 'iaru', title: 'IARU R1' },
+      { value: 'pa', title: t('cat.pa'), sub: t('cat.paSub') },
+      { value: 'fm', title: t('cat.fm'), sub: t('cat.fmSub') },
     ],
-    initial.iaru ? 'iaru' : 'national',
+    initial.contest,
     changed,
   )
   const variant = tilePicker(
@@ -48,15 +52,17 @@ export function categoryPicker(initial: ContestCategory, onChange?: (c: ContestC
   const hint = el('p', 'about')
 
   const value = (): ContestCategory => {
-    const iaru = kind.value() === 'iaru'
-    const o = ops.value() as ContestCategory['ops']
-    return { ops: o, iaru, variant: iaru && o !== 'CHECK' ? (variant.value() as ContestCategory['variant']) : 'full' }
+    const contest = kind.value() as ContestKind
+    const o = contest === 'fm' ? 'SO' : (ops.value() as ContestCategory['ops'])
+    return { ops: o, contest, variant: contest === 'iaru' && o !== 'CHECK' ? (variant.value() as ContestCategory['variant']) : 'full' }
   }
+  const HINT = { national: 'cat.hintNational', iaru: 'cat.hintIaru', pa: 'cat.hintPa', fm: 'cat.hintFm' } as const
   const sync = (): void => {
     const c = value()
-    variant.row.hidden = !c.iaru || c.ops === 'CHECK'
-    hint.textContent = c.ops === 'CHECK' ? '' : c.iaru ? t('cat.hintIaru') : t('cat.hintNational')
+    ops.row.hidden = c.contest === 'fm'
+    variant.row.hidden = c.contest !== 'iaru' || c.ops === 'CHECK'
+    hint.textContent = c.ops === 'CHECK' ? '' : t(HINT[c.contest])
   }
   sync()
-  return { rows: [ops.row, kind.row, variant.row, hint], value }
+  return { rows: [kind.row, ops.row, variant.row, hint], value }
 }

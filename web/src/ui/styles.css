@@ -61,6 +61,24 @@ body {
   flex-direction: column;
   gap: 0.5rem;
 }
+/* EDI export, FM pohár: the summary for the web form, to copy. */
+.edi-fm {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
+.edi-fm[hidden] {
+  display: none;
+}
+.edi-fm__text {
+  margin: 0;
+  font-size: 0.85rem;
+  white-space: pre;
+  overflow-x: auto;
+  max-width: 100%;
+  user-select: text;
+}
 /* A block of form fields shown or hidden together (New log: the contest category). */
 .form-group {
   display: flex;
@@ -826,6 +844,11 @@ body {
 .segmented--wrap {
   flex-wrap: wrap;
 }
+/* Band filter of a multi-band log (QSO list, map): All | 2m | 70cm … */
+.band-filter {
+  flex: none;
+  padding: 0.3rem 0.2rem;
+}
 .segmented .btn[aria-pressed='true'],
 .xvert-row .btn[aria-pressed='true'] {
   background: var(--fg);
@@ -843,11 +866,6 @@ body {
   margin: 1rem 0 0.3rem;
   border-bottom: 1px solid var(--line);
   padding-bottom: 0.15rem;
-}
-/* Band filter of a multi-band log (QSO list, map): All | 2m | 70cm … */
-.band-filter {
-  flex: none;
-  padding: 0.3rem 0.2rem;
 }
 .help-row {
   margin: 0.35rem 0;

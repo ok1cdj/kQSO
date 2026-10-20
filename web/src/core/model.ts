@@ -91,14 +91,19 @@ export interface LogMeta {
   readonly edi?: EdiContest // VHF contest: filled at the first EDI export, kept for the next one
 }
 
-/** VHF contest entry: who operates, IARU R1 contest or national (ČRK), and the variant —
- *  LP and 6 hours exist only in IARU contests (nationally LP follows SPowe). PSect and
- *  the ČRK file name are derived per band from this (core/edi.ts). */
+/** VHF contest entry: who operates, which contest and the variant — LP and 6 hours exist
+ *  only in IARU contests (nationally LP follows SPowe). The contest also sets the scoring:
+ *  km for national / IARU, large-square rings for Provozní aktiv (× squares) and FM pohár.
+ *  PSect and the ČRK file name are derived per band from this (core/edi.ts). */
 export interface ContestCategory {
   readonly ops: 'SO' | 'MO' | 'CHECK'
-  readonly iaru: boolean
+  readonly contest: ContestKind
   readonly variant: 'full' | 'lp' | '6h'
 }
+
+/** national (ČRK general rules) · iaru (IARU R1 50 MHz / VHF / UHF) · pa (VKV Provozní
+ *  aktiv) · fm (FM pohár). */
+export type ContestKind = 'national' | 'iaru' | 'pa' | 'fm'
 
 /** Per-contest EDI header fields (REG1TEST TName / PSect / MOpe1), stored in the log. */
 export interface EdiContest {
