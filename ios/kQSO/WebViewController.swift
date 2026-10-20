@@ -33,6 +33,9 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.scrollView.bounces = false
+        // A swipe from the left edge is Back: it pops the page's history entry (ui/app.ts),
+        // which does what the screen's "‹" does. Nothing to go back to on the log list.
+        webView.allowsBackForwardNavigationGestures = true
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         if #available(iOS 16.4, *) { webView.isInspectable = true }
 

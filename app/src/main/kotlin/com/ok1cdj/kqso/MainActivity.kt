@@ -21,6 +21,7 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
@@ -201,6 +202,21 @@ class MainActivity : ComponentActivity() {
         // (the Kompakt) throws an NPE here.
         setDarkBars(false) // dark icons on white until the page says otherwise
         webView.loadUrl("https://appassets.androidplatform.net/index.html")
+
+        // Back (button, gesture, the Kompakt's key) goes back in the app first: away from
+        // the log list the page keeps a history entry (ui/app.ts), and its popstate does
+        // what the screen's "‹" does. On the log list the app closes, as before.
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (webView.canGoBack()) {
+                    webView.goBack()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                }
+            }
+        })
     }
 
     override fun onDestroy() {

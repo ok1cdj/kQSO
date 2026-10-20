@@ -1,0 +1,1 @@
+The Back button (and gesture, and the Kompakt's key) goes back one screen in the app, like "‹". It closes the app only on the log list — before, it closed it from anywhere, even while logging.

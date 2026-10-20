@@ -34,9 +34,17 @@ export class App {
   private readonly keyer = new KeyerController(this.platform, this.rig)
   private root!: HTMLElement
   private current: Screen | null = null
+  // System Back (Android button / gesture, the browser's Back, the iOS edge swipe) does
+  // what the screen's own "‹" does. Away from the log list one extra history entry stands
+  // for "in the app": Back pops it and calls the screen's back, and the next screen puts
+  // it back unless that is the log list, where Back leaves (closes the Android app).
+  private back: (() => void) | undefined
+  private guarded = false // our extra entry is on top of the history
+  private ignorePop = false // the popstate of our own history.back()
 
   mount(root: HTMLElement): void {
     this.root = root
+    window.addEventListener('popstate', () => this.onPopState())
     this.rig.attachKeyer(this.keyer.civLink)
     // The keyer's settings first: a radio via the keyer may bring its link up.
     void this.keyer.init().then(() => this.rig.init())
@@ -51,15 +59,40 @@ export class App {
   }
 
   showWhatsNew(entries: readonly WhatsNewEntry[], back: () => void): void {
-    this.show(new WhatsNewScreen(entries, { back }), 'whatsnew')
+    this.show(new WhatsNewScreen(entries, { back }), 'whatsnew', back)
   }
 
-  /** `name` is the anonymous screen name for the web statistics (stats.ts). */
-  private show(screen: Screen, name: string): void {
+  /** `name` is the anonymous screen name for the web statistics (stats.ts); `back` what
+   *  system Back does there — none on the log list. */
+  private show(screen: Screen, name: string, back?: () => void): void {
     trackScreen(name)
     this.current?.unmount()
     this.current = screen
+    this.back = back
+    this.syncHistory()
     void screen.mount(this.root)
+  }
+
+  private syncHistory(): void {
+    if (this.back && !this.guarded) {
+      history.pushState({ kqso: true }, '')
+      this.guarded = true
+    } else if (!this.back && this.guarded) {
+      // Back to the log list by the app's own button: drop the extra entry, so the next
+      // Back leaves instead of doing nothing.
+      this.guarded = false
+      this.ignorePop = true
+      history.back()
+    }
+  }
+
+  private onPopState(): void {
+    if (this.ignorePop) {
+      this.ignorePop = false
+      return
+    }
+    this.guarded = false
+    this.back?.()
   }
 
   showLogList(): void {
@@ -83,6 +116,7 @@ export class App {
         openWhatsNew: () => this.showWhatsNew(WHATS_NEW, () => this.showSettings()),
       }),
       'settings',
+      () => this.showLogList(),
     )
   }
 
@@ -93,6 +127,7 @@ export class App {
         cancel: () => this.showLogList(),
       }),
       'newlog',
+      () => this.showLogList(),
     )
   }
 
@@ -105,26 +140,31 @@ export class App {
         toHelp: () => this.showHelp(() => this.showLogging(logId)),
       }),
       'logging',
+      () => this.showLogList(), // an entered partial QSO is in the journal, as with "‹ Logs"
     )
   }
 
   showEdiExport(logId: string): void {
-    this.show(new EdiExportScreen(this.platform, logId, { back: () => this.showLogList() }), 'edi')
+    const back = (): void => this.showLogList()
+    this.show(new EdiExportScreen(this.platform, logId, { back }), 'edi', back)
   }
 
   showHelp(back: () => void): void {
-    this.show(new HelpScreen({ back }), 'help')
+    this.show(new HelpScreen({ back }), 'help', back)
   }
 
   showQsoList(logId: string): void {
+    const back = (): void => this.showLogging(logId)
+    const toList = (): void => this.showQsoList(logId)
     this.show(
       new QsoListScreen(this.platform, logId, {
-        back: () => this.showLogging(logId),
-        editQso: (index) => this.showQsoEdit(logId, index, () => this.showQsoList(logId)),
-        toMap: () => this.show(new MapScreen(this.platform, logId, { back: () => this.showQsoList(logId) }), 'map'),
-        toStats: () => this.show(new StatsScreen(this.platform, logId, { back: () => this.showQsoList(logId) }), 'stats'),
+        back,
+        editQso: (index) => this.showQsoEdit(logId, index, toList),
+        toMap: () => this.show(new MapScreen(this.platform, logId, { back: toList }), 'map', toList),
+        toStats: () => this.show(new StatsScreen(this.platform, logId, { back: toList }), 'stats', toList),
       }),
       'qsolist',
+      back,
     )
   }
 
@@ -135,6 +175,7 @@ export class App {
         done: back,
       }),
       'qsoedit',
+      back, // like the edit's own Back: nothing saved
     )
   }
 }

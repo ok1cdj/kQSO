@@ -1,0 +1,1 @@
+Tlačítko Zpět (i gesto a klávesa na Kompaktu) vrací v aplikaci o obrazovku zpět, stejně jako „‹“. Aplikaci zavře až na seznamu logů – dřív ji zavřelo odkudkoli, i uprostřed logování.

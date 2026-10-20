@@ -14,6 +14,11 @@ export interface WhatsNewEntry {
 /** Newest first. */
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    version: '1.10.1',
+    cs: ['Tlačítko Zpět (i gesto, na Kompaktu klávesa) vrací v aplikaci o obrazovku zpět, stejně jako „‹“. Aplikaci zavře až na seznamu logů. Na iPhonu a iPadu funguje tah od levého okraje.'],
+    en: ['The Back button (and gesture, the Kompakt\'s key) goes back one screen in the app, like "‹". Only on the log list does it close the app. On iPhone and iPad, swipe from the left edge.'],
+  },
+  {
     version: '1.10',
     cs: [
       'Můj lokátor z polohy: tlačítko se zaměřovačem v Novém logu. Poloha se nikam neukládá ani neposílá.',

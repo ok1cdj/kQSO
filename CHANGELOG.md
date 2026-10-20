@@ -2,6 +2,11 @@
 
 What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android app and the iOS app share one version. Newest first.
 
+## [1.10.1] – 2026-10-20
+
+### Changed
+- **System Back goes back in the app**: Android's Back button and gesture (also the Mudita Kompakt's key), the browser's Back and, on iPhone / iPad, a swipe from the left edge do what the screen's own "‹" does. Only on the log list does Back leave (it closes the Android app). Before, Back closed the Android app from any screen, even while logging.
+
 ## [1.10] – 2026-10-19
 
 ### Added
