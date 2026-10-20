@@ -5,6 +5,7 @@
 // a drag only shifts the canvas and the map is redrawn once on release; zoom by buttons.
 // VKV logs can show the rain radar under the map (ui/radar.ts, setting, default off);
 // a tap (not a drag) shows that spot's locator, QRB and azimuth from the own QTH.
+// A multi-band VKV log shows one band at a time (All | 2m | 70cm …, shared with the list).
 
 import {
   PROFILES,
@@ -26,6 +27,7 @@ import { el, button, switchOn } from '../dom'
 import { t } from '../i18n'
 import worldText from '../../db/world.json?raw'
 import { RADAR_SETTING, RadarLayer } from '../radar'
+import { ALL_BANDS, bandFilter, shownBand } from '../band-filter'
 
 /** Setting: calls next to the dots on the map ('0' = off; default on). */
 export const MAP_LABELS_SETTING = 'mapLabels'
@@ -154,22 +156,38 @@ export class MapScreen implements Screen {
     const { meta, qsos } = readLogFile(await this.platform.readLog(this.logId))
     this.meta = meta
     this.labels = switchOn(await this.platform.getSetting(MAP_LABELS_SETTING))
-    this.points = qsoPoints(qsos)
-    const noGrid = qsos.length - qsos.filter((q) => q.grid && gridCenter(q.grid)).length
+    // One band at a time in a multi-band log (a satellite log has its band fixed).
+    const title = el('b', 'title')
+    const note = el('div', 'qsosum')
+    const show = (band: string): void => {
+      const shown = band === ALL_BANDS ? qsos : qsos.filter((q) => q.signal.band === band)
+      this.points = qsoPoints(shown)
+      title.textContent = `${meta.name} · ${band === ALL_BANDS ? '' : `${band} · `}${shown.length} QSO`
+      const noGrid = shown.length - shown.filter((q) => q.grid && gridCenter(q.grid)).length
+      note.textContent = t('map.noGrid', { n: noGrid })
+      note.hidden = noGrid === 0
+    }
+    const fixed = PROFILES[meta.profile].fixedBand
+    show(fixed ? ALL_BANDS : shownBand(this.logId, qsos))
+    const filter = fixed
+      ? undefined
+      : bandFilter(this.logId, qsos, (band) => {
+          show(band)
+          this.fit()
+        })
 
     const bar = el('div', 'bar')
     bar.append(
       button(`‹ ${t('common.back')}`, () => this.nav.back(), 'hdr-nav'),
-      el('b', 'title', `${meta.name} · ${qsos.length} QSO`),
+      title,
       iconButton('zoomOut', '−', () => this.zoom(1 / ZOOM)),
       iconButton('zoomIn', '+', () => this.zoom(ZOOM)),
       iconButton('fit', '⤢', () => this.fit()),
     )
-    const note = noGrid > 0 ? [el('div', 'qsosum', t('map.noGrid', { n: noGrid }))] : []
     this.pickBar.hidden = true
     this.radarNote.hidden = true
     this.wrap.replaceChildren(this.canvas, this.pickBar, this.radarNote)
-    this.root.replaceChildren(bar, ...note, this.wrap)
+    this.root.replaceChildren(bar, ...(filter ? [filter] : []), note, this.wrap)
 
     // Rain radar: VKV logs only (rain scatter), and only when switched on.
     if (PROFILES[meta.profile].contest && switchOn(await this.platform.getSetting(RADAR_SETTING), false)) {

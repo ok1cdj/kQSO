@@ -1,6 +1,7 @@
 // QSO list: a table of the log's QSOs, tap a row to edit it. A VHF-contest
 // log also shows the points per QSO (DUPE for a repeat on the band) and a score line
 // per band on top. VKV and Satellite logs open the map, VKV also the statistics.
+// A multi-band log shows one band at a time (All | 2m | 70cm …, shared with the map).
 // On the web (tablets, phones) the rows are aligned in columns when they fit the
 // width; the APK (the narrow Kompakt) and any narrower screen keep the compact row.
 
@@ -11,6 +12,7 @@ import type { Screen } from '../app'
 import { el, button } from '../dom'
 import { t } from '../i18n'
 import { alignColumns, allFit } from '../columns'
+import { ALL_BANDS, bandFilter, shownBand } from '../band-filter'
 
 export interface QsoListNav {
   back(): void
@@ -27,6 +29,9 @@ export class QsoListScreen implements Screen {
   private readonly root = el('div', 'screen screen--list')
   private readonly list = el('ul', 'qsolist')
   private qsos: readonly Qso[] = []
+  private visible: number[] = [] // indices into qsos of the shown band
+  private readonly title = el('b', 'title')
+  private readonly scores = el('div')
   private scored = new Map<number, ScoredQso>()
   private resize: ResizeObserver | undefined
   private width = 0
@@ -50,10 +55,7 @@ export class QsoListScreen implements Screen {
     const { meta, qsos } = readLogFile(await this.platform.readLog(this.logId))
 
     const bar = el('div', 'bar')
-    bar.append(
-      button(`‹ ${t('common.back')}`, () => this.nav.back(), 'hdr-nav'),
-      el('b', 'title', `${meta.name} · ${qsos.length} QSO`),
-    )
+    bar.append(button(`‹ ${t('common.back')}`, () => this.nav.back(), 'hdr-nav'), this.title)
     const profile = PROFILES[meta.profile]
     if (profile.map) bar.append(button(t('qsolist.map'), () => this.nav.toMap(), 'btn btn--small'))
     if (profile.contest) bar.append(button(t('qsolist.stats'), () => this.nav.toStats(), 'btn btn--small'))
@@ -62,8 +64,16 @@ export class QsoListScreen implements Screen {
     for (const b of bands) for (const r of b.rows) this.scored.set(r.index, r)
     this.qsos = qsos
 
-    this.root.replaceChildren(bar, ...bands.map((b) => el('div', 'qsosum', scoreLine(b))), this.list)
-    this.renderRows()
+    // One band at a time in a multi-band log (a satellite log has its band fixed).
+    const show = (band: string): void => {
+      this.visible = qsos.flatMap((q, i) => (band === ALL_BANDS || q.signal.band === band ? [i] : []))
+      this.title.textContent = `${meta.name} · ${band === ALL_BANDS ? '' : `${band} · `}${this.visible.length} QSO`
+      this.scores.replaceChildren(...bands.filter((b) => band === ALL_BANDS || b.band === band).map((b) => el('div', 'qsosum', scoreLine(b))))
+      this.renderRows()
+    }
+    const filter = profile.fixedBand ? undefined : bandFilter(this.logId, qsos, show)
+    this.root.replaceChildren(bar, ...(filter ? [filter] : []), this.scores, this.list)
+    show(profile.fixedBand ? ALL_BANDS : shownBand(this.logId, qsos))
     if (!this.platform.nativeVersion && qsos.length > 0) {
       // Re-check the fit when the width changes (tablet rotated, window resized).
       this.resize = new ResizeObserver(() => {
@@ -80,13 +90,13 @@ export class QsoListScreen implements Screen {
       this.list.replaceChildren(el('li', 'empty', t('qsolist.empty')))
       return
     }
-    const cells = this.qsos.map((q, i) => rowCells(q, this.scored.get(i)))
+    const cells = this.visible.map((i) => rowCells(this.qsos[i]!, this.scored.get(i)))
     if (!this.platform.nativeVersion) {
       this.fillRows(alignColumns(cells, true), true)
       if (allFit(this.list.querySelectorAll<HTMLElement>('.qsorow-open'))) return
     }
     this.fillRows(
-      this.qsos.map((q, i) => formatRow(q) + pointsSuffix(this.scored.get(i))),
+      this.visible.map((i) => formatRow(this.qsos[i]!) + pointsSuffix(this.scored.get(i))),
       false,
     )
   }
@@ -94,7 +104,8 @@ export class QsoListScreen implements Screen {
   private fillRows(texts: readonly string[], aligned: boolean): void {
     const cls = aligned ? 'qsorow-open qsorow-open--aligned' : 'qsorow-open'
     this.list.replaceChildren(
-      ...texts.map((text, index) => {
+      ...texts.map((text, n) => {
+        const index = this.visible[n]! // edit by the position in the whole log
         const li = el('li', 'qsorow')
         li.append(button(text, () => this.nav.editQso(index), cls))
         return li

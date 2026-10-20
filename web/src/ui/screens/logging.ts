@@ -101,6 +101,7 @@ export class LoggingScreen implements Screen {
   private recentWidth = 0
   private readonly banner = el('div', 'banner')
   private readonly onKeydown = (e: KeyboardEvent): void => this.onHardwareKey(e)
+  private recentBand = '' // VHF contest: the band the recent list shows (re-render on a change)
   private readonly onWideChange = (): void => this.renderStrip()
   private unsubscribeKeyer: (() => void) | undefined
   private unsubscribeRig: (() => void) | undefined
@@ -615,6 +616,7 @@ export class LoggingScreen implements Screen {
     const dry = parseLine(this.line, this.state.sticky, this.state.partial, PROFILES[this.meta.profile])
     this.renderHeader(dry.partial)
     this.renderLine()
+    if (PROFILES[this.meta.profile].contest && this.state.sticky.band !== this.recentBand) this.renderRecent()
     this.renderPreview(dry)
     this.renderStrip()
   }
@@ -918,13 +920,17 @@ export class LoggingScreen implements Screen {
    *  (e-ink repaints). On the web the columns are aligned when every row fits. */
   private renderRecent(): void {
     this.recentWidth = this.recentEl.clientWidth
-    const from = Math.max(0, this.qsos.length - RECENT_MAX)
-    const shown = this.qsos.slice(from)
+    // VHF contest: only the current band's QSOs — the bands don't mix on the screen.
+    const band = PROFILES[this.meta.profile].contest ? this.state.sticky.band : ''
+    this.recentBand = band
+    const indices = this.qsos.flatMap((q, i) => (band === '' || q.signal.band === band ? [i] : [])).slice(-RECENT_MAX)
+    const shown = indices.map((i) => this.qsos[i]!)
     const fill = (texts: readonly string[], cls: string): void => {
       this.recentEl.replaceChildren(
-        ...texts.map((text, i) => {
+        ...texts.map((text, n) => {
           const li = el('li')
-          li.append(button(text, () => this.nav.editQso(from + i), cls))
+          const index = indices[n]! // edit by the position in the whole log
+          li.append(button(text, () => this.nav.editQso(index), cls))
           return li
         }),
       )

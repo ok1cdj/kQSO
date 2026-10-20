@@ -844,6 +844,11 @@ body {
   border-bottom: 1px solid var(--line);
   padding-bottom: 0.15rem;
 }
+/* Band filter of a multi-band log (QSO list, map): All | 2m | 70cm … */
+.band-filter {
+  flex: none;
+  padding: 0.3rem 0.2rem;
+}
 .help-row {
   margin: 0.35rem 0;
   font-size: 0.9rem;
