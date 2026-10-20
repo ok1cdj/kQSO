@@ -2,6 +2,21 @@
 
 What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android app and the iOS app share one version. Newest first.
 
+## [1.11] – 2026-10-20
+
+### Added
+- **VHF contest categories and ČRK EDI files**: the contest is IARU R1 (every ČRK contest: subregionals, Polní den, A1, 50 MHz, September, October), VKV PA or FM pohár, prefilled from the date in New log, together with a 6-hour entry. SO / MO / CHECK is chosen at the EDI export (operators for MO). PSect per band: on 145 / 435 MHz `SO-LP` / `MO-LP` when the power is at most 100 W (QRP is sorted by the evaluator from SPowe), `6H SO` / `6H MO` for a 6-hour entry, plain `6H` on 50 / 70 MHz, `SO` / `MO` on the other bands, `CHECK` everywhere. PBand as the ČRK rules name the bands. Files named by the ČRK table: `01OK1XXX.edi`, 61–64 for 6 hours.
+- **6-hour window**: per band, the logging header shows the time left (in brackets during a break of 2 h or more), with a notice when part 2 starts and when the 6 hours are up.
+- **VKV PA and FM pohár**: scoring by large-square rings (own square 2, the next ring 3, …), VKV PA × the large squares worked incl. the own one; the QSO list, statistics, EDI and the logging preview follow. VKV PA links to its robot; FM pohár shows a summary per band to copy into its web form (145 / 433 MHz, QRP / QRO by the power). Picking FM pohár in New log switches the mode to FM.
+- **Contest statistics**: per UTC hour (QSOs, points, running total, the 6-hour window) and per large square (stations, distance and azimuth; tap for the calls).
+- **Band filter**: a multi-band log shows one band at a time in the QSO list and the map (All | 2m | 70cm …), first the band of the last QSO; the choice is kept per log and shared by both. The VHF contest logging screen lists only the current band's recent QSOs.
+
+### Changed
+- **Settings**: display, map and Wavelog stay open; the callsign database, offline references, radio CI-V and the M5 keyer fold into one row each with a state line. "How to log" moved to About.
+
+### Fixed
+- Hidden segmented rows (radio source / link on the web) are now really hidden.
+
 ## [1.10.1] – 2026-10-20
 
 ### Changed

@@ -14,6 +14,25 @@ export interface WhatsNewEntry {
 /** Newest first. */
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    version: '1.11',
+    cs: [
+      'VKV závody: v Novém logu jen závod (IARU R1, VKV PA, FM pohár) a účast na 6 hodin. SO / MO / CHECK se volí v EDI exportu, LP na 145 / 435 MHz podle výkonu (≤ 100 W). Soubory pojmenované podle ČRK (01OK1XXX.edi).',
+      'Kategorie 6 hodin: hlavička ukazuje zbývající čas, upozorní na začátek 2. části a konec.',
+      'VKV PA a FM pohár: bodování podle pásů velkých čtverců. FM pohár přepne na FM a v EDI ukáže souhrn pro webový formulář.',
+      'Statistiky závodu po hodinách a po velkých čtvercích (stanice, vzdálenost, azimut).',
+      'Filtr pásem v seznamu QSO a v mapě; ve VKV závodě poslední QSO jen z aktuálního pásma.',
+      'Nastavení: technické části (databáze, reference offline, CI-V, klíčovač) složené do řádků se stavem.',
+    ],
+    en: [
+      'VHF contests: New log asks only the contest (IARU R1, VKV PA, FM pohár) and a 6-hour entry. SO / MO / CHECK is chosen at the EDI export, LP on 145 / 435 MHz follows the power (≤ 100 W). Files named as ČRK asks (01OK1XXX.edi).',
+      '6-hour entry: the header shows the time left and tells when part 2 starts and when the 6 hours are up.',
+      'VKV PA and FM pohár: large-square ring scoring. FM pohár switches to FM and its EDI screen shows the summary for the web form.',
+      'Contest statistics per hour and per large square (stations, distance, azimuth).',
+      'Band filter in the QSO list and the map; in a VHF contest the recent QSOs show the current band only.',
+      'Settings: the technical sections (database, offline references, CI-V, keyer) fold into rows with their state.',
+    ],
+  },
+  {
     version: '1.10.1',
     cs: ['Tlačítko Zpět (i gesto, na Kompaktu klávesa) vrací v aplikaci o obrazovku zpět, stejně jako „‹“. Aplikaci zavře až na seznamu logů. Na iPhonu a iPadu funguje tah od levého okraje.'],
     en: ['The Back button (and gesture, the Kompakt\'s key) goes back one screen in the app, like "‹". Only on the log list does it close the app. On iPhone and iPad, swipe from the left edge.'],

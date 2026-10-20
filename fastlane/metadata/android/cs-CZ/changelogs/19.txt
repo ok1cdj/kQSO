@@ -1,0 +1,1 @@
+VKV závody: v Novém logu závod (IARU R1, VKV PA, FM pohár) a 6 hodin, SO/MO/CHECK v EDI exportu, LP podle výkonu. EDI soubory podle ČRK (01OK1XXX.edi). Odpočet 6 hodin v hlavičce. Bodování VKV PA a FM poháru. Statistiky po hodinách a čtvercích. Filtr pásem v seznamu QSO a mapě. Přehlednější Nastavení.

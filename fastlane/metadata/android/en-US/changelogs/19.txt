@@ -1,0 +1,1 @@
+VHF contests: New log picks the contest (IARU R1, VKV PA, FM pohár) and 6 hours, SO/MO/CHECK at the EDI export, LP by the power. EDI files named as ČRK asks. 6-hour clock in the header. VKV PA and FM pohár scoring. Statistics per hour and square. Band filter in the QSO list and map. Tidier Settings.
