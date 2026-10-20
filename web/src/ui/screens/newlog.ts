@@ -22,7 +22,7 @@ import {
   satelliteByLabel,
   satelliteSignal,
 } from '../../core/index'
-import type { LogMeta, MyRefsResult, ProfileId } from '../../core/index'
+import type { ContestKind, LogMeta, MyRefsResult, ProfileId } from '../../core/index'
 import { fieldsAround, nearestRefs } from '../../core/refdb'
 import type { GeoPosition, KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
@@ -133,7 +133,17 @@ export class NewLogScreen implements Screen {
     // VHF contest: the contest from today's date (Provozní aktiv, FM pohár, else IARU) and
     // the full contest, changeable; SO / MO / CHECK carried from the last contest log.
     const prevCat = prev.profile === 'vkv' ? prev.category : undefined
-    const category = categoryPicker({ ops: prevCat?.ops ?? 'SO', contest: contestForDate(new Date()), variant: 'full' }, false)
+    // FM pohár is FM only, on 145 / 433 MHz: picking it switches the mode (and a band
+    // it doesn't have to 2m); picking another contest back from FM gives SSB.
+    const contestSignal = (contest: ContestKind): void => {
+      if (contest === 'fm') {
+        mode.select.value = 'FM'
+        if (band.select.value !== '2m' && band.select.value !== '70cm') band.select.value = '2m'
+      } else if (mode.select.value === 'FM') mode.select.value = 'SSB'
+    }
+    const category = categoryPicker({ ops: prevCat?.ops ?? 'SO', contest: contestForDate(new Date()), variant: 'full' }, false, (c) =>
+      contestSignal(c.contest),
+    )
     const categoryBox = el('div', 'form-group')
     categoryBox.append(...category.rows)
 
@@ -208,16 +218,19 @@ export class NewLogScreen implements Screen {
       categoryBox.hidden = profileId !== 'vkv'
       showNear()
     }
-    // Picking VHF contest starts it on 2m SSB (still changeable below). Only on a tap:
+    // Picking VHF contest starts it on 2m SSB, FM for FM pohár (still changeable below). Only on a tap:
     // a VKV log prefilled from the last one keeps that log's band and mode.
     const onProfile = (): void => {
       if (profile.value() === 'vkv') {
         band.select.value = '2m'
         mode.select.value = 'SSB'
+        contestSignal(category.value().contest)
       }
       syncFields()
     }
     syncFields()
+    // On an FM pohár Saturday a log prefilled from the last VKV one starts on FM too.
+    if (profile.value() === 'vkv' && category.value().contest === 'fm') contestSignal('fm')
     name.input.focus()
     name.input.select()
   }
