@@ -54,10 +54,20 @@ body {
 .keyboard[hidden] {
   display: none;
 }
-/* Portrait without our keyboard (system / hardware): the input stays at the top (the
-   system keyboard covers the bottom) and the recent QSOs fill the rest below it,
-   newest at the top next to the input; the oldest overflow off the bottom, clipped. */
+/* Without our keyboard, hardware keyboard: the recent QSOs take its place above the
+   input, as in the wide layout — newest at the bottom next to the input. */
 .screen--log.screen--nokb {
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  grid-template-areas:
+    'hdr'
+    'recent'
+    'input'
+    'preview'
+    'strip';
+}
+/* System keyboard (it covers the bottom), either orientation: the input at the top and
+   the recent QSOs below it, newest first; the oldest overflow off the bottom, clipped. */
+.screen--log.screen--nokb.screen--syskb {
   grid-template-rows: auto auto auto auto minmax(0, 1fr);
   grid-template-areas:
     'hdr'
@@ -72,6 +82,8 @@ body {
 .screen--nokb .recent {
   grid-area: recent;
   display: flex;
+}
+.screen--syskb .recent {
   flex-direction: column-reverse;
 }
 .screen--nokb .inputline {
@@ -1018,7 +1030,8 @@ body {
     align-self: center;
     max-height: 100%;
   }
-  /* No on-screen keyboard (system / hardware): the log takes the whole width. */
+  /* No on-screen keyboard: the log takes the whole width (system keyboard: the
+     portrait rows above win, input at the top). */
   .screen--log.screen--nokb {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto 1fr auto auto;
@@ -1028,9 +1041,6 @@ body {
       'recent'
       'input'
       'preview';
-  }
-  .screen--nokb .recent {
-    flex-direction: column; /* above the input here: newest at the bottom */
   }
 }
 

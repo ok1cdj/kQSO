@@ -207,6 +207,7 @@ export class LoggingScreen implements Screen {
   private applyKeyboard(): void {
     this.kbEl.hidden = keyboardMode !== 'kqso'
     this.screenEl.classList.toggle('screen--nokb', keyboardMode !== 'kqso')
+    this.screenEl.classList.toggle('screen--syskb', keyboardMode === 'system')
     this.sysInput.disabled = keyboardMode !== 'system'
     if (keyboardMode === 'system') {
       this.syncSysInput()
