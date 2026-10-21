@@ -2,6 +2,11 @@
 
 What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android app and the iOS app share one version. Newest first.
 
+## [1.12] – 2026-10-21
+
+### Added
+- **Keyboard for logging** (Settings): kQSO's own, the system one, or none. System = the phone's keyboard (Gboard, iOS), opened by a tap on the input line; the input stays at the top and the recent QSOs fill the rest below it. None = a hardware keyboard only: the recent QSOs take the on-screen keyboard's place above the input, in portrait too. In landscape the log takes the whole width.
+
 ## [1.11] – 2026-10-20
 
 ### Added

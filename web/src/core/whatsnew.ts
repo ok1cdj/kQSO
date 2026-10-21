@@ -14,6 +14,15 @@ export interface WhatsNewEntry {
 /** Newest first. */
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    version: '1.12',
+    cs: [
+      'Nastavení → Klávesnice pro logování: kQSO, systémová, nebo žádná. Systémová = klávesnice telefonu (otevře se dotykem na řádek vstupu), vstup zůstane nahoře a pod ním poslední QSO. Žádná = jen HW klávesnice, místo naší klávesnice poslední QSO.',
+    ],
+    en: [
+      'Settings → Keyboard for logging: kQSO, system, or none. System = the phone\'s keyboard (tap the input line to open it), the input stays at the top with the recent QSOs below. None = a hardware keyboard only, the recent QSOs take our keyboard\'s place.',
+    ],
+  },
+  {
     version: '1.11',
     cs: [
       'VKV závody: v Novém logu jen závod (IARU R1, VKV PA, FM pohár) a účast na 6 hodin. SO / MO / CHECK se volí v EDI exportu, LP na 145 / 435 MHz podle výkonu (≤ 100 W). Soubory pojmenované podle ČRK (01OK1XXX.edi).',

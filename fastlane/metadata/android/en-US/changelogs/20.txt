@@ -1,0 +1,1 @@
+Settings → Keyboard for logging: kQSO, the system one (the phone's keyboard, input at the top) or none (hardware keyboard only). Without our keyboard the recent QSOs take its place.

@@ -1,0 +1,1 @@
+Nastavení → Klávesnice pro logování: kQSO, systémová (klávesnice telefonu, vstup nahoře) nebo žádná (jen HW klávesnice). Bez naší klávesnice zaberou místo poslední QSO.
