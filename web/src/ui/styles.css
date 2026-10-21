@@ -49,6 +49,52 @@ body {
   grid-template-rows: auto auto auto auto 1fr; /* header · input · preview · strip · keyboard */
   gap: 4px;
   padding: 4px;
+  position: relative; /* anchors the hidden system-keyboard input */
+}
+.keyboard[hidden] {
+  display: none;
+}
+/* Portrait without our keyboard (system / hardware): the input stays at the top (the
+   system keyboard covers the bottom) and the recent QSOs fill the rest below it,
+   newest at the top next to the input; the oldest overflow off the bottom, clipped. */
+.screen--log.screen--nokb {
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  grid-template-areas:
+    'hdr'
+    'input'
+    'preview'
+    'strip'
+    'recent';
+}
+.screen--nokb .hdr {
+  grid-area: hdr;
+}
+.screen--nokb .recent {
+  grid-area: recent;
+  display: flex;
+  flex-direction: column-reverse;
+}
+.screen--nokb .inputline {
+  grid-area: input;
+}
+.screen--nokb .preview {
+  grid-area: preview;
+}
+.screen--nokb .strip {
+  grid-area: strip;
+}
+/* System keyboard: an invisible input that only takes the focus. 16px so iOS doesn't zoom. */
+.sysinput {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  font-size: 16px;
+  pointer-events: none;
 }
 
 /* List / form screens scroll. */
@@ -971,6 +1017,20 @@ body {
     grid-area: kb;
     align-self: center;
     max-height: 100%;
+  }
+  /* No on-screen keyboard (system / hardware): the log takes the whole width. */
+  .screen--log.screen--nokb {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr auto auto;
+    grid-template-areas:
+      'hdr'
+      'strip'
+      'recent'
+      'input'
+      'preview';
+  }
+  .screen--nokb .recent {
+    flex-direction: column; /* above the input here: newest at the bottom */
   }
 }
 

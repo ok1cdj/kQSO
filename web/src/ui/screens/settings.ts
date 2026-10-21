@@ -19,6 +19,8 @@ import { MAP_LABELS_SETTING } from './map'
 import { RADAR_SETTING } from '../radar'
 import { STATS_SETTING, setStatsEnabled } from '../stats'
 import { KEYER_SETTINGS } from '../keyer'
+import { KEYBOARD_MODES, KEYBOARD_SETTING, parseKeyboardMode } from '../keyboard'
+import type { KeyboardMode } from '../keyboard'
 import { keyerGuideLink } from '../keyer-guide'
 import { APP_STORE_URL, PLAY_URL } from '../stores'
 import type { KeyerController } from '../keyer'
@@ -90,6 +92,7 @@ export class SettingsScreen implements Screen {
     this.root.replaceChildren(
       bar,
       this.displayModeSetting(),
+      await this.keyboardSetting(),
       await this.mapSetting(),
       await this.wavelogSetting(),
       await this.callDbSetting(),
@@ -151,6 +154,31 @@ export class SettingsScreen implements Screen {
     themeSeg.append(mkTheme('system', t('settings.themeSystem')), mkTheme('light', t('settings.themeLight')), mkTheme('dark', t('settings.themeDark')))
     showTheme()
     wrap.append(seg, themeSeg)
+    return wrap
+  }
+
+  /** Logging keyboard: kQSO's own / the system one / none (hardware keyboard). */
+  private async keyboardSetting(): Promise<HTMLElement> {
+    const wrap = el('div', 'setting')
+    wrap.append(el('span', 'field-label', t('settings.keyboard')))
+    const current = parseKeyboardMode(await this.platform.getSetting(KEYBOARD_SETTING))
+    const label: Record<KeyboardMode, string> = {
+      kqso: t('settings.keyboardKqso'),
+      system: t('settings.keyboardSystem'),
+      none: t('settings.keyboardNone'),
+    }
+    const seg = el('div', 'segmented')
+    for (const mode of KEYBOARD_MODES) {
+      const b = button(label[mode], () => {
+        void this.platform.setSetting(KEYBOARD_SETTING, mode)
+        for (const x of Array.from(seg.querySelectorAll<HTMLButtonElement>('button'))) {
+          x.setAttribute('aria-pressed', String(x === b))
+        }
+      }, 'btn')
+      b.setAttribute('aria-pressed', String(mode === current))
+      seg.append(b)
+    }
+    wrap.append(seg, el('div', 'about', t('settings.keyboardHint')))
     return wrap
   }
 

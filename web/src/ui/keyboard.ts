@@ -41,3 +41,12 @@ export function createKeyboard(onKey: (action: KeyAction) => void): HTMLElement 
   }
   return kb
 }
+
+/** Settings key for the logging keyboard: kQSO's own, the system one, or none (hardware keyboard). */
+export const KEYBOARD_SETTING = 'keyboard'
+export type KeyboardMode = 'kqso' | 'system' | 'none'
+export const KEYBOARD_MODES: readonly KeyboardMode[] = ['kqso', 'system', 'none']
+
+export function parseKeyboardMode(saved: string | null): KeyboardMode {
+  return saved === 'system' || saved === 'none' ? saved : 'kqso'
+}

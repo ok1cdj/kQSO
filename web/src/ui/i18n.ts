@@ -154,6 +154,11 @@ const en = {
 
   'settings.title': 'Settings',
   'settings.display': 'Display',
+  'settings.keyboard': 'Keyboard for logging',
+  'settings.keyboardKqso': 'kQSO',
+  'settings.keyboardSystem': 'System',
+  'settings.keyboardNone': 'None',
+  'settings.keyboardHint': 'System = the phone\'s own keyboard (tap the input line to open it). None = a hardware keyboard only, the screen gets the space.',
   'settings.mapLabels': 'Station calls on the map',
   'settings.radar': 'Rain radar on the VHF contest map',
   'settings.radarHint': 'For rain scatter (3 cm). Current RainViewer frame, refreshed while the map is open; the request goes to rainviewer.com (no log data). Off = no network.',
@@ -462,6 +467,11 @@ const cs: Record<keyof typeof en, string> = {
 
   'settings.title': 'Nastavení',
   'settings.display': 'Zobrazení',
+  'settings.keyboard': 'Klávesnice pro logování',
+  'settings.keyboardKqso': 'kQSO',
+  'settings.keyboardSystem': 'Systémová',
+  'settings.keyboardNone': 'Žádná',
+  'settings.keyboardHint': 'Systémová = klávesnice telefonu (otevře se dotykem na řádek vstupu). Žádná = jen HW klávesnice, obrazovka získá místo.',
   'settings.mapLabels': 'Značky stanic na mapě',
   'settings.radar': 'Srážkový radar na mapě VKV závodu',
   'settings.radarHint': 'Pro rain scatter (3 cm). Aktuální snímek z RainVieweru, obnovuje se, dokud je mapa otevřená; dotaz jde na rainviewer.com (žádná data z logu). Vypnuto = žádná síť.',

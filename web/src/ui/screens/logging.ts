@@ -48,7 +48,8 @@ import { el, button } from '../dom'
 import { BUNDLED_DB_SETTING, bundledSource } from '../bundled-db'
 import { t } from '../i18n'
 import { alignColumns, allFit } from '../columns'
-import { createKeyboard } from '../keyboard'
+import { KEYBOARD_SETTING, createKeyboard, parseKeyboardMode } from '../keyboard'
+import type { KeyboardMode } from '../keyboard'
 import type { KeyAction } from '../keys'
 import type { KeyerController } from '../keyer'
 import { VOICE_MEMORIES } from '../rig'
@@ -66,6 +67,11 @@ const pad3 = (n: number): string => String(n).padStart(3, '0')
 const RECENT_MAX = 30 // wide layout: rows rendered; CSS clips whatever doesn't fit
 // Same breakpoint as the landscape layout in styles.css.
 const WIDE = window.matchMedia('(min-aspect-ratio: 1/1)')
+// Last read keyboard setting: the next mount lays out right away, init() re-reads it.
+let keyboardMode: KeyboardMode = 'kqso'
+// System keyboard: the hidden <input> holds SENTINEL + the line, so Backspace on an
+// empty line still deletes something (Android sends no key for it, only an input event).
+const SENTINEL = '\u00a0'
 const TX_SHOWN = 40 // keyboard mode: how much of the sent text the preview keeps
 const hhmm = (d: Date): string => `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`
 // Keyer macro buttons in the strip: slot + its short label (EXCH → EX, MYCALL → MY: with
@@ -103,6 +109,11 @@ export class LoggingScreen implements Screen {
   private recentWidth = 0
   private recentBand = '' // VHF contest: the band the recent list shows (re-render on a change)
   private readonly banner = el('div', 'banner')
+  private readonly screenEl = el('div', 'screen screen--log')
+  private readonly kbEl = createKeyboard((a) => this.onKey(a))
+  private readonly sysInput = this.createSysInput()
+  private sysMirror = SENTINEL // what the hidden input held after the last sync
+  private composing = false // IME composition running: don't touch the input's value
   private readonly onKeydown = (e: KeyboardEvent): void => this.onHardwareKey(e)
   private readonly onWideChange = (): void => this.renderStrip()
   private unsubscribeKeyer: (() => void) | undefined
@@ -127,11 +138,10 @@ export class LoggingScreen implements Screen {
     this.banner.hidden = true
     this.meta = DEFAULT_META
     this.state = initialState(DEFAULT_META)
-    const kb = createKeyboard((a) => this.onKey(a))
     // Portrait band order: header · input · preview · strip · keyboard.
-    const screen = el('div', 'screen screen--log')
-    screen.append(this.hdr, this.banner, this.inputEl, this.previewEl, this.stripEl, this.recentEl, kb)
-    root.replaceChildren(screen)
+    this.screenEl.replaceChildren(this.hdr, this.banner, this.inputEl, this.previewEl, this.stripEl, this.recentEl, this.kbEl, this.sysInput)
+    this.applyKeyboard()
+    root.replaceChildren(this.screenEl)
     window.addEventListener('keydown', this.onKeydown)
     WIDE.addEventListener('change', this.onWideChange)
     this.unsubscribeKeyer = this.keyer.subscribe(() => this.onKeyerChange())
@@ -159,6 +169,8 @@ export class LoggingScreen implements Screen {
     this.live = LiveDb.fromText(await this.platform.readCallDb())
     const setId = PROFILES[meta.profile].bundledDb
     const useBundled = (await this.platform.getSetting(BUNDLED_DB_SETTING)) !== '0'
+    keyboardMode = parseKeyboardMode(await this.platform.getSetting(KEYBOARD_SETTING))
+    this.applyKeyboard()
     this.db = combineSources(setId && useBundled ? bundledSource(setId) : null, this.live)
     this.state = initialState(this.meta, qsos[qsos.length - 1])
     // Satellite log: the bird is fixed at log creation (one log per pass). Apply it
@@ -191,8 +203,74 @@ export class LoggingScreen implements Screen {
 
   // --- input -----------------------------------------------------------------
 
+  /** Show our keyboard, or hide it for the system keyboard / a hardware one. */
+  private applyKeyboard(): void {
+    this.kbEl.hidden = keyboardMode !== 'kqso'
+    this.screenEl.classList.toggle('screen--nokb', keyboardMode !== 'kqso')
+    this.sysInput.disabled = keyboardMode !== 'system'
+    if (keyboardMode === 'system') {
+      this.syncSysInput()
+      this.sysInput.focus({ preventScroll: true })
+    }
+  }
+
+  /** The hidden <input> that brings up the system keyboard; a tap on the input line focuses it. */
+  private createSysInput(): HTMLInputElement {
+    const i = el('input', 'sysinput')
+    i.type = 'text'
+    i.inputMode = 'text'
+    i.enterKeyHint = 'send'
+    i.autocomplete = 'off'
+    i.spellcheck = false
+    i.setAttribute('autocapitalize', 'characters')
+    i.setAttribute('autocorrect', 'off')
+    i.setAttribute('aria-label', t('settings.keyboardSystem'))
+    i.addEventListener('input', (e) => this.onSysInput(e as InputEvent))
+    i.addEventListener('compositionstart', () => (this.composing = true))
+    i.addEventListener('compositionend', () => {
+      this.composing = false
+      this.syncSysInput()
+    })
+    this.inputEl.addEventListener('click', () => {
+      if (keyboardMode === 'system') i.focus({ preventScroll: true })
+    })
+    return i
+  }
+
+  /** Turn what the system keyboard changed (a diff against the last sync) into key actions. */
+  private onSysInput(e: InputEvent): void {
+    const now = this.sysInput.value
+    const was = this.sysMirror
+    let p = 0
+    while (p < now.length && p < was.length && now[p] === was[p]) p++
+    const actions: KeyAction[] = []
+    for (let n = was.length - p; n > 0; n--) actions.push({ type: 'backspace' })
+    for (const ch of now.slice(p)) {
+      if (ch === SENTINEL) continue
+      if (ch === ' ') actions.push({ type: 'space' })
+      else if (ch === '\n') actions.push({ type: 'enter' })
+      else if (/^[A-Za-z0-9/]$/.test(ch)) actions.push({ type: 'char', value: ch.toUpperCase() })
+      else if (this.txMode && /^[?.,=+-]$/.test(ch)) actions.push({ type: 'char', value: ch })
+    }
+    this.sysMirror = now
+    for (const a of actions) this.onKey(a)
+    if (!e.isComposing && !this.composing) this.syncSysInput()
+  }
+
+  /** Put the current line back into the hidden input (after our keys / Enter / a suggestion tap). */
+  private syncSysInput(): void {
+    if (keyboardMode !== 'system') return
+    const want = SENTINEL + (this.txMode ? this.txWord : this.line)
+    if (this.sysInput.value !== want) this.sysInput.value = want
+    this.sysMirror = want
+    this.sysInput.setSelectionRange(want.length, want.length)
+  }
+
   private onHardwareKey(e: KeyboardEvent): void {
     const k = e.key
+    // In the system keyboard's input only Enter / Esc go this way; characters and
+    // Backspace come as input events (Android's soft keys have no key value).
+    if (e.target === this.sysInput && k !== 'Enter' && k !== 'Escape') return
     if (k === 'Escape' && this.rig.voicePlaying) {
       e.preventDefault()
       void this.rig.stopVoice()
@@ -697,6 +775,7 @@ export class LoggingScreen implements Screen {
   }
 
   private renderLine(): void {
+    if (!this.composing) this.syncSysInput()
     this.inputEl.classList.toggle('inputline--tx', this.txMode)
     if (this.txMode) {
       this.inputEl.replaceChildren(el('span', 'tx-prompt', 'CW›'), document.createTextNode(` ${this.txWord}`), el('span', 'cursor'))
@@ -924,10 +1003,10 @@ export class LoggingScreen implements Screen {
       this.stripEl.replaceChildren(this.suggestButton(t('logging.keyerReconnect'), () => void this.keyer.reconnect()))
       return
     }
-    // Default: last written QSO. The wide layout already lists it in the
-    // recent-QSO column, so the strip stays empty there.
+    // Default: last written QSO. The wide layout (and portrait without our keyboard)
+    // already lists it in the recent-QSO column, so the strip stays empty there.
     const last = this.qsos.length > 0 ? this.qsos[this.qsos.length - 1] : undefined
-    if (WIDE.matches) this.stripEl.replaceChildren()
+    if (WIDE.matches || keyboardMode !== 'kqso') this.stripEl.replaceChildren()
     else this.stripEl.replaceChildren(document.createTextNode(last ? formatQso(last) : '—'))
   }
 
