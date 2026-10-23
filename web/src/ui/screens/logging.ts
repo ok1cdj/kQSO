@@ -239,7 +239,7 @@ export class LoggingScreen implements Screen {
   }
 
   private updateBoard(): void {
-    if (!this.board.el.hidden) this.board.update(this.qsos, this.state.sticky.band, this.meta.myGrid, scoringFor(this.meta.category))
+    if (!this.board.el.hidden) this.board.update(this.qsos, this.state.sticky.band, this.meta.myGrid, scoringFor(this.meta.category), pad3(this.qsos.length + 1))
   }
 
   /** The hidden <input> that brings up the system keyboard; a tap on the input line focuses it. */

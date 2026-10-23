@@ -1,5 +1,5 @@
-// VHF contest board on the logging screen (as in Tučňák): the band's QSO count in big
-// digits, the UTC clock, the rate, the points, the average and the ODX. Shown only in
+// VHF contest board on the logging screen (as in Tučňák): the serial to give next in big
+// digits (the header's TX number), the band's QSO count, the UTC clock, the rate, the points, the average and the ODX. Shown only in
 // the wide layout without our keyboard, where the log has room on the right. Text is
 // written only when it changes (e-ink repaints).
 
@@ -16,6 +16,7 @@ export class ContestBoard {
   readonly el = el('aside', 'board')
   private readonly countEl = el('div', 'board-count')
   private readonly clockEl = el('div', 'board-clock')
+  private readonly qsosEl = el('dd')
   private readonly rateEl = el('dd')
   private readonly pointsEl = el('dd')
   private readonly avgLabel = el('dt')
@@ -26,6 +27,8 @@ export class ContestBoard {
   constructor() {
     const dl = el('dl', 'board-stats')
     dl.append(
+      el('dt', undefined, 'QSO'),
+      this.qsosEl,
       el('dt', undefined, t('board.rate')),
       this.rateEl,
       el('dt', undefined, t('board.points')),
@@ -44,8 +47,9 @@ export class ContestBoard {
     return currentDisplayMode() === 'eink' ? MINUTE : 1000
   }
 
-  /** Rescore the current band (after a QSO is saved / deleted, or the band changes). */
-  update(qsos: readonly Qso[], band: string, myGrid: string, scoring: Scoring): void {
+  /** Rescore the current band (after a QSO is saved / deleted, or the band changes).
+   *  `nextSerial`: what goes to the other station next (001 …). */
+  update(qsos: readonly Qso[], band: string, myGrid: string, scoring: Scoring, nextSerial: string): void {
     const b = scoreLog(
       qsos.filter((q) => q.signal.band === band),
       myGrid,
@@ -53,7 +57,8 @@ export class ContestBoard {
     )[0]
     this.band = b
     const st = contestStats(b ? [b] : [])
-    set(this.countEl, String(b?.qsos ?? 0))
+    set(this.countEl, nextSerial)
+    set(this.qsosEl, String(b?.qsos ?? 0))
     set(this.pointsEl, b?.multipliers !== undefined ? `${b.points} × ${b.multipliers} = ${b.total}` : String(b?.total ?? 0))
     set(this.avgLabel, scoring.rings ? t('board.avgPoints') : t('board.avgKm'))
     set(this.avgEl, st.avg.toFixed(1))
