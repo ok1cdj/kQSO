@@ -216,6 +216,17 @@ export function hourlyStats(band: BandScore, window?: SixHourWindow): HourStats[
   return out
 }
 
+/** Valid (non-dupe) QSOs of a band in the last `windowMs` up to `now` — the rate on the
+ *  logging screen's contest board (60 and 10 minutes). */
+export function qsoRate(band: BandScore, now: Date, windowMs: number): number {
+  const to = now.getTime()
+  const from = to - windowMs
+  return band.rows.filter((r) => {
+    const t = r.qso.timeOn.getTime()
+    return !r.dupe && t > from && t <= to
+  }).length
+}
+
 export interface SquareStats {
   readonly square: string // large square, e.g. JO70
   readonly calls: readonly string[] // distinct stations worked there, in log order

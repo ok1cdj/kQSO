@@ -114,7 +114,7 @@ export {
   COLOR_PALETTE,
 } from './radar'
 export type { RadarFrame, RadarPalette, TileRef } from './radar'
-export { contestStats, scoreLog, scoringFor, contestPoints, ringPoints, KM_SCORING, sixHourWindow, sixHourPart, sixHourStatus, hourlyStats, squareStats } from './contest'
+export { contestStats, scoreLog, scoringFor, contestPoints, ringPoints, KM_SCORING, sixHourWindow, sixHourPart, sixHourStatus, hourlyStats, qsoRate, squareStats } from './contest'
 export type { BandScore, ContestStats, Scoring, ScoredQso, SixHourWindow, SixHourPhase, HourStats, SquareStats } from './contest'
 export {
   writeEdi,

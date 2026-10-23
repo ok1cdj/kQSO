@@ -53,6 +53,7 @@ import type { KeyboardMode } from '../keyboard'
 import type { KeyAction } from '../keys'
 import type { KeyerController } from '../keyer'
 import { VOICE_MEMORIES } from '../rig'
+import { ContestBoard } from '../contest-board'
 import type { RigController } from '../rig'
 
 export interface LoggingNav {
@@ -109,13 +110,19 @@ export class LoggingScreen implements Screen {
   private recentWidth = 0
   private recentBand = '' // VHF contest: the band the recent list shows (re-render on a change)
   private readonly banner = el('div', 'banner')
+  // VHF contest, wide layout without our keyboard: big QSO count + stats on the right.
+  private readonly board = new ContestBoard()
+  private boardTimer: ReturnType<typeof setInterval> | undefined
   private readonly screenEl = el('div', 'screen screen--log')
   private readonly kbEl = createKeyboard((a) => this.onKey(a))
   private readonly sysInput = this.createSysInput()
   private sysMirror = SENTINEL // what the hidden input held after the last sync
   private composing = false // IME composition running: don't touch the input's value
   private readonly onKeydown = (e: KeyboardEvent): void => this.onHardwareKey(e)
-  private readonly onWideChange = (): void => this.renderStrip()
+  private readonly onWideChange = (): void => {
+    this.renderStrip()
+    this.applyBoard()
+  }
   private unsubscribeKeyer: (() => void) | undefined
   private unsubscribeRig: (() => void) | undefined
   private rigShown = '' // what the header last showed from the radio (re-render on change only: e-ink)
@@ -139,7 +146,7 @@ export class LoggingScreen implements Screen {
     this.meta = DEFAULT_META
     this.state = initialState(DEFAULT_META)
     // Portrait band order: header · input · preview · strip · keyboard.
-    this.screenEl.replaceChildren(this.hdr, this.banner, this.inputEl, this.previewEl, this.stripEl, this.recentEl, this.kbEl, this.sysInput)
+    this.screenEl.replaceChildren(this.hdr, this.banner, this.inputEl, this.previewEl, this.stripEl, this.recentEl, this.board.el, this.kbEl, this.sysInput)
     this.applyKeyboard()
     root.replaceChildren(this.screenEl)
     window.addEventListener('keydown', this.onKeydown)
@@ -157,6 +164,7 @@ export class LoggingScreen implements Screen {
     this.exitTx()
     this.recentResize?.disconnect()
     clearInterval(this.sixHTimer)
+    clearInterval(this.boardTimer)
     this.platform.keepAwake(false)
   }
 
@@ -183,6 +191,7 @@ export class LoggingScreen implements Screen {
       this.state = { ...this.state, sticky: applySatellite(this.state.sticky, sat, qsos.length > 0 ? this.state.sticky.mode : 'SSB') }
     }
     this.loaded = true
+    this.applyBoard()
     if (this.meta.category?.variant === '6h') {
       this.sixHPhase = this.sixH()?.phase // no banner for what happened before opening the log
       this.sixHTimer = setInterval(() => this.tickSixH(), 60_000)
@@ -213,6 +222,24 @@ export class LoggingScreen implements Screen {
       this.syncSysInput()
       this.sysInput.focus({ preventScroll: true })
     }
+    this.applyBoard()
+  }
+
+  /** The contest board: VHF contest, wide layout, no kQSO keyboard (the log has room). */
+  private applyBoard(): void {
+    const shown = this.loaded && WIDE.matches && keyboardMode !== 'kqso' && PROFILES[this.meta.profile].contest
+    this.screenEl.classList.toggle('screen--board', shown)
+    if (shown === !this.board.el.hidden) return
+    this.board.el.hidden = !shown
+    clearInterval(this.boardTimer)
+    this.boardTimer = undefined
+    if (!shown) return
+    this.updateBoard()
+    this.boardTimer = setInterval(() => this.board.tick(new Date()), this.board.tickMs)
+  }
+
+  private updateBoard(): void {
+    if (!this.board.el.hidden) this.board.update(this.qsos, this.state.sticky.band, this.meta.myGrid, scoringFor(this.meta.category))
   }
 
   /** The hidden <input> that brings up the system keyboard; a tap on the input line focuses it. */
@@ -1019,6 +1046,7 @@ export class LoggingScreen implements Screen {
     // VHF contest: only the current band's QSOs — the bands don't mix on the screen.
     const band = PROFILES[this.meta.profile].contest ? this.state.sticky.band : ''
     this.recentBand = band
+    this.updateBoard()
     const indices = this.qsos.flatMap((q, i) => (band === '' || q.signal.band === band ? [i] : [])).slice(-RECENT_MAX)
     const shown = indices.map((i) => this.qsos[i]!)
     const fill = (texts: readonly string[], cls: string): void => {

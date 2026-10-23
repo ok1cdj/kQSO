@@ -1042,6 +1042,72 @@ body {
       'input'
       'preview';
   }
+  /* VHF contest board (ui/contest-board.ts) in the room our keyboard leaves: big QSO
+     count + stats at the top right, as in Tučňák. */
+  .screen--log.screen--nokb.screen--board {
+    grid-template-columns: minmax(0, 1fr) minmax(200px, 22rem);
+    grid-template-rows: auto auto 1fr auto auto;
+    grid-template-areas:
+      'hdr     hdr'
+      'strip   board'
+      'recent  board'
+      'input   board'
+      'preview board';
+  }
+  .screen--log.screen--nokb.screen--syskb.screen--board {
+    grid-template-rows: auto auto auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'hdr     hdr'
+      'input   board'
+      'preview board'
+      'strip   board'
+      'recent  board';
+  }
+  .board {
+    grid-area: board;
+  }
+}
+
+.board {
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.6rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.board[hidden] {
+  display: none;
+}
+.board-clock {
+  text-align: right;
+  font-size: 1.1rem;
+}
+.board-count {
+  text-align: right;
+  font-size: clamp(3.5rem, 14vh, 9rem);
+  font-weight: 700;
+  line-height: 1;
+}
+.board-stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.6rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+.board-stats dt {
+  color: var(--muted);
+}
+.board-stats dd {
+  margin: 0;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* "What's new" (screens/whatsnew.ts) and the APK new-version line on the log list. */

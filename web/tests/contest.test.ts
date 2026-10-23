@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { bearingDeg, gridCenter, qrbKm, qsoPoints } from '../src/core/locator'
-import { contestStats, hourlyStats, ringPoints, scoreLog, scoringFor, sixHourPart, sixHourStatus, sixHourWindow, squareStats } from '../src/core/contest'
+import { contestStats, hourlyStats, qsoRate, ringPoints, scoreLog, scoringFor, sixHourPart, sixHourStatus, sixHourWindow, squareStats } from '../src/core/contest'
 import { isDupe } from '../src/core/dupe'
 import type { Qso } from '../src/core/model'
 
@@ -239,6 +239,20 @@ describe('statistics per hour and per large square', () => {
   })
   it('no QSOs → no rows', () => {
     expect(hourlyStats({ band: '2m', rows: [], qsos: 0, points: 0, wwls: 0, total: 0 })).toEqual([])
+  })
+})
+
+describe('rate for the contest board', () => {
+  const qa = (call: string, d: Date): Qso => ({ ...q(call, '2m', 'SSB', 'JO65ER'), timeOn: d })
+  const [band] = scoreLog(
+    [qa('OZ9SIG', at(14, 0)), qa('DL5BBF', at(14, 50)), qa('OZ9SIG', at(14, 55)), qa('OZ1AAA', at(15, 0))], // 3rd = dupe
+    'JO65FR',
+  )
+  it('valid QSOs in the window up to now; the window start is outside, now is inside', () => {
+    expect(qsoRate(band!, at(15, 0), 60 * 60000)).toBe(2) // 14:00 is just outside, dupe left out
+    expect(qsoRate(band!, at(15, 0), 10 * 60000)).toBe(1) // (14:50, 15:00]: only 15:00
+    expect(qsoRate(band!, at(15, 1), 60 * 60000)).toBe(2)
+    expect(qsoRate(band!, at(16, 30), 60 * 60000)).toBe(0)
   })
 })
 
