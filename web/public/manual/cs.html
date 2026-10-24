@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kQSO — návod</title>
+<link rel="stylesheet" href="manual.css">
+</head>
+<body class="manual-page">
+<main class="manual" data-lang="cs">
+<p class="manual-lang"><a href="en.html">English</a></p>
+<h1>kQSO — návod</h1>
+<p class="muted">Deník pro radioamatéry: aktivace SOTA/POTA/WWFF/GMA/TOTA, VKV závody, satelity i běžný provoz. Pro web, Android a iOS. Rychlý tahák k zápisu spojení je v aplikaci pod <b>?</b> (Jak zadávat spojení); tady je všechno podrobně a s obrázky.</p>
+
+<nav class="manual-toc">
+<ol>
+<li><a href="#start">Začínáme</a></li>
+<li><a href="#logs">Logy a profily</a></li>
+<li><a href="#logging">Zápis spojení</a></li>
+<li><a href="#contest">VKV závod</a></li>
+<li><a href="#activation">Aktivace a satelity</a></li>
+<li><a href="#export">Export a Wavelog</a></li>
+<li><a href="#databases">Databáze značek a reference offline</a></li>
+<li><a href="#radio">Rádio (CI-V) a CW klíčovač</a></li>
+<li><a href="#keys">Hardwarová klávesnice</a></li>
+<li><a href="#settings">Nastavení</a></li>
+<li><a href="#faq">Otázky a potíže</a></li>
+</ol>
+</nav>
+
+<h2 id="start">1. Začínáme</h2>
+<p>kQSO je deník na jeden řádek: celé spojení napíšeš jako text (<code>OK1ABC 59 JN79US</code>) a aplikace pozná každou část podle tvaru. Nepotřebuje účet ani síť, všechno zůstává v zařízení.</p>
+<ul>
+<li><b>Android:</b> Google Play, nebo APK z <a href="https://github.com/ok1cdj/kQSO/releases">GitHubu</a>.</li>
+<li><b>iPhone a iPad:</b> aplikace pro iOS míří do App Store; do té doby webová verze přidaná na plochu.</li>
+<li><b>Web:</b> <a href="https://kqso.ok1cdj.com/">kqso.ok1cdj.com</a> v prohlížeči na počítači, tabletu i telefonu. Po prvním načtení funguje i bez sítě. Na iPhonu a iPadu ji přidej na plochu (Sdílet → Přidat na plochu), jinak může Safari data po čase smazat.</li>
+</ul>
+<p>Úvodní obrazovka je seznam logů. Nahoře je <b>+ Nový log</b>, <b>?</b> (jak zadávat spojení) a <b>⚙</b> (Nastavení). U každého logu je <b>export</b>, u VKV závodu <b>EDI</b> a <b>smazat</b>.</p>
+<figure class="phone"><img src="img/cs/loglist.webp" alt="Seznam logů" width="390" height="844" loading="lazy"><figcaption>Seznam logů: VKV závody, aktivace a satelitní přelet.</figcaption></figure>
+
+<h2 id="logs">2. Logy a profily</h2>
+<p><b>+ Nový log</b> založí log. Vyplň název, svou volačku a lokátor (tlačítko se zaměřovačem ho vyplní z polohy), počáteční pásmo a mód. Volačka a lokátor se pamatují pro příští log. Hlavní volba je <b>profil</b>, který určuje, co se předává a jak se log exportuje:</p>
+<ul>
+<li><b>Aktivace</b> (SOTA, GMA, POTA, WWFF, TOTA): reporty a reference. Do <b>Moje reference</b> napiš jednu nebo víc referencí oddělených mezerou, např. <code>OK/ZC-001 CZ-0123</code>. Tlačítko polohy nabídne nejbližší reference do 25 km, klepnutím se přidají.</li>
+<li><b>Obecný:</b> běžný provoz, navíc jméno protistanice.</li>
+<li><b>VKV závod:</b> pořadová čísla, lokátory, body za km, export EDI. Volíš závod (IARU R1, <a href="https://vkvpa.hamradio.cz/">VKV PA</a>, <a href="https://fmpohar.nagano.cz/">FM pohár</a>) a účast (celý závod nebo 6 hodin). Lokátor je povinný, 6 znaků.</li>
+<li><b>Satelit:</b> co přelet, to log. Družice nastaví uplink a downlink.</li>
+</ul>
+<div class="figs">
+<figure class="phone"><img src="img/cs/newlog-activation.webp" alt="Nový log, Aktivace" width="390" height="844" loading="lazy"><figcaption>Aktivace: moje reference.</figcaption></figure>
+<figure class="phone"><img src="img/cs/newlog-vkv.webp" alt="Nový log, VKV závod" width="390" height="1300" loading="lazy"><figcaption>VKV závod: závod a účast.</figcaption></figure>
+<figure class="phone"><img src="img/cs/newlog-sat.webp" alt="Nový log, Satelit" width="390" height="1300" loading="lazy"><figcaption>Satelit: výběr družice.</figcaption></figure>
+</div>
+<p>Klepnutím na log v seznamu se vrátíš k logování, a to i do rozepsaného spojení: kQSO zapisuje každé QSO hned, takže po pádu nebo restartu nic neztratíš.</p>
+
+<h2 id="logging">3. Zápis spojení</h2>
+<figure class="phone right"><img src="img/cs/logging.webp" alt="Logovací obrazovka" width="390" height="844" loading="lazy"><figcaption>Logovací obrazovka s klávesnicí kQSO.</figcaption></figure>
+<p>Logovací obrazovka má odshora:</p>
+<ul>
+<li><b>hlavičku</b>: zpět na logy, pásmo a mód, ve VKV závodě v rámečku tvoje další pořadové číslo a azimut k protistanici, <b>?</b> nápověda a <b>QSO n ›</b> seznam spojení;</li>
+<li><b>řádek vstupu</b>, kam píšeš;</li>
+<li><b>štítky</b> s tím, co už aplikace z řádku poznala (CALL, RST, NR, LOC, QRB…), přerušovaně to, co ještě chybí;</li>
+<li><b>lištu</b> s návrhy značek a lokátorů, nebo poslední zapsané QSO;</li>
+<li><b>klávesnici</b> kQSO: abecední 6×7, velká tlačítka i do rukavic.</li>
+</ul>
+<figure class="crop"><img src="img/cs/logging-header.webp" alt="Hlavička" width="390" height="48" loading="lazy"><figcaption>Hlavička VKV závodu: 2m SSB, další číslo 449.</figcaption></figure>
+
+<h3>Celé spojení na jeden řádek</h3>
+<p>Napiš, co slyšíš, a stiskni <b>Enter</b>. Enter s textem přidá části ke spojení a řádek vyprázdní, <b>prázdný Enter spojení zapíše</b>. Povinná je jen volačka (ve VKV závodě i přijaté číslo a lokátor). S hardwarovou klávesnicí zapíše spojení i <kbd>Ctrl+Enter</kbd>, a to rovnou s textem, který je zrovna na řádku.</p>
+<figure class="crop"><img src="img/cs/logging-preview.webp" alt="Celé QSO na řádku" width="390" height="170" loading="lazy"><figcaption><code>OK2KZR 59123 JN99AF</code>: značka, report 59 + číslo 123, lokátor; hned je vidět QRB 179 km.</figcaption></figure>
+<p><b>Report nemusíš psát.</b> Holé číslo za značkou je ve VKV závodě přijaté pořadové číslo a report zůstane výchozí 59 (v CW 599). Stačí tedy <code>OK2KZR 123</code>. Jiný report připíšeš před číslo: <code>57123</code> nebo <code>57 123</code>.</p>
+<figure class="crop"><img src="img/cs/logging-callnr.webp" alt="Značka a číslo" width="390" height="170" loading="lazy"><figcaption><code>OK2KZR 123</code>: RST 59 doplněno samo, 123 je přijaté číslo.</figcaption></figure>
+
+<h3>Po částech, jak to slyšíš</h3>
+<p>Spojení <b>nemusí být celé na jednom řádku</b>. Každou část můžeš poslat zvlášť Enterem, třeba jak ji protistanice zrovna odvysílala: značku, pak číslo, pak lokátor. Štítky ukazují, co už máš a co chybí. Ve VKV závodě se spojení zapíše prázdným Enterem až ve chvíli, kdy má značku, číslo i lokátor; do té doby zůstane otevřené.</p>
+<div class="figs">
+<figure class="crop"><img src="img/cs/logging-step1.webp" alt="Krok 1" width="390" height="170" loading="lazy"><figcaption>1. <code>OK2KZR</code> ⏎: značka je, NR a LOC chybí.</figcaption></figure>
+<figure class="crop"><img src="img/cs/logging-step2.webp" alt="Krok 2" width="390" height="170" loading="lazy"><figcaption>2. <code>123</code> ⏎: přibylo číslo.</figcaption></figure>
+<figure class="crop"><img src="img/cs/logging-step3.webp" alt="Krok 3" width="390" height="170" loading="lazy"><figcaption>3. <code>JN99AF</code>: lokátor, QRB a azimut. Pak ⏎ a prázdný ⏎ zapíše.</figcaption></figure>
+</div>
+<p>Překlep ve značce opravíš tak, že napíšeš novou: další značka nahradí tu předchozí, report a lokátor zůstanou. Ve VKV závodě můžeš začít i lokátorem, když ho uslyšíš první; lišta pak nabídne značky, které databáze na tom lokátoru zná.</p>
+
+<h3>Návrhy, lokátor z databáze a duplicity</h3>
+<p>Od dvou znaků lišta nabízí značky z databáze (přibalený seznam pro typ logu plus stanice, se kterými už jsi pracoval). Klepnutí značku doplní. Když databáze zná lokátor stanice, nabídne ho jako <b>+ lokátor</b>: klepnutí (nebo Alt+X) ho vezme.</p>
+<div class="figs">
+<figure class="crop"><img src="img/cs/logging-suggest.webp" alt="Návrhy" width="390" height="170" loading="lazy"><figcaption>Návrhy značek; inverzně ty, které už jsou v logu.</figcaption></figure>
+<figure class="crop"><img src="img/cs/logging-prefill.webp" alt="Lokátor z databáze" width="390" height="170" loading="lazy"><figcaption>Značka a číslo zapsané, databáze nabízí <b>+ JO50HV</b>.</figcaption></figure>
+</div>
+<p>Ve VKV závodě ukáže štítek <b>QRV</b> další pásma, na kterých stanice bývá (z databáze). Pásma, kde už s ní spojení máš, jsou přeškrtnutá, takže hned vidíš, kam ji ještě přetáhnout.</p>
+<figure class="crop"><img src="img/cs/logging-qrv.webp" alt="QRV pásma" width="390" height="196" loading="lazy"><figcaption>OK1EM na 2 m: QRV i na 70 cm až 122 GHz, 23 cm a 3 cm už uděláno.</figcaption></figure>
+<p><b>Duplicita</b> zčerná celý řádek. Duplicita je stejná značka na stejném pásmu a módu; ve VKV závodě na stejném pásmu (na módu nezáleží), v satelitním logu na stejné družici. Zapsat ji jde, ve VKV závodě má 0 bodů.</p>
+<figure class="crop"><img src="img/cs/logging-dupe.webp" alt="Duplicita" width="390" height="170" loading="lazy"><figcaption>OK1OTL už v logu na 2 m je: řádek je inverzní.</figcaption></figure>
+
+<h3>Pásmo, mód, čas</h3>
+<ul>
+<li><code>40m</code>, <code>2m</code>, <code>23cm</code>, <code>ssb</code>, <code>cw</code>, <code>fm</code> přepnou pásmo a mód; drží, dokud je nezměníš. Mikrovlny jdou napsat i v GHz: <code>10G</code> = 3 cm, <code>24G</code> = 1,25 cm.</li>
+<li>Čas spojení se bere v UTC při prvním stisku klávesy. Ručně (třeba z papíru) ho zadáš jako první část řádku: <code>1832 OK1ABC</code>.</li>
+</ul>
+
+<h3>Příkazy</h3>
+<p>Jedno písmeno samotné na řádku a Enter. Náhled pod řádkem ukáže, co se stane, ještě před Enterem.</p>
+<table>
+<tr><td><code>W</code></td><td>zahodí rozepsané spojení</td></tr>
+<tr><td><code>D</code></td><td>smaže poslední zapsané spojení (nejdřív se zeptá)</td></tr>
+<tr><td><code>E</code></td><td>upraví poslední zapsané spojení</td></tr>
+<tr><td><code>H</code></td><td>nápověda</td></tr>
+</table>
+<p><b>Esc</b> smaže rozepsaný řádek (třeba značku, kterou si jen ověřuješ v logu).</p>
+
+<h3>Seznam QSO a úprava</h3>
+<p><b>QSO n ›</b> otevře seznam spojení, nejnovější nahoře. Klepnutím na spojení ho upravíš nebo smažeš. Ve VKV závodě má seznam přepínač pásem, body u každého spojení a řádek se skóre pásma; nahoře jsou tlačítka <b>Mapa</b> a <b>Statistika</b>.</p>
+<div class="figs">
+<figure class="phone"><img src="img/cs/qsolist.webp" alt="Seznam QSO" width="390" height="844" loading="lazy"><figcaption>Seznam QSO s body a skóre pásma.</figcaption></figure>
+<figure class="phone"><img src="img/cs/qsoedit.webp" alt="Úprava QSO" width="390" height="844" loading="lazy"><figcaption>Úprava spojení.</figcaption></figure>
+</div>
+
+<h3>Klávesnice: kQSO, systémová, žádná</h3>
+<p>V <b>Nastavení → Klávesnice pro logování</b> vybereš:</p>
+<ul>
+<li><b>kQSO</b>: vlastní abecední klávesnice (výchozí);</li>
+<li><b>Systémová</b>: klávesnice telefonu (otevře se klepnutím na řádek); řádek je nahoře a pod ním poslední spojení;</li>
+<li><b>Žádná</b>: jen hardwarová klávesnice (počítač, tablet s klávesnicí); místo dostane seznam posledních spojení a ve VKV závodě na šířku závodní panel.</li>
+</ul>
+<figure class="phone"><img src="img/cs/logging-system-kbd.webp" alt="Systémová klávesnice" width="390" height="844" loading="lazy"><figcaption>Systémová klávesnice: řádek nahoře, poslední spojení pod ním.</figcaption></figure>
+
+<h2 id="contest">4. VKV závod</h2>
+<p>Log s profilem <b>VKV závod</b> počítá body (1 bod za km mezi středy lokátorů podle IARU R1; VKV PA a FM pohár po prstencích velkých čtverců), hlídá duplicity po pásmech a čísluje tvoje spojení. Další odesílané číslo je v hlavičce v rámečku; číslování je společné pro všechna pásma.</p>
+<p>V kategorii <b>6 hodin</b> hlavička ukazuje zbývající čas, ve statistice je vidět, které spojení patří do šestihodinového okna.</p>
+<figure class="crop"><img src="img/cs/logging-6h-header.webp" alt="Hlavička 6h" width="390" height="48" loading="lazy"><figcaption>6 hodin: zbývá 0:29.</figcaption></figure>
+
+<h3>Závodní panel</h3>
+<p>Na tabletu nebo počítači na šířku, se systémovou klávesnicí nebo bez klávesnice (Nastavení → Klávesnice pro logování → Žádná), ukáže kQSO vpravo <b>závodní panel</b>: velké číslo, které dáváš protistanici, hodiny UTC, počet QSO na pásmu, rate za posledních 60 a 10 minut, body, průměr a ODX.</p>
+<figure class="wide"><img src="img/cs/panel-tablet.webp" alt="Závodní panel na tabletu" width="1280" height="800" loading="lazy"><figcaption>Tablet na šířku s hardwarovou klávesnicí: poslední spojení vlevo, závodní panel vpravo.</figcaption></figure>
+<figure class="crop small"><img src="img/cs/panel.webp" alt="Závodní panel" width="352" height="265" loading="lazy"><figcaption>Závodní panel.</figcaption></figure>
+
+<h3>Statistika</h3>
+<p><b>Seznam QSO → Statistika</b> ukáže pro každé pásmo zvlášť (pásma se nemíchají):</p>
+<ul>
+<li>souhrn: QSO, body a průměr bodů na spojení, u více pásem i <b>Celkem</b>;</li>
+<li><b>Po hodinách (UTC)</b>: spojení a body v každé hodině a průběžné součty, takže je vidět, kdy to šlo a kdy stálo;</li>
+<li><b>Velké čtverce</b>: kolik stanic z každého čtverce, vzdálenost a směr; klepnutím na čtverec se ukáží jeho stanice;</li>
+<li><b>Top 10</b>: nejdelší (nejcennější) spojení pásma.</li>
+</ul>
+<div class="figs">
+<figure class="crop"><img src="img/cs/stats-hours.webp" alt="Po hodinách" width="390" height="516" loading="lazy"><figcaption>Polní den, 70 cm po hodinách: noční pauza je hned vidět.</figcaption></figure>
+<figure class="crop"><img src="img/cs/stats-squares-open.webp" alt="Velké čtverce" width="390" height="330" loading="lazy"><figcaption>Velké čtverce; JN79 rozbalený.</figcaption></figure>
+<figure class="crop"><img src="img/cs/stats-top.webp" alt="Top 10" width="390" height="276" loading="lazy"><figcaption>Top 10 spojení pásma.</figcaption></figure>
+</div>
+<p>U kategorie 6 hodin statistika ukáže, kdy okno šest hodin běželo, a v tabulce po hodinách sloupec <b>mimo 6 h</b> pro spojení, která se do kategorie nepočítají.</p>
+<figure class="crop"><img src="img/cs/stats-6h.webp" alt="6 hodin" width="390" height="150" loading="lazy"><figcaption>OL0M, 6 hodin: okno 06:30–12:30 UTC.</figcaption></figure>
+
+<h3>Mapa</h3>
+<p><b>Seznam QSO → Mapa</b>: tečka za každý udělaný lokátor, síť lokátorů a tvůj QTH. Táhnutím posuneš, − + přiblížíš, tlačítko rohů ukáže vše. V Nastavení jde vypnout značky u teček.</p>
+<p><b>Klepnutí do mapy</b> ukáže vlevo nahoře lokátor toho místa, vzdálenost (QRB) a azimut od tebe, stejně jako v logu. Hodí se, když chceš vědět, kam otočit anténu na oblast deště nebo na stanici, kterou ještě nemáš. Křížek × údaj zavře.</p>
+<p><b>Srážkový radar</b> (Nastavení → Srážkový radar na mapě VKV závodu, výchozí vypnuto) přidá pod mapu aktuální snímek srážek z RainVieweru. Je to nástroj pro <b>rain scatter na 3 cm</b>: ukáže, kde jsou srážkové buňky, a klepnutím do nich zjistíš azimut, kam otočit anténu. Snímek se obnovuje, dokud je mapa otevřená; čas snímku v UTC je vlevo dole. Radar je jen u VKV závodu a jen tehdy jde dotaz do sítě (žádná data z logu). V E-ink zobrazení se kreslí v odstínech šedi.</p>
+<figure class="wide"><img src="img/cs/map-tablet.webp" alt="Mapa" width="1280" height="800" loading="lazy"><figcaption>Mapa Polního dne, pásmo 2 m.</figcaption></figure>
+<figure class="wide"><img src="img/cs/map-radar-tablet.webp" alt="Mapa s radarem" width="1280" height="800" loading="lazy"><figcaption>Se srážkovým radarem; klepnutí ukázalo JN88IN · 153 km · 151°.</figcaption></figure>
+
+<h3>Export EDI</h3>
+<p>V seznamu logů tlačítko <b>EDI</b> připraví soubory pro vyhodnocovatele: jeden soubor na pásmo (např. <code>02OK1KPA.edi</code>). Nahoře zkontroluj název závodu, závod, účast a kategorii (SO, MO, CHECK); u MO doplň další operátory. Stanice (jméno, e-mail) je společná pro všechna pásma.</p>
+<p>Každé pásmo má vlastní výkon, anténu, výšku antény a vybavení; kQSO si je pamatuje pro příští závod. Na 145 a 435 MHz rozhoduje výkon o sekci: do 100 W je to LP. <a href="https://vkvpa.hamradio.cz/">VKV PA</a> nabídne odeslání robotovi, <a href="https://fmpohar.nagano.cz/">FM pohár</a> souhrn pro webový formulář.</p>
+<div class="figs">
+<figure class="phone"><img src="img/cs/edi.webp" alt="EDI, závod a stanice" width="390" height="947" loading="lazy"><figcaption>Závod, kategorie MO, operátoři, stanice.</figcaption></figure>
+<figure class="phone"><img src="img/cs/edi-band.webp" alt="EDI, pásmo" width="390" height="478" loading="lazy"><figcaption>Pásmo 435 MHz: výkon, anténa, vysílač, export.</figcaption></figure>
+</div>
+<p>ADIF z tlačítka <b>export</b> obsahuje všechna pásma najednou, třeba pro Wavelog.</p>
+
+<h2 id="activation">5. Aktivace a satelity</h2>
+<h3>Aktivace</h3>
+<p>V aktivaci se předávají reporty: <code>DD2TC 55</code> je přijatý report 55, odeslaný zůstane 59. Jiný odeslaný report napiš s T: <code>DD2TC 55 T57</code>. Referenci protistanice (S2S, P2P) připiš za značku: <code>OK1ABC OK/ZC/001</code> (poslední lomítko se změní na pomlčku). Fungují i reference GMA, POTA, WWFF a rozhledny TOTA.</p>
+<figure class="phone"><img src="img/cs/logging-activation.webp" alt="Aktivace" width="390" height="844" loading="lazy"><figcaption>Aktivace OE/SB-257, 26 spojení na 40, 20 a 10 m.</figcaption></figure>
+<p>Má-li aktivace víc vlastních referencí (vrchol + park), <b>export</b> nabídne celý ADIF a k tomu soubor pro každou referenci zvlášť, jak je chce nahrát každý program.</p>
+
+<h3>Satelity</h3>
+<p>Satelitní log patří k jednomu přeletu. Družici vybereš při zakládání logu; nastaví pásma uplink a downlink i SAT_NAME. Předává se report a lokátor: <code>9A2U 59 JN75RO</code>. Na lineárních družicích jde přepnout <code>ssb</code> a <code>cw</code>.</p>
+<figure class="phone"><img src="img/cs/logging-sat.webp" alt="Satelit" width="390" height="844" loading="lazy"><figcaption>Přelet FO-29.</figcaption></figure>
+
+<h2 id="export">6. Export a Wavelog</h2>
+<p>kQSO nemá import logů a nic nesynchronizuje: log se odešle nebo exportuje a je hotovo.</p>
+<ul>
+<li><b>export</b> v seznamu logů uloží ADIF (v aplikaci přes sdílení nebo do souborů, na webu stažením).</li>
+<li><b>EDI</b> u VKV závodu, viz <a href="#contest">VKV závod</a>.</li>
+<li><b>Wavelog</b>: v Nastavení zadej adresu svého Wavelogu (jen https) a token API v2 se scopes <code>qso:write</code> a <code>station:read</code> (Wavelog 3.1 a novější), klepni Připojit a vyber station profil. U logů Obecný, Satelit a VKV závod se pak objeví tlačítko <b>Wavelog</b>; po klepnutí ukáže, kolik spojení bylo nových a kolik duplicit. Aktivace se do Wavelogu neposílají (jdou do SOTA, POTA… přes jejich vlastní nahrávání).</li>
+</ul>
+<figure class="crop"><img src="img/cs/settings-wavelog.webp" alt="Wavelog v Nastavení" width="374" height="276" loading="lazy"><figcaption>Nastavení → Wavelog.</figcaption></figure>
+
+<h2 id="databases">7. Databáze značek a reference offline</h2>
+<p><b>Databáze značek</b> dává návrhy a lokátory. Skládá se z přibalených sad a z tvých vlastních pracovaných stanic, které přibývají s každým spojením. V Nastavení ji jde vypnout, exportovat, importovat (sloučí se) a vlastní část smazat.</p>
+<p><b>Reference offline</b>: seznamy SOTA, POTA, WWFF, GMA a TOTA pro nabídku referencí v okolí. Okolí se stáhne samo, když je síť; před výletem si stáhni oblast (pole <code>JN</code> nebo lokátor <code>JN69</code>).</p>
+<div class="figs">
+<figure class="crop"><img src="img/cs/settings-calldb.webp" alt="Databáze značek" width="374" height="275" loading="lazy"><figcaption>Databáze značek.</figcaption></figure>
+<figure class="crop"><img src="img/cs/settings-refs.webp" alt="Reference offline" width="374" height="320" loading="lazy"><figcaption>Reference offline.</figcaption></figure>
+</div>
+
+<h2 id="radio">8. Rádio (CI-V) a CW klíčovač</h2>
+<p class="note">Obojí je beta. Chyby prosím hlas na <a href="https://github.com/ok1cdj/kQSO/issues">GitHub Issues</a>.</p>
+<h3>Rádio – CI-V</h3>
+<p>kQSO umí číst a ladit rádia Icom:</p>
+<ul>
+<li><b>IC-705 přes jeho Bluetooth</b> (aplikace pro Android a iOS): Nastavení → Rádio → IC-705 Bluetooth → Připojit. Poprvé na rádiu otevři MENU → SET → Bluetooth Set → Pairing Reception.</li>
+<li><b>Jakýkoli Icom přes klíčovač M5-ESP32-keyer</b> na CI-V konektoru rádia (firmware 2.1.0 a novější; aplikace i Chrome / Edge): Nastavení → Rádio → Přes klíčovač. V rádiu zapni CI-V Transceive.</li>
+</ul>
+<p>Pásmo, mód a přesný kmitočet se pak berou z rádia. Napsané pásmo nebo mód rádio přeladí, <code>F28300</code> ho naladí na 28,300 MHz. Pásmo, které rádio neumí, přepne jen log. Model rádia se pozná podle CI-V adresy; při změněné adrese ho vyber ručně.</p>
+<figure class="crop"><img src="img/cs/settings-rig-on.webp" alt="Rádio CI-V" width="374" height="881" loading="lazy"><figcaption>Rádio – CI-V zapnuté: výběr modelu.</figcaption></figure>
+<p><b>Transvertory (XVERT):</b> pro každé pásmo kmitočet RF a mezifrekvence na rádiu. Klepnutím na pásmo jeho transvertor zapneš. Napsané pásmo pak rádio naladí na mezifrekvenci a do logu jde kmitočet RF (v hlavičce XV).</p>
+<figure class="crop"><img src="img/cs/settings-xvert.webp" alt="Transvertory" width="390" height="696" loading="lazy"><figcaption>Tabulka transvertorů, předvyplněná obvyklými hodnotami.</figcaption></figure>
+
+<h3>CW klíčovač M5</h3>
+<p>Klíčovač <a href="https://keyer.ok1cdj.com/build.html">M5-ESP32-keyer</a> se připojuje přes Bluetooth (aplikace pro Android a iOS, Chrome / Edge): Nastavení → Klíčovač M5 → CW klíčování Ano → Připojit. V CW pak lišta nabízí makra CQ, EX, TU, MY, LOC/REF a ?, hlavička ukazuje RUN nebo S&amp;P a rychlost. Rádia, která klíčují CW přes CI-V (IC-705, 7300, 9700, 7610, 7100), vysílají makra vlastním klíčovačem; v SSB a FM lišta nabízí hlasové paměti T1–T4.</p>
+<ul>
+<li>Makra má každý profil zvlášť pro RUN (dávám CQ) a S&amp;P (odpovídám). Proměnné: <code>{CALL}</code> <code>{MYCALL}</code> <code>{MYLOC}</code> <code>{MYREF}</code> <code>{RST}</code> <code>{NR}</code> <code>{LOC}</code> <code>{REF}</code> <code>{HI}</code> (GM / GA / GE podle místního času).</li>
+<li><b>ESM</b> (jako v N1MM): Enter posílá makra podle stavu spojení. Zapíná se v Nastavení nebo příkazem <code>ESM</code>.</li>
+<li>Na řádku: <code>R</code> / <code>S</code> režim RUN / S&amp;P, <code>S20</code> rychlost 20 WPM, <code>C</code> znovu připojit, <code>K PSE QRS</code> odešle text, samotné <code>K</code> zapne CW klávesnici (co píšeš, jde do éteru). Esc nebo STOP vysílání zastaví.</li>
+</ul>
+<figure class="crop"><img src="img/cs/settings-keyer-on.webp" alt="Klíčovač M5" width="374" height="1540" loading="lazy"><figcaption>Klíčovač M5: rychlost, ESM a makra pro VKV závod / RUN.</figcaption></figure>
+
+<h2 id="keys">9. Hardwarová klávesnice</h2>
+<p>S klávesnicí (počítač, tablet) fungují tyto zkratky. Zkratka, která zrovna nemá co dělat, klávesu nechá být.</p>
+<table>
+<tr><td><kbd>Enter</kbd></td><td>přidat napsané, prázdný Enter zapíše spojení</td></tr>
+<tr><td><kbd>Ctrl+Enter</kbd></td><td>zapsat spojení hned (když má vše potřebné)</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>smazat rozepsaný řádek; při vysílání STOP</td></tr>
+<tr><td><kbd>Alt+W</kbd> <kbd>Alt+D</kbd> <kbd>Alt+H</kbd> <kbd>Alt+E</kbd></td><td>zahodit spojení / smazat poslední / nápověda / upravit poslední</td></tr>
+<tr><td><kbd>Alt+X</kbd></td><td>vzít lokátor nabídnutý z databáze</td></tr>
+<tr><td><kbd>Alt+M</kbd></td><td>mód CW → SSB → FM</td></tr>
+<tr><td><kbd>Alt+L</kbd> / <kbd>Alt+Q</kbd></td><td>seznam QSO / zpět na logy</td></tr>
+<tr><td><kbd>F5</kbd> <kbd>F6</kbd> <kbd>F7</kbd> <kbd>F8</kbd> <kbd>F11</kbd> <kbd>F12</kbd></td><td>makra CQ EX TU ? MY INFO; v SSB / FM F5–F8 hlasové paměti T1–T4</td></tr>
+<tr><td><kbd>PgUp</kbd> / <kbd>PgDn</kbd></td><td>rychlost CW ±2 WPM</td></tr>
+<tr><td><kbd>Alt+R</kbd> <kbd>Alt+S</kbd> <kbd>Alt+C</kbd> <kbd>Alt+K</kbd></td><td>RUN / S&amp;P / připojit klíčovač / CW klávesnice</td></tr>
+<tr><td><kbd>Ctrl+M</kbd></td><td>ESM zapnout / vypnout</td></tr>
+</table>
+
+<h2 id="settings">10. Nastavení</h2>
+<p>⚙ v seznamu logů. Části po řadě:</p>
+<dl class="settings">
+<dt>Zobrazení</dt><dd>Standardní nebo E-ink (jen černá a bílá, bez stínů a animací, pro e-inkové displeje jako Mudita Kompakt). Ve standardním zobrazení téma Systém, Světlý nebo Tmavý.</dd>
+<dt>Klávesnice pro logování</dt><dd>kQSO, Systémová, Žádná; viz <a href="#logging">Zápis spojení</a>.</dd>
+<dt>Značky stanic na mapě, Srážkový radar</dt><dd>Popisky teček na mapě; radar RainViewer na mapě VKV závodu (výchozí vypnuto, jen tehdy jde dotaz do sítě).</dd>
+<dt>Wavelog</dt><dd>Adresa, token, station profil; viz <a href="#export">Export a Wavelog</a>.</dd>
+<dt>Databáze značek, Reference offline</dt><dd>Viz <a href="#databases">Databáze značek</a>.</dd>
+<dt>Rádio – CI-V, Klíčovač M5</dt><dd>Viz <a href="#radio">Rádio a klíčovač</a>.</dd>
+<dt>Úložiště</dt><dd>Kde jsou data a jestli jsou trvalá. Ve webové verzi zapne trvalé úložiště přidání na plochu a první QSO.</dd>
+<dt>Kontrolovat aktualizace / Anonymní statistiky</dt><dd>Android z GitHubu: jednou denně dotaz na novou verzi. Web: anonymní počty obrazovek a funkcí (nikdy obsah logu); obojí jde vypnout.</dd>
+<dt>O aplikaci</dt><dd>Verze, licence, odkazy, <b>Jak zadávat spojení</b>, <b>Návod</b> a <b>Co je nového</b>.</dd>
+</dl>
+<div class="figs">
+<figure class="crop"><img src="img/cs/settings-display.webp" alt="Zobrazení" width="374" height="119" loading="lazy"><figcaption>Zobrazení.</figcaption></figure>
+<figure class="crop"><img src="img/cs/settings-keyboard.webp" alt="Klávesnice" width="374" height="143" loading="lazy"><figcaption>Klávesnice pro logování.</figcaption></figure>
+<figure class="crop"><img src="img/cs/settings-map.webp" alt="Mapa" width="374" height="208" loading="lazy"><figcaption>Mapa a radar.</figcaption></figure>
+<figure class="crop"><img src="img/cs/settings-storage.webp" alt="Úložiště" width="374" height="108" loading="lazy"><figcaption>Úložiště.</figcaption></figure>
+<figure class="crop"><img src="img/cs/settings-about.webp" alt="About" width="374" height="217" loading="lazy"><figcaption>O aplikaci: návod, tahák, novinky.</figcaption></figure>
+</div>
+
+<h2 id="faq">11. Otázky a potíže</h2>
+<dl>
+<dt>Kde jsou moje data?</dt>
+<dd>Jen v zařízení: Android v úložišti aplikace, iOS ve složce Documents (vidíš ji v aplikaci Soubory), web v soukromém úložišti prohlížeče. Žádný server je nevidí. Viz <a href="../privacy.html">zásady ochrany soukromí</a>.</dd>
+<dt>Na webu se mi ztratily logy.</dt>
+<dd>Prohlížeč smí data webu bez trvalého úložiště smazat. Přidej kQSO na plochu a stav ověř v Nastavení → Úložiště. Důležité logy exportuj.</dd>
+<dt>Klíčovač nebo IC-705 se nepřipojí.</dt>
+<dd>Na Androidu povol aplikaci Bluetooth (na Androidu 11 i polohu, kterou systém vyžaduje pro hledání zařízení). Na webu jen Chrome nebo Edge. Když spojení spadne, klepni na ✕ v hlavičce nebo napiš <code>C</code>.</dd>
+<dt>Aplikace nevzala značku nebo lokátor.</dt>
+<dd>Podívej se na štítky pod řádkem: ukazují, co kQSO z textu poznalo. Lokátor se bere až po značce (ve VKV závodě celý lokátor kdykoli). Když něco nesedí, napiš prosím na <a href="https://github.com/ok1cdj/kQSO/issues">GitHub Issues</a>.</dd>
+</dl>
+<footer class="manual-foot"><p>kQSO — autor <b>OK1CDJ</b> · licence <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0</a> · <a href="https://github.com/ok1cdj/kQSO">github.com/ok1cdj/kQSO</a></p></footer>
+</main>
+</body>
+</html>

@@ -13,6 +13,7 @@ phone, tablet or desktop.
 - **Live web:** <https://kqso.ok1cdj.com/> (web 1.13.1; the old `ok1cdj.github.io/kQSO/` redirects there)
 - **Android:** [Google Play](https://play.google.com/store/apps/details?id=com.ok1cdj.kqso), or the APK from [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.13.1) — the same signature, so either updates the other
 - **iOS (iPhone, iPad):** App Store (in review)
+- **Manual** (with screenshots): [English](https://kqso.ok1cdj.com/manual/en.html) · [česky](https://kqso.ok1cdj.com/manual/cs.html), also in the app under Settings → About
 - **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 
 <a href="https://play.google.com/store/apps/details?id=com.ok1cdj.kqso"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80"></a>
@@ -54,7 +55,7 @@ and the map.
   the radio, voice memories, transverters.
 - **E-ink and standard display**, light and dark theme, English and Czech.
 
-Details of each feature are [below](#feature-details).
+Details of each feature are [below](#feature-details); the full **manual** with screenshots is in the app (Settings → About → Manual) and on the web: [English](https://kqso.ok1cdj.com/manual/en.html) · [česky](https://kqso.ok1cdj.com/manual/cs.html).
 
 ## Screenshots
 

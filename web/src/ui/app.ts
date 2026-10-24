@@ -10,6 +10,7 @@ import { QsoListScreen } from './screens/qsolist'
 import { QsoEditScreen } from './screens/qsoedit'
 import { SettingsScreen } from './screens/settings'
 import { HelpScreen } from './screens/help'
+import { ManualScreen } from './screens/manual'
 import { EdiExportScreen } from './screens/ediexport'
 import { MapScreen } from './screens/map'
 import { StatsScreen } from './screens/stats'
@@ -123,6 +124,7 @@ export class App {
         back: () => this.showLogList(),
         openHelp: () => this.showHelp(() => this.showSettings()),
         openWhatsNew: () => this.showWhatsNew(WHATS_NEW, () => this.showSettings()),
+        openManual: () => this.showManual(() => this.showSettings()),
       }),
       'settings',
       () => this.showLogList(),
@@ -159,7 +161,11 @@ export class App {
   }
 
   showHelp(back: () => void): void {
-    this.show(new HelpScreen({ back }), 'help', back)
+    this.show(new HelpScreen({ back, openManual: () => this.showManual(() => this.showHelp(back)) }), 'help', back)
+  }
+
+  showManual(back: () => void): void {
+    this.show(new ManualScreen({ back }), 'manual', back)
   }
 
   showQsoList(logId: string): void {

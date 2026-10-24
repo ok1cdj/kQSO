@@ -2,6 +2,14 @@
 
 What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android app and the iOS app share one version. Newest first.
 
+## [Unreleased]
+
+### Added
+- **Manual** (Czech and English, with screenshots): Settings → About → Manual, and at the end of How to log. Also on the web at kqso.ok1cdj.com/manual/en.html (cs.html). Works offline.
+
+### Fixed
+- **Special-event calls with several digits** (OL900LTV, GB250X) weren't recognized as calls, so such a QSO couldn't be logged.
+
 ## [1.13.1] – 2026-10-24
 
 ### Added
@@ -9,12 +17,12 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 
 ### Fixed
 - **Android Back on What's new** right after an update closed the app; it now closes the notes, like the screen's "‹".
-- **The VHF contest board** came up on a phone held upright when the system keyboard slid up (seen on the Mudita Kompakt); it now needs the device turned to landscape and enough width.
+- **The VHF contest panel** came up on a phone held upright when the system keyboard slid up (seen on the Mudita Kompakt); it now needs the device turned to landscape and enough width.
 
 ## [1.13] – 2026-10-24
 
 ### Added
-- **VHF contest board**: in landscape with the system keyboard or none, the room the kQSO keyboard leaves shows the next serial in big digits (what goes to the other station), the UTC clock, the band's QSO count, rate per 60 / 10 min, points, average and ODX. VHF contest logs only.
+- **VHF contest panel**: in landscape with the system keyboard or none, the room the kQSO keyboard leaves shows the next serial in big digits (what goes to the other station), the UTC clock, the band's QSO count, rate per 60 / 10 min, points, average and ODX. VHF contest logs only.
 - **New VHF callsign database** from the public EDI logs of the ČRK VHF contests (last 2 years, 2 898 logs, 3 055 calls), with the bands each station is QRV on. A call + locator counts once enough logs have it (144 MHz 5, 432 MHz 3, higher 2) or from the station's own log, which drops the typos.
 - **QRV bands**: in a VHF contest the other bands the station is QRV on show after the call, short (`2 70 23 13 … 24G 47G 76G`), without the current one; bands already worked in this log are struck out. Your own QSOs add their band to your callsign database.
 - **Going up the bands**: a station already in this log gets its locator filled in straight away on another band (VHF contest only; a corrected call drops it again).

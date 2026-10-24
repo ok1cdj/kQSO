@@ -9,6 +9,7 @@ import { keyerGuideLink } from '../keyer-guide'
 
 export interface HelpNav {
   back(): void
+  openManual(): void
 }
 
 interface Row {
@@ -319,7 +320,8 @@ export class HelpScreen implements Screen {
       }
       return sec
     })
-    this.root.replaceChildren(bar, ...body)
+    const manual = button(`${t('settings.manual')} ›`, () => this.nav.openManual(), 'btn btn--small')
+    this.root.replaceChildren(bar, ...body, manual)
   }
 
   unmount(): void {}

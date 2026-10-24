@@ -34,6 +34,7 @@ export interface SettingsNav {
   back(): void
   openHelp(): void
   openWhatsNew(): void
+  openManual(): void
 }
 
 const STORAGE_KEY: Record<ReturnType<typeof platformKind>, 'settings.storageNative' | 'settings.storageOpfs' | 'settings.storageMemory'> = {
@@ -834,6 +835,7 @@ export class SettingsScreen implements Screen {
     if (APP_STORE_URL) stores.append(' · ', link('App Store', APP_STORE_URL))
     const links = el('div', 'segmented')
     links.append(
+      button(`${t('settings.manual')} ›`, () => this.nav.openManual(), 'btn btn--small'),
       button(`${t('settings.help')} ›`, () => this.nav.openHelp(), 'btn btn--small'),
       button(`${t('settings.whatsNew')} ›`, () => this.nav.openWhatsNew(), 'btn btn--small'),
     )

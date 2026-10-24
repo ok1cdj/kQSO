@@ -14,9 +14,19 @@ const CACHE = `kqso-${__SW_VERSION__}`
 /** How long a page load waits for the network before it takes the cached copy. */
 const NAV_TIMEOUT_MS = 3000
 
-self.addEventListener('install', () => {
+/** The manual's pages, so it opens offline even if it was never opened online; its
+ *  pictures are cached when the manual is first opened (screens/manual.ts). */
+const PRECACHE = ['manual/cs.html', 'manual/en.html', 'manual/manual.css']
+
+self.addEventListener('install', (event) => {
   // Activate the new worker immediately — don't wait for old tabs to close.
   void self.skipWaiting()
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((cache) => cache.addAll(PRECACHE.map((p) => new URL(p, self.registration.scope).href)))
+      .catch(() => {}), // offline install: they get cached on first use instead
+  )
 })
 
 self.addEventListener('activate', (event) => {

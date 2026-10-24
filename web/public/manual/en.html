@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kQSO — manual</title>
+<link rel="stylesheet" href="manual.css">
+</head>
+<body class="manual-page">
+<main class="manual" data-lang="en">
+<p class="manual-lang"><a href="cs.html">Česky</a></p>
+<h1>kQSO — manual</h1>
+<p class="muted">A ham radio log for SOTA/POTA/WWFF/GMA/TOTA activations, VHF contests, satellites and everyday operating, on the web, Android and iOS. The quick reference for entering QSOs is in the app under <b>?</b> (How to log); this is the whole story, with pictures.</p>
+
+<nav class="manual-toc">
+<ol>
+<li><a href="#start">Getting started</a></li>
+<li><a href="#logs">Logs and profiles</a></li>
+<li><a href="#logging">Logging a QSO</a></li>
+<li><a href="#contest">VHF contest</a></li>
+<li><a href="#activation">Activations and satellites</a></li>
+<li><a href="#export">Export and Wavelog</a></li>
+<li><a href="#databases">Callsign database and offline references</a></li>
+<li><a href="#radio">Radio (CI-V) and the CW keyer</a></li>
+<li><a href="#keys">Hardware keyboard</a></li>
+<li><a href="#settings">Settings</a></li>
+<li><a href="#faq">Questions and problems</a></li>
+</ol>
+</nav>
+
+<h2 id="start">1. Getting started</h2>
+<p>kQSO is a one-line log: you type the whole QSO as text (<code>OK1ABC 59 JN79US</code>) and the app recognizes each part by its shape. It needs no account and no network; everything stays on your device.</p>
+<ul>
+<li><b>Android:</b> Google Play, or the APK from <a href="https://github.com/ok1cdj/kQSO/releases">GitHub</a>.</li>
+<li><b>iPhone and iPad:</b> the iOS app is on its way to the App Store; until then use the web app added to the home screen.</li>
+<li><b>Web:</b> <a href="https://kqso.ok1cdj.com/">kqso.ok1cdj.com</a> in a browser on a computer, tablet or phone. After the first load it works offline too. On iPhone and iPad add it to the home screen (Share → Add to Home Screen), otherwise Safari may clear its data after a while.</li>
+</ul>
+<p>The first screen is the log list. At the top: <b>+ New log</b>, <b>?</b> (how to log) and <b>⚙</b> (Settings). Each log has <b>export</b>, a VHF contest also <b>EDI</b>, and <b>delete</b>.</p>
+<figure class="phone"><img src="img/en/loglist.webp" alt="Log list" width="390" height="844" loading="lazy"><figcaption>The log list: VHF contests, an activation and a satellite pass.</figcaption></figure>
+
+<h2 id="logs">2. Logs and profiles</h2>
+<p><b>+ New log</b> creates a log. Fill in the name, your callsign and locator (the crosshair button fills it from your position), the starting band and mode. The callsign and locator are remembered for the next log. The main choice is the <b>profile</b>, which decides what is exchanged and how the log is exported:</p>
+<ul>
+<li><b>Activation</b> (SOTA, GMA, POTA, WWFF, TOTA): reports and references. Type one or more references, separated by spaces, into <b>My reference</b>, e.g. <code>OK/ZC-001 CZ-0123</code>. The locate button offers the nearest references within 25 km; tap to add.</li>
+<li><b>General:</b> everyday operating, plus the other station's name.</li>
+<li><b>VHF contest:</b> serial numbers, locators, points per km, EDI export. You choose the contest (IARU R1, <a href="https://vkvpa.hamradio.cz/">VKV PA</a>, <a href="https://fmpohar.nagano.cz/">FM pohár</a>) and the entry (whole contest or 6 hours). The locator is required, 6 characters.</li>
+<li><b>Satellite:</b> one log per pass. The satellite sets the uplink and downlink.</li>
+</ul>
+<div class="figs">
+<figure class="phone"><img src="img/en/newlog-activation.webp" alt="New log, Activation" width="390" height="844" loading="lazy"><figcaption>Activation: my references.</figcaption></figure>
+<figure class="phone"><img src="img/en/newlog-vkv.webp" alt="New log, VHF contest" width="390" height="1300" loading="lazy"><figcaption>VHF contest: contest and entry.</figcaption></figure>
+<figure class="phone"><img src="img/en/newlog-sat.webp" alt="New log, Satellite" width="390" height="1300" loading="lazy"><figcaption>Satellite: pick the bird.</figcaption></figure>
+</div>
+<p>Tap a log in the list to get back to logging, even into an unfinished QSO: kQSO writes every QSO at once, so a crash or restart loses nothing.</p>
+
+<h2 id="logging">3. Logging a QSO</h2>
+<figure class="phone right"><img src="img/en/logging.webp" alt="Logging screen" width="390" height="844" loading="lazy"><figcaption>The logging screen with the kQSO keyboard.</figcaption></figure>
+<p>From the top, the logging screen has:</p>
+<ul>
+<li>the <b>header</b>: back to the logs, band and mode, in a VHF contest your next serial (boxed) and the azimuth to the other station, <b>?</b> help and <b>QSO n ›</b> the QSO list;</li>
+<li>the <b>input line</b> you type into;</li>
+<li><b>chips</b> with what the app has recognized so far (CALL, RST, NR, LOC, QRB…), dashed for what is still missing;</li>
+<li>the <b>strip</b> with call and locator suggestions, or the last saved QSO;</li>
+<li>the kQSO <b>keyboard</b>: alphabetical 6×7, big keys that work with gloves.</li>
+</ul>
+<figure class="crop"><img src="img/en/logging-header.webp" alt="Header" width="390" height="48" loading="lazy"><figcaption>VHF contest header: 2m SSB, next serial 449.</figcaption></figure>
+
+<h3>The whole QSO on one line</h3>
+<p>Type what you hear and press <b>Enter</b>. Enter with text adds the parts to the QSO and clears the line; <b>an empty Enter saves the QSO</b>. Only the callsign is required (in a VHF contest also the received number and the locator). With a hardware keyboard <kbd>Ctrl+Enter</kbd> saves the QSO too, straight with whatever is on the line.</p>
+<figure class="crop"><img src="img/en/logging-preview.webp" alt="A whole QSO on the line" width="390" height="170" loading="lazy"><figcaption><code>OK2KZR 59123 JN99AF</code>: call, report 59 + serial 123, locator; the QRB of 179 km shows at once.</figcaption></figure>
+<p><b>You don't have to type the report.</b> In a VHF contest a bare number after the call is the received serial, and the report stays the default 59 (599 in CW). So <code>OK2KZR 123</code> is enough. Put another report in front of the number: <code>57123</code> or <code>57 123</code>.</p>
+<figure class="crop"><img src="img/en/logging-callnr.webp" alt="Call and number" width="390" height="170" loading="lazy"><figcaption><code>OK2KZR 123</code>: RST 59 filled in, 123 is the received serial.</figcaption></figure>
+
+<h3>Piece by piece, as you hear it</h3>
+<p>A QSO <b>doesn't have to be on one line</b>. Send each part with its own Enter, the way the other station gave it: the call, then the number, then the locator. The chips show what you have and what is missing. In a VHF contest an empty Enter saves the QSO only once it has the call, the number and the locator; until then it stays open.</p>
+<div class="figs">
+<figure class="crop"><img src="img/en/logging-step1.webp" alt="Step 1" width="390" height="170" loading="lazy"><figcaption>1. <code>OK2KZR</code> ⏎: the call is in, NR and LOC are missing.</figcaption></figure>
+<figure class="crop"><img src="img/en/logging-step2.webp" alt="Step 2" width="390" height="170" loading="lazy"><figcaption>2. <code>123</code> ⏎: the number is in.</figcaption></figure>
+<figure class="crop"><img src="img/en/logging-step3.webp" alt="Step 3" width="390" height="170" loading="lazy"><figcaption>3. <code>JN99AF</code>: locator, QRB and azimuth. Then ⏎ and an empty ⏎ saves.</figcaption></figure>
+</div>
+<p>To fix a mistyped call, type the new one: a new call replaces the earlier one, the report and locator stay. In a VHF contest you can also start with the locator when you hear it first; the strip then offers the calls the database knows at that locator.</p>
+
+<h3>Suggestions, locator from the database, dupes</h3>
+<p>After two characters the strip offers calls from the database (the bundled list for the log type plus the stations you have worked). A tap fills the call in. When the database knows the station's locator, it offers it as <b>+ locator</b>: a tap (or Alt+X) takes it.</p>
+<div class="figs">
+<figure class="crop"><img src="img/en/logging-suggest.webp" alt="Suggestions" width="390" height="170" loading="lazy"><figcaption>Call suggestions; inverted ones are already in the log.</figcaption></figure>
+<figure class="crop"><img src="img/en/logging-prefill.webp" alt="Locator from the database" width="390" height="170" loading="lazy"><figcaption>Call and number in, the database offers <b>+ JO50HV</b>.</figcaption></figure>
+</div>
+<p>In a VHF contest the <b>QRV</b> chip shows the other bands the station is usually on (from the database). Bands where you already have a QSO with it are struck out, so you see at once where to move it next.</p>
+<figure class="crop"><img src="img/en/logging-qrv.webp" alt="QRV bands" width="390" height="196" loading="lazy"><figcaption>OK1EM on 2 m: QRV on 70 cm up to 122 GHz, 23 cm and 3 cm already worked.</figcaption></figure>
+<p>A <b>dupe</b> turns the whole line black. A dupe is the same call on the same band and mode; in a VHF contest on the same band (any mode), in a satellite log on the same satellite. It can still be logged; in a VHF contest it scores 0 points.</p>
+<figure class="crop"><img src="img/en/logging-dupe.webp" alt="Dupe" width="390" height="170" loading="lazy"><figcaption>OK1OTL is already in the log on 2 m: the line is inverted.</figcaption></figure>
+
+<h3>Band, mode, time</h3>
+<ul>
+<li><code>40m</code>, <code>2m</code>, <code>23cm</code>, <code>ssb</code>, <code>cw</code>, <code>fm</code> switch band and mode; they stick until changed. Microwaves can be typed in GHz: <code>10G</code> = 3 cm, <code>24G</code> = 1.25 cm.</li>
+<li>The QSO time is taken in UTC at your first keystroke. To set it by hand (e.g. from paper), type it as the first part of the line: <code>1832 OK1ABC</code>.</li>
+</ul>
+
+<h3>Commands</h3>
+<p>A single letter alone on the line, then Enter. The preview under the line shows what will happen before you press Enter.</p>
+<table>
+<tr><td><code>W</code></td><td>discard the unfinished QSO</td></tr>
+<tr><td><code>D</code></td><td>delete the last saved QSO (asks first)</td></tr>
+<tr><td><code>E</code></td><td>edit the last saved QSO</td></tr>
+<tr><td><code>H</code></td><td>help</td></tr>
+</table>
+<p><b>Esc</b> clears the line being typed (e.g. a call you only looked up).</p>
+
+<h3>QSO list and editing</h3>
+<p><b>QSO n ›</b> opens the QSO list, newest first. Tap a QSO to edit or delete it. In a VHF contest the list has a band switch, points per QSO and the band's score line; at the top are <b>Map</b> and <b>Statistics</b>.</p>
+<div class="figs">
+<figure class="phone"><img src="img/en/qsolist.webp" alt="QSO list" width="390" height="844" loading="lazy"><figcaption>QSO list with points and the band score.</figcaption></figure>
+<figure class="phone"><img src="img/en/qsoedit.webp" alt="Edit QSO" width="390" height="844" loading="lazy"><figcaption>Editing a QSO.</figcaption></figure>
+</div>
+
+<h3>Keyboard: kQSO, system, none</h3>
+<p>In <b>Settings → Keyboard for logging</b> choose:</p>
+<ul>
+<li><b>kQSO</b>: our own alphabetical keyboard (default);</li>
+<li><b>System</b>: the phone's keyboard (tap the line to open it); the line is at the top with the recent QSOs below;</li>
+<li><b>None</b>: a hardware keyboard only (computer, tablet with a keyboard); the space goes to the recent QSOs and, in a VHF contest in landscape, the contest panel.</li>
+</ul>
+<figure class="phone"><img src="img/en/logging-system-kbd.webp" alt="System keyboard" width="390" height="844" loading="lazy"><figcaption>System keyboard: the line on top, the recent QSOs below.</figcaption></figure>
+
+<h2 id="contest">4. VHF contest</h2>
+<p>A <b>VHF contest</b> log scores the QSOs (1 point per km between locator centres, IARU R1; VKV PA and FM pohár by large-square rings), checks dupes per band and numbers your QSOs. The next serial to give is boxed in the header; the numbering is shared by all bands.</p>
+<p>In the <b>6 hours</b> entry the header shows the time left, and the statistics show which QSOs fall into the six-hour window.</p>
+<figure class="crop"><img src="img/en/logging-6h-header.webp" alt="6-hour header" width="390" height="48" loading="lazy"><figcaption>6 hours: 0:29 left.</figcaption></figure>
+
+<h3>Contest panel</h3>
+<p>On a tablet or computer in landscape, with the system keyboard or none (Settings → Keyboard for logging → None), kQSO shows the <b>contest panel</b> on the right: the number to give in big digits, the UTC clock, the band's QSO count, the rate over the last 60 and 10 minutes, points, the average and the ODX.</p>
+<figure class="wide"><img src="img/en/panel-tablet.webp" alt="Contest panel on a tablet" width="1280" height="800" loading="lazy"><figcaption>Tablet in landscape with a hardware keyboard: recent QSOs on the left, the contest panel on the right.</figcaption></figure>
+<figure class="crop small"><img src="img/en/panel.webp" alt="Contest panel" width="352" height="265" loading="lazy"><figcaption>The contest panel.</figcaption></figure>
+
+<h3>Statistics</h3>
+<p><b>QSO list → Statistics</b> shows, for each band separately (bands are never mixed):</p>
+<ul>
+<li>a summary: QSOs, points and points per QSO, with several bands also the <b>Total</b>;</li>
+<li><b>Per hour (UTC)</b>: QSOs and points in each hour with running totals, so you see when it went well and when it stalled;</li>
+<li><b>Large squares</b>: how many stations from each square, distance and bearing; tap a square for its stations;</li>
+<li><b>Top 10</b>: the band's longest (most valuable) QSOs.</li>
+</ul>
+<div class="figs">
+<figure class="crop"><img src="img/en/stats-hours.webp" alt="Per hour" width="390" height="516" loading="lazy"><figcaption>Polní den, 70 cm per hour: the night break shows at once.</figcaption></figure>
+<figure class="crop"><img src="img/en/stats-squares-open.webp" alt="Large squares" width="390" height="330" loading="lazy"><figcaption>Large squares; JN79 opened.</figcaption></figure>
+<figure class="crop"><img src="img/en/stats-top.webp" alt="Top 10" width="390" height="276" loading="lazy"><figcaption>The band's top 10 QSOs.</figcaption></figure>
+</div>
+<p>In a 6-hour entry the statistics show when the six-hour window ran, and the per-hour table has an <b>out of 6 h</b> column for the QSOs that don't count for the entry.</p>
+<figure class="crop"><img src="img/en/stats-6h.webp" alt="6 hours" width="390" height="150" loading="lazy"><figcaption>OL0M, 6 hours: window 06:30–12:30 UTC.</figcaption></figure>
+
+<h3>Map</h3>
+<p><b>QSO list → Map</b>: a dot per worked locator, the locator grid and your QTH. Drag to move, − + to zoom, the corners button fits everything. In Settings you can hide the calls next to the dots.</p>
+<p><b>Tap the map</b> and the top left shows that spot's locator, distance (QRB) and azimuth from you, as in the log. Handy to see where to turn the antenna for a rain cell or a station you haven't worked yet. The × closes it.</p>
+<p><b>Rain radar</b> (Settings → Rain radar on the VHF contest map, off by default) adds the current RainViewer precipitation frame under the map. It is a tool for <b>rain scatter on 3 cm</b>: it shows where the rain cells are, and a tap into one gives the azimuth to turn the antenna to. The frame refreshes while the map is open; its UTC time is at the bottom left. The radar is for VHF contests only and is the only time the map uses the network (no log data is sent). In E-ink it is drawn in greys.</p>
+<figure class="wide"><img src="img/en/map-tablet.webp" alt="Map" width="1280" height="800" loading="lazy"><figcaption>The Polní den map, 2 m band.</figcaption></figure>
+<figure class="wide"><img src="img/en/map-radar-tablet.webp" alt="Map with the rain radar" width="1280" height="800" loading="lazy"><figcaption>With the rain radar; a tap showed JN88IN · 153 km · 151°.</figcaption></figure>
+
+<h3>EDI export</h3>
+<p>The <b>EDI</b> button in the log list prepares the files for the contest manager: one file per band (e.g. <code>02OK1KPA.edi</code>). At the top check the contest name, the contest, the entry and the category (SO, MO, CHECK); for MO add the other operators. The station (name, e-mail) is the same on every band.</p>
+<p>Each band has its own power, antenna, antenna height and equipment; kQSO remembers them for the next contest. On 145 and 435 MHz the power decides the section: up to 100 W it is LP. <a href="https://vkvpa.hamradio.cz/">VKV PA</a> offers sending to the robot, <a href="https://fmpohar.nagano.cz/">FM pohár</a> a summary for its web form.</p>
+<div class="figs">
+<figure class="phone"><img src="img/en/edi.webp" alt="EDI, contest and station" width="390" height="947" loading="lazy"><figcaption>Contest, MO category, operators, station.</figcaption></figure>
+<figure class="phone"><img src="img/en/edi-band.webp" alt="EDI, one band" width="390" height="496" loading="lazy"><figcaption>The 435 MHz band: power, antenna, transmitter, export.</figcaption></figure>
+</div>
+<p>The ADIF from the <b>export</b> button has all bands in one file, e.g. for Wavelog.</p>
+
+<h2 id="activation">5. Activations and satellites</h2>
+<h3>Activations</h3>
+<p>An activation exchanges reports: <code>DD2TC 55</code> is a received 55, the sent report stays 59. Give another sent report with T: <code>DD2TC 55 T57</code>. Add the other station's reference (S2S, P2P) after the call: <code>OK1ABC OK/ZC/001</code> (the last slash becomes a dash). GMA, POTA, WWFF and TOTA tower references work too.</p>
+<figure class="phone"><img src="img/en/logging-activation.webp" alt="Activation" width="390" height="844" loading="lazy"><figcaption>Activation of OE/SB-257, 26 QSOs on 40, 20 and 10 m.</figcaption></figure>
+<p>When an activation has several own references (a summit + a park), <b>export</b> offers the whole ADIF plus one file per reference, as each program wants its own upload.</p>
+
+<h3>Satellites</h3>
+<p>A satellite log is one pass. You pick the satellite when creating the log; it sets the uplink and downlink bands and SAT_NAME. The exchange is a report and a locator: <code>9A2U 59 JN75RO</code>. On linear birds you can switch <code>ssb</code> and <code>cw</code>.</p>
+<figure class="phone"><img src="img/en/logging-sat.webp" alt="Satellite" width="390" height="844" loading="lazy"><figcaption>An FO-29 pass.</figcaption></figure>
+
+<h2 id="export">6. Export and Wavelog</h2>
+<p>kQSO has no log import and syncs nothing: a log is sent or exported, and that's it.</p>
+<ul>
+<li><b>export</b> in the log list saves an ADIF (in the apps through share or to files, on the web as a download).</li>
+<li><b>EDI</b> for a VHF contest, see <a href="#contest">VHF contest</a>.</li>
+<li><b>Wavelog</b>: in Settings enter your Wavelog's URL (https only) and an API v2 token with the scopes <code>qso:write</code> and <code>station:read</code> (Wavelog 3.1 and newer), tap Connect and pick the station profile. General, Satellite and VHF contest logs then get a <b>Wavelog</b> button; after a tap it shows how many QSOs were new and how many dupes. Activations are not pushed to Wavelog (they go to SOTA, POTA… through their own uploads).</li>
+</ul>
+<figure class="crop"><img src="img/en/settings-wavelog.webp" alt="Wavelog in Settings" width="374" height="297" loading="lazy"><figcaption>Settings → Wavelog.</figcaption></figure>
+
+<h2 id="databases">7. Callsign database and offline references</h2>
+<p>The <b>callsign database</b> gives suggestions and locators. It is made of bundled sets and your own worked stations, which grow with every QSO. In Settings you can switch it off, export it, import (merges) and delete your own part.</p>
+<p><b>Offline references</b>: the SOTA, POTA, WWFF, GMA and TOTA lists for the nearby references offer. The area around you downloads by itself when online; before a trip download an area (field <code>JN</code> or locator <code>JN69</code>).</p>
+<div class="figs">
+<figure class="crop"><img src="img/en/settings-calldb.webp" alt="Callsign database" width="374" height="274" loading="lazy"><figcaption>Callsign database.</figcaption></figure>
+<figure class="crop"><img src="img/en/settings-refs.webp" alt="Offline references" width="374" height="342" loading="lazy"><figcaption>Offline references.</figcaption></figure>
+</div>
+
+<h2 id="radio">8. Radio (CI-V) and the CW keyer</h2>
+<p class="note">Both are beta. Please report bugs on <a href="https://github.com/ok1cdj/kQSO/issues">GitHub Issues</a>.</p>
+<h3>Radio – CI-V</h3>
+<p>kQSO reads and tunes Icom radios:</p>
+<ul>
+<li><b>IC-705 over its Bluetooth</b> (Android and iOS apps): Settings → Radio → IC-705 Bluetooth → Connect. The first time open MENU → SET → Bluetooth Set → Pairing Reception on the radio.</li>
+<li><b>Any Icom through the M5-ESP32-keyer</b> on the radio's CI-V jack (firmware 2.1.0 and newer; apps and Chrome / Edge): Settings → Radio → Via the keyer. Switch CI-V Transceive on in the radio.</li>
+</ul>
+<p>Band, mode and the exact frequency then come from the radio. A typed band or mode tunes the radio, <code>F28300</code> tunes it to 28.300 MHz. A band the radio can't do switches only the log. The radio model goes by its CI-V address; choose it by hand if the address was changed.</p>
+<figure class="crop"><img src="img/en/settings-rig-on.webp" alt="Radio CI-V" width="374" height="838" loading="lazy"><figcaption>Radio – CI-V on: picking the model.</figcaption></figure>
+<p><b>Transverters (XVERT):</b> per band the RF frequency and the IF on the radio. Tap a band to switch its transverter on. A typed band then tunes the radio to the IF and the log gets the RF frequency (XV in the header).</p>
+<figure class="crop"><img src="img/en/settings-xvert.webp" alt="Transverters" width="390" height="696" loading="lazy"><figcaption>The transverter table, prefilled with the usual values.</figcaption></figure>
+
+<h3>M5 CW keyer</h3>
+<p>The <a href="https://keyer.ok1cdj.com/build.html">M5-ESP32-keyer</a> connects over Bluetooth (Android and iOS apps, Chrome / Edge): Settings → M5 keyer → CW keying Yes → Connect. In CW the strip then offers the macros CQ, EX, TU, MY, LOC/REF and ?, and the header shows RUN or S&amp;P and the speed. Radios that key CW over CI-V (IC-705, 7300, 9700, 7610, 7100) send the macros with their own keyer; in SSB and FM the strip offers the voice memories T1–T4.</p>
+<ul>
+<li>Each profile has its own macros for RUN (I call CQ) and S&amp;P (I answer). Variables: <code>{CALL}</code> <code>{MYCALL}</code> <code>{MYLOC}</code> <code>{MYREF}</code> <code>{RST}</code> <code>{NR}</code> <code>{LOC}</code> <code>{REF}</code> <code>{HI}</code> (GM / GA / GE by local time).</li>
+<li><b>ESM</b> (as in N1MM): Enter sends the macros by the state of the QSO. Switch it on in Settings or with the <code>ESM</code> command.</li>
+<li>On the line: <code>R</code> / <code>S</code> RUN / S&amp;P mode, <code>S20</code> speed 20 WPM, <code>C</code> reconnect, <code>K PSE QRS</code> sends the text, <code>K</code> alone starts the CW keyboard (what you type goes on the air). Esc or STOP stops sending.</li>
+</ul>
+<figure class="crop"><img src="img/en/settings-keyer-on.webp" alt="M5 keyer" width="374" height="1540" loading="lazy"><figcaption>M5 keyer: speed, ESM and the VHF contest / RUN macros.</figcaption></figure>
+
+<h2 id="keys">9. Hardware keyboard</h2>
+<p>With a keyboard (computer, tablet) these shortcuts work. A shortcut with nothing to do right now leaves the key alone.</p>
+<table>
+<tr><td><kbd>Enter</kbd></td><td>add what is typed; an empty Enter saves the QSO</td></tr>
+<tr><td><kbd>Ctrl+Enter</kbd></td><td>save the QSO now (when it has all it needs)</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>clear the line being typed; while sending, STOP</td></tr>
+<tr><td><kbd>Alt+W</kbd> <kbd>Alt+D</kbd> <kbd>Alt+H</kbd> <kbd>Alt+E</kbd></td><td>discard the QSO / delete the last / help / edit the last</td></tr>
+<tr><td><kbd>Alt+X</kbd></td><td>take the locator the database offers</td></tr>
+<tr><td><kbd>Alt+M</kbd></td><td>mode CW → SSB → FM</td></tr>
+<tr><td><kbd>Alt+L</kbd> / <kbd>Alt+Q</kbd></td><td>QSO list / back to the logs</td></tr>
+<tr><td><kbd>F5</kbd> <kbd>F6</kbd> <kbd>F7</kbd> <kbd>F8</kbd> <kbd>F11</kbd> <kbd>F12</kbd></td><td>macros CQ EX TU ? MY INFO; in SSB / FM F5–F8 the voice memories T1–T4</td></tr>
+<tr><td><kbd>PgUp</kbd> / <kbd>PgDn</kbd></td><td>CW speed ±2 WPM</td></tr>
+<tr><td><kbd>Alt+R</kbd> <kbd>Alt+S</kbd> <kbd>Alt+C</kbd> <kbd>Alt+K</kbd></td><td>RUN / S&amp;P / connect the keyer / CW keyboard</td></tr>
+<tr><td><kbd>Ctrl+M</kbd></td><td>ESM on / off</td></tr>
+</table>
+
+<h2 id="settings">10. Settings</h2>
+<p>⚙ in the log list. The parts in order:</p>
+<dl class="settings">
+<dt>Display</dt><dd>Standard or E-ink (black and white only, no shadows or animations, for e-ink screens such as the Mudita Kompakt). In Standard the theme System, Light or Dark.</dd>
+<dt>Keyboard for logging</dt><dd>kQSO, System, None; see <a href="#logging">Logging a QSO</a>.</dd>
+<dt>Station calls on the map, Rain radar</dt><dd>Labels next to the map dots; the RainViewer radar on the VHF contest map (off by default, the only time it uses the network).</dd>
+<dt>Wavelog</dt><dd>URL, token, station profile; see <a href="#export">Export and Wavelog</a>.</dd>
+<dt>Callsign database, Offline references</dt><dd>See <a href="#databases">Callsign database</a>.</dd>
+<dt>Radio – CI-V, M5 keyer</dt><dd>See <a href="#radio">Radio and keyer</a>.</dd>
+<dt>Storage</dt><dd>Where the data is and whether it is persistent. In the web app, adding it to the home screen and the first QSO make the storage persistent.</dd>
+<dt>Check for updates / Anonymous usage statistics</dt><dd>Android from GitHub: once a day asks for a new version. Web: anonymous counts of screens and features (never log content); both can be switched off.</dd>
+<dt>About</dt><dd>Version, licence, links, <b>How to log</b>, <b>Manual</b> and <b>What's new</b>.</dd>
+</dl>
+<div class="figs">
+<figure class="crop"><img src="img/en/settings-display.webp" alt="Display" width="374" height="119" loading="lazy"><figcaption>Display.</figcaption></figure>
+<figure class="crop"><img src="img/en/settings-keyboard.webp" alt="Keyboard" width="374" height="143" loading="lazy"><figcaption>Keyboard for logging.</figcaption></figure>
+<figure class="crop"><img src="img/en/settings-map.webp" alt="Map" width="374" height="208" loading="lazy"><figcaption>Map and radar.</figcaption></figure>
+<figure class="crop"><img src="img/en/settings-storage.webp" alt="Storage" width="374" height="108" loading="lazy"><figcaption>Storage.</figcaption></figure>
+<figure class="crop"><img src="img/en/settings-about.webp" alt="About" width="374" height="198" loading="lazy"><figcaption>About: manual, quick reference, what's new.</figcaption></figure>
+</div>
+
+<h2 id="faq">11. Questions and problems</h2>
+<dl>
+<dt>Where is my data?</dt>
+<dd>Only on your device: on Android in the app's storage, on iOS in its Documents folder (visible in the Files app), on the web in the browser's private storage. No server sees it. See the <a href="../privacy.html">privacy policy</a>.</dd>
+<dt>My logs disappeared in the web app.</dt>
+<dd>A browser may clear a site's data without persistent storage. Add kQSO to the home screen and check Settings → Storage. Export important logs.</dd>
+<dt>The keyer or the IC-705 won't connect.</dt>
+<dd>On Android allow Bluetooth for the app (on Android 11 also location, which the system requires for a device scan). On the web only Chrome or Edge. When the link drops, tap ✕ in the header or type <code>C</code>.</dd>
+<dt>The app didn't take a call or a locator.</dt>
+<dd>Look at the chips under the line: they show what kQSO recognized. A locator counts only after the call (in a VHF contest a full locator any time). If something looks wrong, please write to <a href="https://github.com/ok1cdj/kQSO/issues">GitHub Issues</a>.</dd>
+</dl>
+<footer class="manual-foot"><p>kQSO — by <b>OK1CDJ</b> · licence <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0</a> · <a href="https://github.com/ok1cdj/kQSO">github.com/ok1cdj/kQSO</a></p></footer>
+</main>
+</body>
+</html>
