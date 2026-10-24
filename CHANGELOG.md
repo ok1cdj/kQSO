@@ -9,7 +9,6 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 - **New VHF callsign database** from the public EDI logs of the ČRK VHF contests (last 2 years, 2 898 logs, 3 055 calls), with the bands each station is QRV on. A call + locator counts once enough logs have it (144 MHz 5, 432 MHz 3, higher 2) or from the station's own log, which drops the typos.
 - **QRV bands**: in a VHF contest a chip after the call shows the station's other bands, short (`2 70 23 13 … 24G 47G 76G`), without the current one; bands already worked in this log are struck out. Your own QSOs add their band to your callsign database.
 - **Going up the bands**: a station already in this log gets its locator filled in straight away on another band (VHF contest only; a corrected call drops it again).
-
 - **Hardware keyboard shortcuts** on the logging screen: Ctrl+Enter saves the QSO when it has all it needs; Alt+W / D / H / E as the line commands (Alt+D keeps the line being typed); Alt+X takes the offered locator; Alt+M cycles CW → SSB → FM; Alt+L the QSO list, Alt+Q back; F5 F6 F7 F8 F11 F12 the macros CQ EX TU ? MY INFO (F5–F8 the radio's voice memories in SSB / FM); PgUp / PgDn the CW speed ±2; Alt+R / S / C / K RUN, S&P, connect the keyer, CW keyboard; Ctrl+M ESM on / off. A shortcut with nothing to do leaves the key to the browser.
 - **E ⏎** edits the last saved QSO.
 
