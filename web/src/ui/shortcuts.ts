@@ -50,7 +50,7 @@ export function matchShortcut(e: KeyInput): Shortcut | undefined {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.altKey) return { type: 'save' }
   // Ctrl, not Cmd: Cmd+M minimizes the window on macOS. (Firefox mutes the tab on Ctrl+M —
   // the screen takes the key only while CW keying is on.)
-  if (e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyM') return { type: 'esm' }
+  if (e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey && e.code === 'KeyM') return { type: 'esm' }
   if (e.altKey && !e.ctrlKey && !e.metaKey) return ALT[e.code]
   if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return undefined
   const f = (F_KEYS as readonly string[]).indexOf(e.key)

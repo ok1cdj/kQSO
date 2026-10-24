@@ -51,6 +51,7 @@ describe('matchShortcut', () => {
   it('Ctrl+M is ESM; Cmd+M (macOS minimize) and Alt+M (mode) are not', () => {
     expect(matchShortcut(key('m', { code: 'KeyM', ctrlKey: true }))).toEqual({ type: 'esm' })
     expect(matchShortcut(key('m', { code: 'KeyM', metaKey: true }))).toBeUndefined()
+    expect(matchShortcut(key('M', { code: 'KeyM', ctrlKey: true, shiftKey: true }))).toBeUndefined() // the browser's
     expect(matchShortcut(alt('KeyM'))).toEqual({ type: 'mode' })
   })
 })
