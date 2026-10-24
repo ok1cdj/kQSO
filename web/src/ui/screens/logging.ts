@@ -113,6 +113,8 @@ export class LoggingScreen implements Screen {
   private readonly banner = el('div', 'banner')
   // VHF contest, wide layout without our keyboard: big QSO count + stats on the right.
   private readonly board = new ContestBoard()
+  // VHF contest: the locator filled in from this log, and for which call (dropped if the call changes).
+  private autoGrid: { call: string; grid: string } | undefined
   private boardTimer: ReturnType<typeof setTimeout> | undefined // the first tick, then the interval (clearInterval clears either)
   private readonly screenEl = el('div', 'screen screen--log')
   private readonly kbEl = createKeyboard((a) => this.onKey(a))
@@ -378,15 +380,19 @@ export class LoggingScreen implements Screen {
     const hadContent = hasContent(this.state.partial)
     const before = { lineEmpty: this.line.trim() === '', hadContent, hadCall: this.state.partial.call !== undefined }
     const prev = this.state.sticky
-    const r = reduce(this.state, { type: 'enter', line: this.line }, this.meta)
+    const r = reduce(this.lineState(), { type: 'enter', line: this.line }, this.meta)
     this.state = r.state
     if (r.clearInput) this.line = ''
     // VHF contest, worked already on another band (going up the bands with a station): its locator
     // goes straight in. Elsewhere a log spans days and stations move — only the suggestion chip.
     const p = this.state.partial
-    if (PROFILES[this.meta.profile].contest && !r.committed && p.call !== undefined && p.grid === undefined) {
+    if (r.committed || p.call === undefined) this.autoGrid = undefined
+    else if (PROFILES[this.meta.profile].contest && p.grid === undefined) {
       const grid = this.loggedLoc(p.call)
-      if (grid) this.state = { ...this.state, partial: { ...p, grid } }
+      if (grid) {
+        this.state = { ...this.state, partial: { ...p, grid } }
+        this.autoGrid = { call: p.call.toUpperCase(), grid }
+      }
     }
     // Radio connected: a typed band / mode tunes it; its transceive then confirms.
     const next = this.state.sticky
@@ -515,7 +521,7 @@ export class LoggingScreen implements Screen {
    *  number again, not the next number; likewise `saved`, the QSO an ESM Enter has just
    *  saved (S&P sends its exchange with that QSO's number). */
   private async sendMacro(slot: MacroSlot, saved?: Qso): Promise<void> {
-    const dry = parseLine(this.line, this.state.sticky, this.state.partial, PROFILES[this.meta.profile]).partial
+    const dry = parseLine(this.line, this.state.sticky, this.lineState().partial, PROFILES[this.meta.profile]).partial
     const last = this.qsos.length > 0 ? this.qsos[this.qsos.length - 1] : undefined
     const from = saved ?? (dry.call === undefined ? last : undefined)
     const common = { myCall: this.meta.myCall, myLoc: this.meta.myGrid, myRef: this.meta.myRefs?.map((r) => r.value).join(' '), hi: greeting(new Date()) }
@@ -736,7 +742,7 @@ export class LoggingScreen implements Screen {
   private renderAll(): void {
     // Dry-run the current line onto the accumulated QSO once; the header (azimuth)
     // and the preview both show what will actually be saved.
-    const dry = parseLine(this.line, this.state.sticky, this.state.partial, PROFILES[this.meta.profile])
+    const dry = parseLine(this.line, this.state.sticky, this.lineState().partial, PROFILES[this.meta.profile])
     if (PROFILES[this.meta.profile].contest && this.state.sticky.band !== this.recentBand) this.renderRecent()
     this.renderHeader(dry.partial)
     this.renderLine(dry.sticky)
@@ -1126,6 +1132,16 @@ export class LoggingScreen implements Screen {
     this.stampFirstKeystroke()
     this.line = call
     this.renderAll()
+  }
+
+  /** The state the current line applies to: a locator filled in for another call is dropped
+   *  (OK1ABC filled, then corrected to OK1ABD — not OK1ABC's locator). */
+  private lineState(): CoreState {
+    const a = this.autoGrid
+    const p = this.state.partial
+    if (!a || p.grid !== a.grid || this.effectiveCall()?.toUpperCase() === a.call) return this.state
+    const { grid: _drop, ...rest } = p
+    return { ...this.state, partial: rest }
   }
 
   private fillGrid(grid: string): void {

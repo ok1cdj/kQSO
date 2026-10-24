@@ -150,7 +150,7 @@ class Site:
     def get(self, path, fresh=False):
         """GET BASE+path, cached under its path. fresh: download again while the budget lasts.
         Raises Budget when out of requests and not cached."""
-        f = self.cache / re.sub(r'[^A-Za-z0-9._-]', '_', path or 'index')
+        f = self.file(path)
         if f.exists() and (not fresh or self.budget <= 0):
             return f.read_bytes()
         if self.budget <= 0:
@@ -163,6 +163,9 @@ class Site:
         f.write_bytes(data)
         return data
 
+    def file(self, path):
+        return self.cache / re.sub(r'[^A-Za-z0-9._-]', '_', path or 'index')
+
     def rounds(self):
         """[(id, name, end date)], newest first. The front page is fetched fresh (new rounds appear)."""
         page = decode(self.get('', fresh=True))
@@ -173,14 +176,19 @@ class Site:
                 out.append((int(rid), m.group(1), date(int(m.group(4)), int(m.group(3)), int(m.group(2)))))
         return out
 
-    def log_ids(self, rid):
-        """The round's log ids. Missing (still being evaluated) → []."""
+    def log_ids(self, rid, end):
+        """The round's log ids. Missing (still being evaluated) → []. A round that ended in the
+        last 60 days is fetched again (more logs may come), and a page without logs isn't kept."""
+        path = f'index.php?page=results&filter=ok&id_round={rid}'
         try:
-            page = decode(self.get(f'index.php?page=results&filter=ok&id_round={rid}'))
+            page = decode(self.get(path, fresh=(date.today() - end).days < 60))
         except OSError as e:
             print(f'  round {rid}: {e}', file=sys.stderr)
             return []
-        return sorted({int(x) for x in re.findall(rf'page=log_details&id_round={rid}&log=(\d+)', page)})
+        ids = sorted({int(x) for x in re.findall(rf'page=log_details&id_round={rid}&log=(\d+)', page)})
+        if not ids:
+            self.file(path).unlink(missing_ok=True)
+        return ids
 
     def edi(self, rid, lid):
         """The log's EDI text (via its details page), or None."""
@@ -247,7 +255,7 @@ def main():
     logs, nrounds, missing = [], 0, 0
     for rid, name, end in rounds:
         try:
-            ids = site.log_ids(rid)[: args.limit]
+            ids = site.log_ids(rid, end)[: args.limit]
         except Budget:
             missing += 1
             continue
