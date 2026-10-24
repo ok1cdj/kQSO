@@ -13,6 +13,8 @@ import {
   writeLogFile,
   matchCommand,
   matchKeyerCommand,
+  applyMode,
+  buildQso,
   matchTuneCommand,
   hasContent,
   esmMessage,
@@ -54,6 +56,8 @@ import type { KeyboardMode } from '../keyboard'
 import type { KeyAction } from '../keys'
 import type { KeyerController } from '../keyer'
 import { VOICE_MEMORIES } from '../rig'
+import { matchShortcut, nextMode } from '../shortcuts'
+import type { Shortcut } from '../shortcuts'
 import { ContestBoard } from '../contest-board'
 import type { RigController } from '../rig'
 
@@ -87,6 +91,8 @@ const MACRO_BUTTONS: ReadonlyArray<readonly [MacroSlot, string | undefined]> = [
   ['INFO', undefined],
   ['?', '?'],
 ]
+// Hardware keyboard F5 F6 F7 F8 F11 F12 (shortcuts.ts F_KEYS) → these macros, as in Tučňák.
+const F_SLOTS: readonly MacroSlot[] = ['CQ', 'EXCH', 'TU', '?', 'MYCALL', 'INFO']
 
 export class LoggingScreen implements Screen {
   private meta!: LogMeta
@@ -305,6 +311,13 @@ export class LoggingScreen implements Screen {
 
   private onHardwareKey(e: KeyboardEvent): void {
     const k = e.key
+    // Shortcuts first (also in the system keyboard's input); one that doesn't apply now
+    // lets the key through (F5 without the keyer still reloads).
+    const sc = matchShortcut(e)
+    if (sc && this.runShortcut(sc)) {
+      e.preventDefault()
+      return
+    }
     // In the system keyboard's input only Enter / Esc go this way; characters and
     // Backspace come as input events (Android's soft keys have no key value).
     if (e.target === this.sysInput && k !== 'Enter' && k !== 'Escape') return
@@ -321,12 +334,94 @@ export class LoggingScreen implements Screen {
       this.renderAll()
       return
     }
+    // Alt / Ctrl / Cmd + a key that is no shortcut here: not typing, leave it to the browser.
+    if (e.altKey || e.ctrlKey || e.metaKey) return
     // Keyboard mode also takes the keyer's punctuation from a hardware keyboard.
     if (this.txMode && /^[?.,=+-]$/.test(k)) return this.handled(e, { type: 'char', value: k })
     if (k === 'Enter') return this.handled(e, { type: 'enter' })
     if (k === 'Backspace') return this.handled(e, { type: 'backspace' })
     if (k === ' ') return this.handled(e, { type: 'space' })
     if (/^[A-Za-z0-9/]$/.test(k)) return this.handled(e, { type: 'char', value: k.toUpperCase() })
+  }
+
+  /** Run a hardware-keyboard shortcut; false when it doesn't apply now (the key goes on). */
+  private runShortcut(sc: Shortcut): boolean {
+    // CW keyboard mode: only the macros, the speed and Alt+K (leave it).
+    if (this.txMode && sc.type !== 'memory' && sc.type !== 'speed' && !(sc.type === 'keyer' && sc.letter === 'K')) return false
+    switch (sc.type) {
+      case 'memory': {
+        const slot = F_SLOTS[sc.index]
+        if (slot && this.macrosShown()) {
+          void this.sendMacro(slot)
+          return true
+        }
+        const voice = VOICE_MEMORIES[sc.index]
+        if (voice !== undefined && this.voiceShown()) {
+          void this.rig.playVoice(voice)
+          return true
+        }
+        return false
+      }
+      case 'speed': {
+        const wpm = this.keyer.wpm
+        if (!this.keyerOn() || !this.keyer.connected || wpm === undefined) return false
+        void this.keyer.setSpeed(wpm + sc.delta)
+        return true
+      }
+      case 'line':
+        void this.lineShortcut(sc.letter)
+        return true
+      case 'keyer':
+        if (!this.keyerOn()) return false
+        if (this.txMode) {
+          this.exitTx()
+          this.renderAll()
+        } else void this.runKeyerCommand(matchKeyerCommand(sc.letter)!, true).then(() => this.renderAll())
+        return true
+      case 'loc': {
+        const grid = this.locSuggestion()
+        if (!grid) return false
+        this.fillGrid(grid)
+        return true
+      }
+      case 'mode':
+        this.cycleMode()
+        return true
+      case 'list':
+        this.nav.toQsoList()
+        return true
+      case 'back':
+        this.close()
+        return true
+      case 'save':
+        void this.saveNow()
+        return true
+    }
+  }
+
+  /** Alt+W / D / H / E = the line command, as if typed alone + Enter. The typed line stays
+   *  (Alt+D deletes the last QSO without losing it); Alt+W discards it too. */
+  private async lineShortcut(letter: 'W' | 'D' | 'H' | 'E'): Promise<void> {
+    const keep = letter === 'W' ? '' : this.line
+    this.line = letter
+    await this.commit()
+    this.line = keep
+    this.renderAll()
+  }
+
+  /** Ctrl+Enter: take the typed line in and save the QSO when it has all it needs. The
+   *  line's own Enter sends no ESM macro — the save's does (RUN: TU, S&P: EXCH). */
+  private async saveNow(): Promise<void> {
+    if (this.line.trim() !== '') await this.commit(false)
+    if (this.line.trim() === '' && this.state.hasStarted && buildQso(this.lineState().partial, this.state.sticky, this.meta)) await this.commit()
+  }
+
+  /** Alt+M: CW → SSB → FM, as if typed; a radio connected tunes to it. */
+  private cycleMode(): void {
+    const mode = nextMode(this.state.sticky.mode)
+    this.state = { ...this.state, sticky: applyMode(this.state.sticky, mode) }
+    if (this.rigSets()) void this.rig.tune(undefined, mode)
+    this.renderAll()
   }
 
   private handled(e: KeyboardEvent, a: KeyAction): void {
@@ -362,7 +457,8 @@ export class LoggingScreen implements Screen {
     }
   }
 
-  private async commit(): Promise<void> {
+  /** Enter. `esm` false: no ESM macro for it (Ctrl+Enter's first step). */
+  private async commit(esm = true): Promise<void> {
     // F28300: tune the radio (only with the radio switched on — else F… is just input).
     const hz = this.rig.enabled ? matchTuneCommand(this.line) : undefined
     if (hz !== undefined) {
@@ -436,7 +532,7 @@ export class LoggingScreen implements Screen {
     this.renderAll()
     // ESM: Enter sends the macro for what it just did (after the save, so the macro
     // carries the saved QSO's call, report and number).
-    if (this.esmOn()) {
+    if (esm && this.esmOn()) {
       const slot = esmMessage(this.keyer.mode, before, {
         committed: committed !== undefined,
         hasCall: this.state.partial.call !== undefined,
@@ -453,9 +549,14 @@ export class LoggingScreen implements Screen {
 
   // --- line commands ----------------------------------------------
 
-  private async runCommand(cmd: 'wipe' | 'deleteLast' | 'deleteLastBlocked' | 'help', hadContent: boolean): Promise<void> {
+  private async runCommand(cmd: 'wipe' | 'deleteLast' | 'deleteLastBlocked' | 'help' | 'editLast', hadContent: boolean): Promise<void> {
     if (cmd === 'help') {
       this.nav.toHelp()
+      return
+    }
+    if (cmd === 'editLast') {
+      if (this.qsos.length === 0) this.notice = t('logging.nothingToEdit')
+      else this.nav.editQso(this.qsos.length - 1)
       return
     }
     if (cmd === 'deleteLastBlocked') {
@@ -490,10 +591,13 @@ export class LoggingScreen implements Screen {
     return this.keyer.activeFor(this.state.sticky.mode)
   }
 
-  private async runKeyerCommand(kc: KeyerCommand): Promise<void> {
-    this.line = ''
-    // The command letter stamped the QSO time; drop it unless a QSO is under way.
-    if (!hasContent(this.state.partial)) this.state = { ...this.state, partial: {}, hasStarted: false }
+  /** `keepLine`: from a shortcut (Alt+R …) — the typed line and the QSO under way stay. */
+  private async runKeyerCommand(kc: KeyerCommand, keepLine = false): Promise<void> {
+    if (!keepLine) {
+      this.line = ''
+      // The command letter stamped the QSO time; drop it unless a QSO is under way.
+      if (!hasContent(this.state.partial)) this.state = { ...this.state, partial: {}, hasStarted: false }
+    }
     if (kc.type === 'run' || kc.type === 'sp') {
       // No notice: the header shows RUN / S&P, and the strip keeps the macro buttons.
       await this.keyer.setMode(kc.type)
@@ -885,7 +989,9 @@ export class LoggingScreen implements Screen {
           ? t('logging.cmdWipe')
           : cmd === 'help'
             ? t('logging.cmdHelp')
-            : blocked
+            : cmd === 'editLast'
+              ? t('logging.cmdEdit')
+              : blocked
               ? t('logging.cmdBlocked')
               : t('logging.cmdDeleteLast')
       this.previewEl.replaceChildren(fieldChip(this.line.trim(), what, blocked))

@@ -10,6 +10,12 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 - **QRV bands**: in a VHF contest a chip after the call shows the station's other bands, short (`2 70 23 13 … 24G 47G 76G`), without the current one; bands already worked in this log are struck out. Your own QSOs add their band to your callsign database.
 - **Going up the bands**: a station already in this log gets its locator filled in straight away on another band (VHF contest only; a corrected call drops it again).
 
+- **Hardware keyboard shortcuts** on the logging screen: Ctrl+Enter saves the QSO when it has all it needs; Alt+W / D / H / E as the line commands (the typed line stays); Alt+X takes the offered locator; Alt+M cycles CW → SSB → FM; Alt+L the QSO list, Alt+Q back; F5 F6 F7 F8 F11 F12 the macros CQ EX TU ? MY INFO (F5–F8 the radio's voice memories in SSB / FM); PgUp / PgDn the CW speed ±2; Alt+R / S / C / K RUN, S&P, connect the keyer, CW keyboard. A shortcut with nothing to do leaves the key to the browser.
+- **E ⏎** edits the last saved QSO.
+
+### Changed
+- ESM on / off is now **ESM ⏎** (E is the edit).
+
 ### Fixed
 - The DUPE warning and the QRV chip use a band typed on the same line (`2G OK1EM` checks 13 cm).
 

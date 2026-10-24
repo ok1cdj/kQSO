@@ -28,6 +28,7 @@ describe('matchCommand', () => {
   it('a lone W or D is a command, any case, surrounding spaces ignored', () => {
     expect(matchCommand('W')).toBe('wipe')
     expect(matchCommand('h')).toBe('help')
+    expect(matchCommand('e')).toBe('editLast')
     expect(matchCommand(' w ')).toBe('wipe')
     expect(matchCommand('D')).toBe('deleteLast')
   })
@@ -90,5 +91,15 @@ describe('D — delete the last saved QSO', () => {
     expect(r.command).toBe('deleteLastBlocked')
     expect(r.clearInput).toBe(true)
     expect(r.state.partial).toMatchObject({ call: 'OK1ABC', reportRcvd: '57' })
+  })
+})
+
+describe('E — edit the last QSO', () => {
+  it('asks the UI to open it; an unfinished QSO stays, a lone E leaves nothing', () => {
+    expect(typeLines(['E']).command).toBe('editLast')
+    expect(typeLines(['E']).state.partial).toEqual({})
+    const r = typeLines(['OK1ABC', 'E'])
+    expect(r.command).toBe('editLast')
+    expect(r.state.partial.call).toBe('OK1ABC')
   })
 })

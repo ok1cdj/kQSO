@@ -123,7 +123,9 @@ tokens are ignored. See **Settings → How to log** in the app for the full gram
   apart from the logs; export / import (merge) / delete in Settings.
 - **DUPE warning:** same call + band + mode; VHF contest same call + band (any
   mode); satellite same call + bird. It only warns, never blocks.
-- **Line commands:** `W` discards the unfinished QSO, `D` deletes the last saved one.
+- **Line commands:** `W` discards the unfinished QSO, `D` deletes the last saved one,
+  `E` edits it. **Hardware keyboard shortcuts:** Ctrl+Enter saves, Alt+W / D / H / E / X / M / L / Q,
+  F5–F8 F11 F12 the macros, PgUp / PgDn the CW speed (all in the in-app help).
 - **VHF contest scoring:** 1 point per km between locator centres (111.2 km/°,
   truncated + 1), each station once per band. QRB shows in the preview; the QSO
   list has points per QSO and a score line per band (QSO · points · WWL · ODX).
@@ -149,7 +151,7 @@ tokens are ignored. See **Settings → How to log** in the app for the full gram
   offers the macros CQ (DE in S&P) EX TU MY REF/LOC/INF ?, STOP while sending (also Esc), RUN / S&P
   (`R` / `S`) with own macros per log profile (editable in Settings), `S20` = 20 WPM
   until disconnect, default speed in Settings, `C` = connect again, `K text` = send
-  text, `K` = CW keyboard mode, ESM (Enter sends the macros, as in N1MM; `E`).
+  text, `K` = CW keyboard mode, ESM (Enter sends the macros, as in N1MM; `ESM`).
   Tested with the M5-ESP32-keyer v2; please report bugs on
   [GitHub Issues](https://github.com/ok1cdj/kQSO/issues).
 - **Icom radios over CI-V (beta)** (off by default; Settings → Radio): the **IC-705 over

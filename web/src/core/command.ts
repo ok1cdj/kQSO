@@ -10,8 +10,9 @@ export type LineCommand =
   | 'wipe' // W — discard the unfinished QSO
   | 'deleteLast' // D — delete the last saved QSO
   | 'help' // H — open the help
+  | 'editLast' // E — edit the last saved QSO
 
-const COMMANDS: Readonly<Record<string, LineCommand>> = { W: 'wipe', D: 'deleteLast', H: 'help' }
+const COMMANDS: Readonly<Record<string, LineCommand>> = { W: 'wipe', D: 'deleteLast', H: 'help', E: 'editLast' }
 
 /** The command a line stands for, or undefined when it is ordinary input. */
 export function matchCommand(line: string): LineCommand | undefined {
@@ -34,7 +35,7 @@ export function matchTuneCommand(line: string): number | undefined {
 /** Keyer line commands (only while CW keying is on — otherwise R / S stay a name):
  *  R = RUN, S = S&P, S<n> = speed n WPM until disconnect, C = connect the keyer again,
  *  K = keyboard mode (typed words go out as CW), K <text> = send that text once,
- *  E = ESM on / off. `inRange` is false for
+ *  ESM = ESM on / off. `inRange` is false for
  *  S4 / S51 so the preview can say why nothing will be sent. */
 export type KeyerCommand =
   | { readonly type: 'run' }
@@ -51,7 +52,7 @@ export function matchKeyerCommand(line: string): KeyerCommand | undefined {
   if (l === 'S') return { type: 'sp' }
   if (l === 'C') return { type: 'connect' }
   if (l === 'K') return { type: 'keyboard' }
-  if (l === 'E') return { type: 'esm' }
+  if (l === 'ESM') return { type: 'esm' }
   const text = /^K\s+(.+)$/.exec(l)
   if (text) return { type: 'text', text: text[1]! }
   const m = /^S(\d{1,2})$/.exec(l)

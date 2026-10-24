@@ -191,7 +191,8 @@ describe('keyer line commands', () => {
     expect(matchKeyerCommand(' s ')).toEqual({ type: 'sp' })
     expect(matchKeyerCommand('c')).toEqual({ type: 'connect' })
     expect(matchKeyerCommand('k')).toEqual({ type: 'keyboard' })
-    expect(matchKeyerCommand('e')).toEqual({ type: 'esm' })
+    expect(matchKeyerCommand('esm')).toEqual({ type: 'esm' })
+    expect(matchKeyerCommand('E')).toBeUndefined() // E is the line command: edit the last QSO
     expect(matchKeyerCommand('k pse qrs ')).toEqual({ type: 'text', text: 'PSE QRS' })
     expect(matchKeyerCommand('S20')).toEqual({ type: 'speed', wpm: 20, inRange: true })
     expect(matchKeyerCommand('S5')).toEqual({ type: 'speed', wpm: 5, inRange: true })
