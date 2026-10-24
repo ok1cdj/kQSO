@@ -13,8 +13,9 @@ export interface TokenContext {
 }
 
 const TIME = /^\d{4}$/
-// optional prefix, 1–3 char + digit + 1–4 letters core, optional suffix.
-const CALL = /^([A-Z0-9]+\/)?[A-Z0-9]{1,3}\d[A-Z]{1,4}(\/[A-Z0-9]+)?$/
+// optional prefix, 1–3 char + 1–4 digits + 1–4 letters core, optional suffix.
+// Special-event calls carry several digits: OL900LTV, GB250X, OK100CRK.
+const CALL = /^([A-Z0-9]+\/)?[A-Z0-9]{1,3}\d{1,4}[A-Z]{1,4}(\/[A-Z0-9]+)?$/
 // the TX report is given explicitly with a T prefix (T56) because it
 // rarely changes; \d{2,3} covers 59 and 599. The RX report is just a
 // bare number after the call (rule #7) — no prefix, faster to type.

@@ -40,6 +40,12 @@ describe('each classification rule in isolation', () => {
     expect(classifyToken('OK1ABC/5', ctx())).toEqual({ type: 'call', value: 'OK1ABC/5' })
   })
 
+  it('#5 special-event calls with several digits', () => {
+    expect(classifyToken('OL900LTV', ctx())).toEqual({ type: 'call', value: 'OL900LTV' })
+    expect(classifyToken('GB250X', ctx())).toEqual({ type: 'call', value: 'GB250X' })
+    expect(classifyToken('OK100CRK/P', ctx())).toEqual({ type: 'call', value: 'OK100CRK/P' })
+  })
+
   it('#6 TX report override T## keeps digits only', () => {
     expect(classifyToken('T56', ctx({ callSeen: true }))).toEqual({ type: 'reportSent', value: '56' })
     expect(classifyToken('T599', ctx({ callSeen: true }))).toEqual({ type: 'reportSent', value: '599' })
