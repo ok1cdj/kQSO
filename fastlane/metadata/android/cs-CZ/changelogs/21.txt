@@ -1,0 +1,1 @@
+VKV závod: velké číslo spojení a statistiky jako v Tučňáku, nová databáze značek z deníků ČRK s pásmy QRV, čip QRV za značkou (pracovaná pásma přeškrtnutá), lokátor stanice z logu se na dalším pásmu vyplní sám.

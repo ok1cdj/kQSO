@@ -2,6 +2,17 @@
 
 What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android app and the iOS app share one version. Newest first.
 
+## [1.13] – 2026-10-24
+
+### Added
+- **VHF contest board** (as in Tučňák): in landscape with the system keyboard or none, the room the kQSO keyboard leaves shows the next serial in big digits (what goes to the other station), the UTC clock, the band's QSO count, rate per 60 / 10 min, points, average and ODX. VHF contest logs only.
+- **New VHF callsign database** from the public EDI logs of the ČRK VHF contests (last 2 years, 2 898 logs, 3 055 calls), with the bands each station is QRV on. A call + locator counts once enough logs have it (144 MHz 5, 432 MHz 3, higher 2) or from the station's own log, which drops the typos.
+- **QRV bands**: in a VHF contest a chip after the call shows the station's other bands, short (`2 70 23 13 … 24G 47G 76G`), without the current one; bands already worked in this log are struck out. Your own QSOs add their band to your callsign database.
+- **Going up the bands**: a station already in this log gets its locator filled in straight away on another band (VHF contest only; a corrected call drops it again).
+
+### Fixed
+- The DUPE warning and the QRV chip use a band typed on the same line (`2G OK1EM` checks 13 cm).
+
 ## [1.12] – 2026-10-21
 
 ### Added

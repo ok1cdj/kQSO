@@ -10,8 +10,8 @@ Android app and as an iOS app for iPhone and iPad (the same web app in a native 
 Built for the **Mudita Kompakt** (480×800 e-ink), and just as usable on any other
 phone, tablet or desktop.
 
-- **Live web:** <https://kqso.ok1cdj.com/> (web 1.12; the old `ok1cdj.github.io/kQSO/` redirects there)
-- **Android:** [Google Play](https://play.google.com/store/apps/details?id=com.ok1cdj.kqso), or the APK from [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.12) — the same signature, so either updates the other
+- **Live web:** <https://kqso.ok1cdj.com/> (web 1.13; the old `ok1cdj.github.io/kQSO/` redirects there)
+- **Android:** [Google Play](https://play.google.com/store/apps/details?id=com.ok1cdj.kqso), or the APK from [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.13) — the same signature, so either updates the other
 - **iOS (iPhone, iPad):** App Store (in review)
 - **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -44,7 +44,8 @@ and the map.
   contest (serials, locators, IARU R1 scoring, EDI export), satellite (one log per pass).
 - **Bands** 160 m to 76 GHz; microwaves can be typed in GHz (`24G`).
 - **Callsign database:** suggestions and locator prefill from a bundled set plus your
-  own worked stations; **DUPE** warning.
+  own worked stations; the VHF set (from the ČRK contest logs) knows the bands each
+  station is QRV on; **DUPE** warning.
 - **QSO map** and **contest statistics**, offline; optional rain radar for rain scatter.
 - **Export** ADIF (and EDI per band), **push to your own Wavelog**.
 - **Crash-safe:** every QSO is written at once; an unfinished one comes back after a restart.

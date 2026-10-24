@@ -14,6 +14,21 @@ export interface WhatsNewEntry {
 /** Newest first. */
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    version: '1.13',
+    cs: [
+      'VKV závod na šířku bez naší klávesnice: vpravo nahoře velké další číslo spojení, čas UTC, počet QSO na pásmu, rychlost, body a ODX, jako v Tučňáku.',
+      'Nová VKV databáze značek z veřejných deníků závodů ČRK (3 055 značek) včetně pásem, na kterých jsou stanice QRV.',
+      'Za značkou čip QRV s ostatními pásmy stanice (2 70 23 … 24G 47G); pásma, kde už ji v logu máš, jsou přeškrtnutá.',
+      'Stanici, kterou už v logu máš, se na dalším pásmu rovnou vyplní lokátor.',
+    ],
+    en: [
+      'VHF contest in landscape without our keyboard: the next serial in big digits at the top right, UTC clock, the band\'s QSO count, rate, points and ODX, as in Tučňák.',
+      'New VHF callsign database from the public ČRK contest logs (3,055 calls) with the bands each station is QRV on.',
+      'A QRV chip after the call shows the station\'s other bands (2 70 23 … 24G 47G); bands already worked in this log are struck out.',
+      'A station already in this log gets its locator filled in straight away on the next band.',
+    ],
+  },
+  {
     version: '1.12',
     cs: [
       'Nastavení → Klávesnice pro logování: kQSO, systémová, nebo žádná. Systémová = klávesnice telefonu (otevře se dotykem na řádek vstupu), vstup zůstane nahoře a pod ním poslední QSO. Žádná = jen HW klávesnice, místo naší klávesnice poslední QSO.',
