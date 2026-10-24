@@ -92,6 +92,8 @@ export class App {
       this.guarded = false
       this.ignorePop = true
       history.back()
+      // Should that back do nothing (a skipped entry), the next real Back must not be eaten.
+      setTimeout(() => (this.ignorePop = false), 1000)
     }
   }
 

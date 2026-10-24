@@ -245,9 +245,10 @@ export class LoggingScreen implements Screen {
    *  wide enough. Landscape by the screen, not the viewport: a system keyboard sliding up
    *  makes a portrait phone's viewport wider than tall (the Kompakt showed the board). */
   private applyBoard(): void {
-    // screen.orientation (Android, iOS 16.4+); iOS doesn't swap screen.width / height.
-    const turned = screen.orientation ? screen.orientation.type.startsWith('landscape') : screen.width > screen.height
-    const landscape = turned && window.innerWidth >= BOARD_MIN_WIDTH
+    // The wide layout (CSS) holds the board; screen.orientation (Android, iOS 16.4+) tells
+    // a turned device from a keyboard-shortened viewport. Without it: the wide layout alone.
+    const turned = screen.orientation ? screen.orientation.type.startsWith('landscape') : true
+    const landscape = WIDE.matches && turned && window.innerWidth >= BOARD_MIN_WIDTH
     const shown = this.loaded && landscape && keyboardMode !== 'kqso' && PROFILES[this.meta.profile].contest
     this.screenEl.classList.toggle('screen--board', shown)
     if (shown === !this.board.el.hidden) return
