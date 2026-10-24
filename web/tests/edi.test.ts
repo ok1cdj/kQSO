@@ -40,6 +40,12 @@ const log: Qso[] = [
 ]
 
 describe('writeEdi', () => {
+  it('signs [Remarks] with the program when given', () => {
+    const lines = writeEdi(meta, log, '2m', contest, SO, station, eq2m, 'kQSO 1.13.1').split('\r\n')
+    const at = lines.indexOf('[Remarks]')
+    expect(lines.slice(at, at + 3)).toEqual(['[Remarks]', 'Created by kQSO 1.13.1 https://kqso.ok1cdj.com/', '[QSORecords;3]'])
+  })
+
   it('golden file for the 2m band', () => {
     expect(writeEdi(meta, log, '2m', contest, SO, station, eq2m).split('\r\n')).toEqual([
       '[REG1TEST;1]',

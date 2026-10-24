@@ -258,7 +258,7 @@ export class EdiExportScreen implements Screen {
       await this.platform.rewriteLog(this.logId, writeLogFile(this.meta, qsos))
     }
     const file = ediFileName(category, band, this.meta.myCall)
-    await this.platform.exportText(writeEdi(this.meta, qsos, band, contest, category, station, eq), file)
+    await this.platform.exportText(writeEdi(this.meta, qsos, band, contest, category, station, eq, `kQSO ${__APP_VERSION__}`), file)
     trackEvent('export', { format: 'edi', band })
     status.textContent = t('edi.exported', { file })
   }

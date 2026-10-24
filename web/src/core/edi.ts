@@ -230,6 +230,8 @@ export function writeEdi(
   category: ContestCategory,
   station: EdiStation,
   eq: EdiEquipment,
+  /** The program, e.g. "kQSO 1.13.1", signed in [Remarks] as other loggers do. */
+  program?: string,
 ): string {
   const score = scoreLog(qsos, meta.myGrid, scoringFor(category)).find((b) => b.band === band)
   const rows = score?.rows ?? []
@@ -275,6 +277,7 @@ export function writeEdi(
     `CToSc=${score?.total ?? 0}`,
     odx ? `CODXC=${odx.call.toUpperCase()};${odx.grid.toUpperCase()};${odx.km}` : 'CODXC=',
     '[Remarks]',
+    ...(program ? [ediAscii(`Created by ${program} https://kqso.ok1cdj.com/`).slice(0, 75)] : []),
     `[QSORecords;${rows.length}]`,
     ...rows.map((r) => record(r.qso, r.points, r.newWwl, r.dupe)),
   ]

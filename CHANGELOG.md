@@ -6,6 +6,7 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 
 ### Added
 - **Manual** (Czech and English, with screenshots): Settings → About → Manual, and at the end of How to log. Also on the web at kqso.ok1cdj.com/manual/en.html (cs.html). Works offline.
+- **EDI files are signed** in [Remarks]: `Created by kQSO 1.x https://kqso.ok1cdj.com/`, as other loggers do.
 
 ### Fixed
 - **Special-event calls with several digits** (OL900LTV, GB250X) weren't recognized as calls, so such a QSO couldn't be logged.
