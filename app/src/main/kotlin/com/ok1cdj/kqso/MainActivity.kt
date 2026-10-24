@@ -203,17 +203,22 @@ class MainActivity : ComponentActivity() {
         setDarkBars(false) // dark icons on white until the page says otherwise
         webView.loadUrl("https://appassets.androidplatform.net/index.html")
 
-        // Back (button, gesture, the Kompakt's key) goes back in the app first: away from
-        // the log list the page keeps a history entry (ui/app.ts), and its popstate does
-        // what the screen's "‹" does. On the log list the app closes, as before.
+        // Back (button, gesture, the Kompakt's key) goes back in the app first: the page's
+        // kqsoBack() (ui/app.ts) does what the screen's "‹" does and says whether it did.
+        // Not the WebView history alone: it skips entries pushed before any tap (What's
+        // new at start), so Back closed the app there. On the log list the app closes.
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (webView.canGoBack()) {
-                    webView.goBack()
-                } else {
-                    isEnabled = false
-                    onBackPressedDispatcher.onBackPressed()
-                    isEnabled = true
+                webView.evaluateJavascript("window.kqsoBack ? window.kqsoBack() : null") { handled ->
+                    when {
+                        handled == "true" -> {}
+                        handled == "null" && webView.canGoBack() -> webView.goBack()
+                        else -> {
+                            isEnabled = false
+                            onBackPressedDispatcher.onBackPressed()
+                            isEnabled = true
+                        }
+                    }
                 }
             }
         })

@@ -45,6 +45,15 @@ export class App {
   mount(root: HTMLElement): void {
     this.root = root
     window.addEventListener('popstate', () => this.onPopState())
+    // The Android app asks here first on Back (MainActivity): true = the screen went back.
+    // Its WebView skips history entries pushed before any tap (What's new at start), so
+    // history alone would close the app there.
+    const w = window as unknown as { kqsoBack?: () => boolean }
+    w.kqsoBack = () => {
+      if (!this.back) return false
+      this.back()
+      return true
+    }
     this.rig.attachKeyer(this.keyer.civLink)
     // The keyer's settings first: a radio via the keyer may bring its link up.
     void this.keyer.init().then(() => this.rig.init())

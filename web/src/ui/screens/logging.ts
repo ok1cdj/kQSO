@@ -73,6 +73,8 @@ const pad3 = (n: number): string => String(n).padStart(3, '0')
 const RECENT_MAX = 30 // wide layout: rows rendered; CSS clips whatever doesn't fit
 // Same breakpoint as the landscape layout in styles.css.
 const WIDE = window.matchMedia('(min-aspect-ratio: 1/1)')
+// The contest board needs the log column + its own 22rem beside it.
+const BOARD_MIN_WIDTH = 720
 // Last read keyboard setting: the next mount lays out right away, init() re-reads it.
 let keyboardMode: KeyboardMode = 'kqso'
 // System keyboard: the hidden <input> holds SENTINEL + the line, so Backspace on an
@@ -129,6 +131,8 @@ export class LoggingScreen implements Screen {
   private sysMirror = SENTINEL // what the hidden input held after the last sync
   private composing = false // IME composition running: don't touch the input's value
   private readonly onKeydown = (e: KeyboardEvent): void => this.onHardwareKey(e)
+  // Rotation, a system keyboard, a resized window: the board may come or go (no-op otherwise).
+  private readonly onResize = (): void => this.applyBoard()
   private readonly onWideChange = (): void => {
     this.renderStrip()
     this.applyBoard()
@@ -160,6 +164,7 @@ export class LoggingScreen implements Screen {
     this.applyKeyboard()
     root.replaceChildren(this.screenEl)
     window.addEventListener('keydown', this.onKeydown)
+    window.addEventListener('resize', this.onResize)
     WIDE.addEventListener('change', this.onWideChange)
     this.unsubscribeKeyer = this.keyer.subscribe(() => this.onKeyerChange())
     this.unsubscribeRig = this.rig.subscribe(() => this.onRigChange())
@@ -168,6 +173,7 @@ export class LoggingScreen implements Screen {
 
   unmount(): void {
     window.removeEventListener('keydown', this.onKeydown)
+    window.removeEventListener('resize', this.onResize)
     WIDE.removeEventListener('change', this.onWideChange)
     this.unsubscribeKeyer?.()
     this.unsubscribeRig?.()
@@ -235,9 +241,14 @@ export class LoggingScreen implements Screen {
     this.applyBoard()
   }
 
-  /** The contest board: VHF contest, wide layout, no kQSO keyboard (the log has room). */
+  /** The contest board: VHF contest, no kQSO keyboard, the device held in landscape and
+   *  wide enough. Landscape by the screen, not the viewport: a system keyboard sliding up
+   *  makes a portrait phone's viewport wider than tall (the Kompakt showed the board). */
   private applyBoard(): void {
-    const shown = this.loaded && WIDE.matches && keyboardMode !== 'kqso' && PROFILES[this.meta.profile].contest
+    // screen.orientation (Android, iOS 16.4+); iOS doesn't swap screen.width / height.
+    const turned = screen.orientation ? screen.orientation.type.startsWith('landscape') : screen.width > screen.height
+    const landscape = turned && window.innerWidth >= BOARD_MIN_WIDTH
+    const shown = this.loaded && landscape && keyboardMode !== 'kqso' && PROFILES[this.meta.profile].contest
     this.screenEl.classList.toggle('screen--board', shown)
     if (shown === !this.board.el.hidden) return
     this.board.el.hidden = !shown
