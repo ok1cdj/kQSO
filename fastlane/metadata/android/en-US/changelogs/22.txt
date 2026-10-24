@@ -1,0 +1,1 @@
+Fixes: Back on What's new after an update no longer closes the app; the VHF contest board no longer comes up on an upright phone when the system keyboard slides up.

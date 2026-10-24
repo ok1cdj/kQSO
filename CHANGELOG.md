@@ -2,6 +2,12 @@
 
 What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android app and the iOS app share one version. Newest first.
 
+## [1.13.1] – 2026-10-24
+
+### Fixed
+- **Android Back on What's new** right after an update closed the app; it now closes the notes, like the screen's "‹".
+- **The VHF contest board** came up on a phone held upright when the system keyboard slid up (seen on the Mudita Kompakt); it now needs the device turned to landscape and enough width.
+
 ## [1.13] – 2026-10-24
 
 ### Added
