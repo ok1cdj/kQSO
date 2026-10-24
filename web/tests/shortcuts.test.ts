@@ -47,6 +47,12 @@ describe('matchShortcut', () => {
     expect(matchShortcut(key('w', { code: 'KeyW', ctrlKey: true, altKey: true }))).toBeUndefined() // AltGr
     expect(matchShortcut(key('W', { code: 'KeyW' }))).toBeUndefined()
   })
+
+  it('Ctrl+M is ESM; Cmd+M (macOS minimize) and Alt+M (mode) are not', () => {
+    expect(matchShortcut(key('m', { code: 'KeyM', ctrlKey: true }))).toEqual({ type: 'esm' })
+    expect(matchShortcut(key('m', { code: 'KeyM', metaKey: true }))).toBeUndefined()
+    expect(matchShortcut(alt('KeyM'))).toEqual({ type: 'mode' })
+  })
 })
 
 describe('nextMode', () => {

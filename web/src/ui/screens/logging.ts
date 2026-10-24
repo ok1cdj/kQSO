@@ -396,6 +396,10 @@ export class LoggingScreen implements Screen {
       case 'save':
         void this.saveNow()
         return true
+      case 'esm':
+        if (!this.keyerOn()) return false
+        void this.runKeyerCommand({ type: 'esm' }, true).then(() => this.renderAll())
+        return true
     }
   }
 

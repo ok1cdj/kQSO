@@ -1,6 +1,6 @@
 // Hardware-keyboard shortcuts on the logging screen, as in Tučňák: macros from F5 (F1–F4
 // belong to the browser / system), PgUp / PgDn the CW speed, Alt+letter the line commands
-// and navigation, Ctrl+Enter save now. Pure — DOM-free, so it can be unit-tested; the
+// and navigation, Ctrl+Enter save now, Ctrl+M ESM. Pure — DOM-free, so it can be unit-tested; the
 // logging screen decides whether a shortcut applies (keyer, radio) and lets the key
 // through when it doesn't.
 
@@ -18,6 +18,7 @@ export type Shortcut =
   | { readonly type: 'list' }
   | { readonly type: 'back' }
   | { readonly type: 'save' }
+  | { readonly type: 'esm' } // ESM on / off
 
 export interface KeyInput {
   readonly key: string
@@ -47,6 +48,9 @@ const ALT: Readonly<Record<string, Shortcut>> = {
  *  Alt goes by the physical key (`code`): macOS Option gives other characters in `key`. */
 export function matchShortcut(e: KeyInput): Shortcut | undefined {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.altKey) return { type: 'save' }
+  // Ctrl, not Cmd: Cmd+M minimizes the window on macOS. (Firefox mutes the tab on Ctrl+M —
+  // the screen takes the key only while CW keying is on.)
+  if (e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyM') return { type: 'esm' }
   if (e.altKey && !e.ctrlKey && !e.metaKey) return ALT[e.code]
   if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return undefined
   const f = (F_KEYS as readonly string[]).indexOf(e.key)
