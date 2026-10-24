@@ -399,12 +399,17 @@ export class LoggingScreen implements Screen {
     }
   }
 
-  /** Alt+W / D / H / E = the line command, as if typed alone + Enter. The typed line stays
-   *  (Alt+D deletes the last QSO without losing it); Alt+W discards it too. */
+  /** Alt+W / D / H / E = the line command, as if typed alone + Enter. Alt+D keeps the typed
+   *  line and its QSO time (deletes the last QSO without losing what's being typed); Alt+W
+   *  discards it; H / E leave the screen, where only an entered call comes back (journal). */
   private async lineShortcut(letter: 'W' | 'D' | 'H' | 'E'): Promise<void> {
-    const keep = letter === 'W' ? '' : this.line
+    const keep = letter === 'D' ? this.line : ''
+    const timeOn = this.state.partial.timeOn
     this.line = letter
     await this.commit()
+    if (keep.trim() !== '' && timeOn && !this.state.partial.timeOn) {
+      this.state = { ...this.state, partial: { ...this.state.partial, timeOn }, hasStarted: true }
+    }
     this.line = keep
     this.renderAll()
   }
@@ -412,6 +417,13 @@ export class LoggingScreen implements Screen {
   /** Ctrl+Enter: take the typed line in and save the QSO when it has all it needs. The
    *  line's own Enter sends no ESM macro — the save's does (RUN: TU, S&P: EXCH). */
   private async saveNow(): Promise<void> {
+    // A command on the line (W, E, R, F28300 …) just runs, as with Enter — no save after it
+    // (E / H have left the screen by then).
+    const l = this.line
+    if (matchCommand(l) || (this.rig.enabled && matchTuneCommand(l) !== undefined) || (this.keyerOn() && matchKeyerCommand(l))) {
+      await this.commit()
+      return
+    }
     if (this.line.trim() !== '') await this.commit(false)
     if (this.line.trim() === '' && this.state.hasStarted && buildQso(this.lineState().partial, this.state.sticky, this.meta)) await this.commit()
   }

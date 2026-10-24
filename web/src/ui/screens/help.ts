@@ -145,7 +145,7 @@ const EN: readonly Section[] = [
     rows: [
       { text: 'On-screen keyboard is alphabetical, 6×7. Space is single width; Backspace and Enter are double. A hardware keyboard works too.' },
       { code: 'Ctrl+⏎', text: 'Save the QSO now: takes the typed line in and saves when it has all it needs (call, in a VHF contest also the locator).' },
-      { code: 'Alt+W D H E', text: 'Discard the QSO / delete the last / help / edit the last — as W D H E ⏎; the typed line stays (Alt+W discards it).' },
+      { code: 'Alt+W D H E', text: 'Discard the QSO / delete the last / help / edit the last — as W D H E ⏎. Alt+D keeps the line being typed.' },
       { code: 'Alt+X', text: 'Take the locator the database offers (+ LOC).' },
       { code: 'Alt+M', text: 'Mode CW → SSB → FM.' },
       { code: 'Alt+L / Alt+Q', text: 'QSO list / back to the logs.' },
@@ -280,7 +280,7 @@ const CS: readonly Section[] = [
     rows: [
       { text: 'Klávesnice je abecední, 6×7. Mezera je jednoduchá, Backspace a Enter dvojité. Funguje i hardwarová klávesnice.' },
       { code: 'Ctrl+⏎', text: 'Zapsat QSO hned: přiklopí napsaný řádek a zapíše, když má vše potřebné (volačku, ve VKV závodě i lokátor).' },
-      { code: 'Alt+W D H E', text: 'Zahodit QSO / smazat poslední / nápověda / upravit poslední — jako W D H E ⏎; napsaný řádek zůstane (Alt+W ho zahodí).' },
+      { code: 'Alt+W D H E', text: 'Zahodit QSO / smazat poslední / nápověda / upravit poslední — jako W D H E ⏎. Alt+D nechá rozepsaný řádek.' },
       { code: 'Alt+X', text: 'Vzít lokátor nabídnutý z databáze (+ LOC).' },
       { code: 'Alt+M', text: 'Mód CW → SSB → FM.' },
       { code: 'Alt+L / Alt+Q', text: 'Seznam QSO / zpět na logy.' },
