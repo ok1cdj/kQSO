@@ -403,7 +403,8 @@ export class LoggingScreen implements Screen {
    *  line and its QSO time (deletes the last QSO without losing what's being typed); Alt+W
    *  discards it; H / E leave the screen, where only an entered call comes back (journal). */
   private async lineShortcut(letter: 'W' | 'D' | 'H' | 'E'): Promise<void> {
-    const keep = letter === 'D' ? this.line : ''
+    // E with nothing saved yet stays here (a notice), so it keeps the line too.
+    const keep = letter === 'D' || (letter === 'E' && this.qsos.length === 0) ? this.line : ''
     const timeOn = this.state.partial.timeOn
     this.line = letter
     await this.commit()
