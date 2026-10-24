@@ -22,3 +22,6 @@ tmp/
 ios/kQSO.xcodeproj/
 ios/kQSO/web/
 ios/build/
+
+# vkvdb.py download cache (EDI logs carry addresses and phone numbers)
+.cache/
