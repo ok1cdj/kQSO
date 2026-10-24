@@ -3,8 +3,11 @@ name: iOS
 # The iOS shell (ios/) on a macOS runner — no Mac needed locally.
 #  - Every push to the `ios` branch (and a manual run) builds for the Simulator without
 #    signing: a compile check.
-#  - A v* tag, or a manual run with "testflight" ticked, archives, signs with
-#    cloud-managed certificates (App Store Connect API key) and uploads to TestFlight.
+#  - A v* tag, or a manual run with "testflight" ticked, archives unsigned, then the
+#    export signs with the cloud-managed distribution certificate (App Store Connect API
+#    key) and uploads to TestFlight. The archive is unsigned on purpose: signing it would
+#    make every fresh runner create a new Apple Development certificate until the account
+#    hits Apple's limit ("Choose a certificate to revoke").
 #
 # Repository secrets for the upload (Settings -> Secrets and variables -> Actions):
 #   ASC_KEY_ID      - App Store Connect API key ID (role Admin)
@@ -81,7 +84,7 @@ jobs:
           xcodebuild -project ios/kQSO.xcodeproj -scheme kQSO -configuration Release \
             -destination 'generic/platform=iOS' -archivePath build/kQSO.xcarchive \
             DEVELOPMENT_TEAM="$TEAM" MARKETING_VERSION=${{ steps.v.outputs.version }} \
-            CURRENT_PROJECT_VERSION=${{ github.run_number }} "${AUTH[@]}" archive
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} CODE_SIGNING_ALLOWED=NO archive
           sed "s/TEAM_ID/$TEAM/" ios/ExportOptions.plist > "$RUNNER_TEMP/ExportOptions.plist"
           xcodebuild -exportArchive -archivePath build/kQSO.xcarchive \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath build/export "${AUTH[@]}"
