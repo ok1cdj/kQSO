@@ -158,8 +158,13 @@ class Site:
         self.budget -= 1
         time.sleep(self.delay)
         req = urllib.request.Request(BASE + path, headers={'User-Agent': AGENT})
-        with urllib.request.urlopen(req, timeout=60) as r:
-            data = r.read()
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                data = r.read()
+        except OSError:
+            if f.exists():  # a fresh copy failed: the cached one will do
+                return f.read_bytes()
+            raise
         f.write_bytes(data)
         return data
 
@@ -178,15 +183,16 @@ class Site:
 
     def log_ids(self, rid, end):
         """The round's log ids. Missing (still being evaluated) → []. A round that ended in the
-        last 60 days is fetched again (more logs may come), and a page without logs isn't kept."""
+        last 60 days is fetched again (more logs may come) and not kept while it has none."""
         path = f'index.php?page=results&filter=ok&id_round={rid}'
+        recent = (date.today() - end).days < 60
         try:
-            page = decode(self.get(path, fresh=(date.today() - end).days < 60))
+            page = decode(self.get(path, fresh=recent))
         except OSError as e:
             print(f'  round {rid}: {e}', file=sys.stderr)
             return []
         ids = sorted({int(x) for x in re.findall(rf'page=log_details&id_round={rid}&log=(\d+)', page)})
-        if not ids:
+        if not ids and recent:
             self.file(path).unlink(missing_ok=True)
         return ids
 

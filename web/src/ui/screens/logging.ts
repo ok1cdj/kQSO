@@ -113,8 +113,9 @@ export class LoggingScreen implements Screen {
   private readonly banner = el('div', 'banner')
   // VHF contest, wide layout without our keyboard: big QSO count + stats on the right.
   private readonly board = new ContestBoard()
-  // VHF contest: the locator filled in from this log, and for which call (dropped if the call changes).
-  private autoGrid: { call: string; grid: string } | undefined
+  // VHF contest: the locator filled in from this log, for which call, and the partial QSO it went
+  // into — valid only while that very partial is current (any other change to it ends it).
+  private autoGrid: { call: string; grid: string; partial: PartialQso } | undefined
   private boardTimer: ReturnType<typeof setTimeout> | undefined // the first tick, then the interval (clearInterval clears either)
   private readonly screenEl = el('div', 'screen screen--log')
   private readonly kbEl = createKeyboard((a) => this.onKey(a))
@@ -380,18 +381,25 @@ export class LoggingScreen implements Screen {
     const hadContent = hasContent(this.state.partial)
     const before = { lineEmpty: this.line.trim() === '', hadContent, hadCall: this.state.partial.call !== undefined }
     const prev = this.state.sticky
+    const typedGrid = classifyLine(tokenize(this.line), PROFILES[this.meta.profile], this.state.partial.call !== undefined).some(
+      (t) => t.cls.type === 'locator',
+    )
     const r = reduce(this.lineState(), { type: 'enter', line: this.line }, this.meta)
     this.state = r.state
     if (r.clearInput) this.line = ''
     // VHF contest, worked already on another band (going up the bands with a station): its locator
     // goes straight in. Elsewhere a log spans days and stations move — only the suggestion chip.
     const p = this.state.partial
-    if (r.committed || p.call === undefined) this.autoGrid = undefined
-    else if (PROFILES[this.meta.profile].contest && p.grid === undefined) {
+    const a = this.autoGrid
+    // Still the filled-in locator of the same call (e.g. the serial came on this line)? Keep tracking it.
+    this.autoGrid =
+      a && !r.committed && !typedGrid && p.call?.toUpperCase() === a.call && p.grid === a.grid ? { ...a, partial: p } : undefined
+    if (!r.committed && p.call !== undefined && p.grid === undefined && PROFILES[this.meta.profile].contest) {
       const grid = this.loggedLoc(p.call)
       if (grid) {
-        this.state = { ...this.state, partial: { ...p, grid } }
-        this.autoGrid = { call: p.call.toUpperCase(), grid }
+        const partial = { ...p, grid }
+        this.state = { ...this.state, partial }
+        this.autoGrid = { call: p.call.toUpperCase(), grid, partial }
       }
     }
     // Radio connected: a typed band / mode tunes it; its transceive then confirms.
@@ -1139,7 +1147,7 @@ export class LoggingScreen implements Screen {
   private lineState(): CoreState {
     const a = this.autoGrid
     const p = this.state.partial
-    if (!a || p.grid !== a.grid || this.effectiveCall()?.toUpperCase() === a.call) return this.state
+    if (!a || p !== a.partial || this.effectiveCall()?.toUpperCase() === a.call) return this.state
     const { grid: _drop, ...rest } = p
     return { ...this.state, partial: rest }
   }
