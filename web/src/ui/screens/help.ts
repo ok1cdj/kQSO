@@ -144,6 +144,7 @@ const EN: readonly Section[] = [
     title: 'Keyboard',
     rows: [
       { text: 'On-screen keyboard is alphabetical, 6×7. Space is single width; Backspace and Enter are double. A hardware keyboard works too.' },
+      { code: 'Esc', text: 'Clear the line being typed (e.g. a call you only looked up). What Enter took in stays; while CW is going out, Esc is STOP.' },
       { code: 'Ctrl+⏎', text: 'Save the QSO now: takes the typed line in and saves when it has all it needs (call, in a VHF contest also the locator).' },
       { code: 'Alt+W D H E', text: 'Discard the QSO / delete the last / help / edit the last — as W D H E ⏎. Alt+D keeps the line being typed.' },
       { code: 'Alt+X', text: 'Take the locator the database offers (+ LOC).' },
@@ -280,6 +281,7 @@ const CS: readonly Section[] = [
     title: 'Klávesnice',
     rows: [
       { text: 'Klávesnice je abecední, 6×7. Mezera je jednoduchá, Backspace a Enter dvojité. Funguje i hardwarová klávesnice.' },
+      { code: 'Esc', text: 'Smaže rozepsaný řádek (třeba značku, kterou si jen ověřuješ v logu). Co už prošlo Enterem, zůstane; když jde CW, je Esc STOP.' },
       { code: 'Ctrl+⏎', text: 'Zapsat QSO hned: přiklopí napsaný řádek a zapíše, když má vše potřebné (volačku, ve VKV závodě i lokátor).' },
       { code: 'Alt+W D H E', text: 'Zahodit QSO / smazat poslední / nápověda / upravit poslední — jako W D H E ⏎. Alt+D nechá rozepsaný řádek.' },
       { code: 'Alt+X', text: 'Vzít lokátor nabídnutý z databáze (+ LOC).' },

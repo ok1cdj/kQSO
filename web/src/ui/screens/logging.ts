@@ -338,12 +338,18 @@ export class LoggingScreen implements Screen {
       void this.rig.stopVoice()
       return
     }
-    if (k === 'Escape' && this.keyerOn()) {
+    // Esc = STOP first; with nothing on the air it leaves keyboard mode. A typed line
+    // with nothing on the air goes instead (below).
+    if (k === 'Escape' && this.keyerOn() && (this.txMode || this.keyer.sending || this.line.trim() === '')) {
       e.preventDefault()
-      // Esc = STOP; with nothing on the air it leaves keyboard mode.
       if (this.txMode && !this.keyer.sending) this.exitTx()
       else void this.keyer.stop()
       this.renderAll()
+      return
+    }
+    if (k === 'Escape' && !this.txMode && this.line !== '') {
+      e.preventDefault()
+      this.clearLine()
       return
     }
     // Alt / Ctrl / Cmd + a key that is no shortcut here: not typing, leave it to the browser.
@@ -354,6 +360,16 @@ export class LoggingScreen implements Screen {
     if (k === 'Backspace') return this.handled(e, { type: 'backspace' })
     if (k === ' ') return this.handled(e, { type: 'space' })
     if (/^[A-Za-z0-9/]$/.test(k)) return this.handled(e, { type: 'char', value: k.toUpperCase() })
+  }
+
+  /** Esc on a typed line: drop just that text (a call only looked up in the log). What
+   *  Enter already took in stays — discarding the QSO is Alt+W / W. The time its first
+   *  key stamped goes too when nothing else is under way, as with W. */
+  private clearLine(): void {
+    this.line = ''
+    this.notice = ''
+    if (!hasContent(this.state.partial)) this.state = { ...this.state, partial: {}, hasStarted: false }
+    this.renderAll()
   }
 
   /** Run a hardware-keyboard shortcut; false when it doesn't apply now (the key goes on). */

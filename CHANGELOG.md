@@ -4,6 +4,9 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 
 ## [1.13.1] – 2026-10-24
 
+### Added
+- **Esc clears the line being typed** (e.g. a call only looked up in the log). What Enter took in stays (discard the QSO with Alt+W); while CW or a voice memory is going out, Esc stops it first.
+
 ### Fixed
 - **Android Back on What's new** right after an update closed the app; it now closes the notes, like the screen's "‹".
 - **The VHF contest board** came up on a phone held upright when the system keyboard slid up (seen on the Mudita Kompakt); it now needs the device turned to landscape and enough width.

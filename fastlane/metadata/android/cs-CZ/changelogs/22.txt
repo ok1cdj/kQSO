@@ -1,1 +1,1 @@
-Opravy: tlačítko Zpět na „Co je nového“ po aktualizaci už nezavře aplikaci; přehled VKV závodu se neukáže na telefonu na výšku, když se vysune systémová klávesnice.
+Esc smaže rozepsaný řádek (co prošlo Enterem, zůstane). Opravy: tlačítko Zpět na „Co je nového“ po aktualizaci už nezavře aplikaci; přehled VKV závodu se neukáže na telefonu na výšku, když se vysune systémová klávesnice.

@@ -14,6 +14,11 @@ export interface WhatsNewEntry {
 /** Newest first. */
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    version: '1.13.1',
+    cs: ['Esc smaže rozepsaný řádek — třeba značku, kterou si jen ověřuješ v logu. Co už prošlo Enterem, zůstane.'],
+    en: ['Esc clears the line being typed — e.g. a call you only looked up in the log. What Enter took in stays.'],
+  },
+  {
     version: '1.13',
     cs: [
       'VKV závod na šířku bez naší klávesnice: vpravo nahoře velké další číslo spojení, čas UTC, počet QSO na pásmu, rychlost, body a ODX.',
