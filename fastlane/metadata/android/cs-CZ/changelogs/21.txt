@@ -1,1 +1,1 @@
-VKV závod: velké číslo spojení a statistiky jako v Tučňáku, databáze značek z deníků ČRK s pásmy QRV, čip QRV za značkou, lokátor z logu na dalším pásmu. Zkratky pro HW klávesnici (Ctrl+Enter, Alt+…, F5–F12), E ⏎ upraví poslední QSO, ESM je teď ESM ⏎.
+VKV závod: velké číslo spojení a statistiky, databáze značek z deníků ČRK s pásmy QRV, za značkou ostatní pásma stanice, lokátor z logu na dalším pásmu. Zkratky pro HW klávesnici (Ctrl+Enter, Alt+…, F5–F12), E ⏎ upraví poslední QSO, ESM je teď ESM ⏎ nebo Ctrl+M.

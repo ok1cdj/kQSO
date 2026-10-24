@@ -1,1 +1,1 @@
-VHF contest: big serial and stats as in Tučňák, a callsign database from the ČRK logs with QRV bands, a QRV chip after the call, the locator from the log on the next band. Hardware keyboard shortcuts (Ctrl+Enter, Alt+…, F5–F12), E ⏎ edits the last QSO, ESM is now ESM ⏎.
+VHF contest: big serial and stats, a callsign database from the ČRK logs with QRV bands, the station's other bands after the call, the locator from the log on the next band. Hardware keyboard shortcuts (Ctrl+Enter, Alt+…, F5–F12), E ⏎ edits the last QSO, ESM is now ESM ⏎ or Ctrl+M.

@@ -16,17 +16,17 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
     version: '1.13',
     cs: [
-      'VKV závod na šířku bez naší klávesnice: vpravo nahoře velké další číslo spojení, čas UTC, počet QSO na pásmu, rychlost, body a ODX, jako v Tučňáku.',
+      'VKV závod na šířku bez naší klávesnice: vpravo nahoře velké další číslo spojení, čas UTC, počet QSO na pásmu, rychlost, body a ODX.',
       'Nová VKV databáze značek z veřejných deníků závodů ČRK (3 055 značek) včetně pásem, na kterých jsou stanice QRV.',
-      'Za značkou čip QRV s ostatními pásmy stanice (2 70 23 … 24G 47G); pásma, kde už ji v logu máš, jsou přeškrtnutá.',
+      'Za značkou se ukážou ostatní pásma, kde je stanice QRV (2 70 23 … 24G 47G); pásma, kde už ji v logu máš, jsou přeškrtnutá.',
       'Stanici, kterou už v logu máš, se na dalším pásmu rovnou vyplní lokátor.',
       'Zkratky pro HW klávesnici: Ctrl+Enter zapíše QSO, Alt+W/D/H/E, Alt+X lokátor, Alt+M mód, Alt+L/Q, makra F5–F8 F11 F12, PgUp/PgDn rychlost (vše v nápovědě).',
       'E ⏎ upraví poslední QSO; ESM se teď přepíná příkazem ESM ⏎ nebo Ctrl+M.',
     ],
     en: [
-      'VHF contest in landscape without our keyboard: the next serial in big digits at the top right, UTC clock, the band\'s QSO count, rate, points and ODX, as in Tučňák.',
+      'VHF contest in landscape without our keyboard: the next serial in big digits at the top right, UTC clock, the band\'s QSO count, rate, points and ODX.',
       'New VHF callsign database from the public ČRK contest logs (3,055 calls) with the bands each station is QRV on.',
-      'A QRV chip after the call shows the station\'s other bands (2 70 23 … 24G 47G); bands already worked in this log are struck out.',
+      'After the call, the other bands the station is QRV on show up (2 70 23 … 24G 47G); bands already worked in this log are struck out.',
       'A station already in this log gets its locator filled in straight away on the next band.',
       'Hardware keyboard shortcuts: Ctrl+Enter saves the QSO, Alt+W/D/H/E, Alt+X locator, Alt+M mode, Alt+L/Q, macros F5–F8 F11 F12, PgUp/PgDn speed (all in the help).',
       'E ⏎ edits the last QSO; ESM is now switched with ESM ⏎ or Ctrl+M.',
