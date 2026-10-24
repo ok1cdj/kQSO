@@ -25,6 +25,7 @@ import {
   LiveDb,
   combineSources,
   dbDate,
+  qrvLabels,
   emptySuggestions,
   userHeader,
   isDupe,
@@ -41,7 +42,7 @@ import {
   scoringFor,
   ringPoints,
 } from '../../core/index'
-import type { CoreState, SuggestionSource, LogMeta, PartialQso, Qso, KeyerCommand, MacroSlot, SixHourPhase } from '../../core/index'
+import type { CoreState, SuggestionSource, LogMeta, PartialQso, Qso, StickyState, KeyerCommand, MacroSlot, SixHourPhase } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
 import { el, button } from '../dom'
@@ -112,7 +113,7 @@ export class LoggingScreen implements Screen {
   private readonly banner = el('div', 'banner')
   // VHF contest, wide layout without our keyboard: big QSO count + stats on the right.
   private readonly board = new ContestBoard()
-  private boardTimer: ReturnType<typeof setInterval> | undefined
+  private boardTimer: ReturnType<typeof setTimeout> | undefined // the first tick, then the interval (clearInterval clears either)
   private readonly screenEl = el('div', 'screen screen--log')
   private readonly kbEl = createKeyboard((a) => this.onKey(a))
   private readonly sysInput = this.createSysInput()
@@ -235,7 +236,12 @@ export class LoggingScreen implements Screen {
     this.boardTimer = undefined
     if (!shown) return
     this.updateBoard()
-    this.boardTimer = setInterval(() => this.board.tick(new Date()), this.board.tickMs)
+    // First tick on the next whole period (e-ink: the minute), so the clock doesn't lag up to a minute.
+    const ms = this.board.tickMs
+    this.boardTimer = setTimeout(() => {
+      this.board.tick(new Date())
+      this.boardTimer = setInterval(() => this.board.tick(new Date()), ms)
+    }, ms - (Date.now() % ms))
   }
 
   private updateBoard(): void {
@@ -375,6 +381,13 @@ export class LoggingScreen implements Screen {
     const r = reduce(this.state, { type: 'enter', line: this.line }, this.meta)
     this.state = r.state
     if (r.clearInput) this.line = ''
+    // VHF contest, worked already on another band (going up the bands with a station): its locator
+    // goes straight in. Elsewhere a log spans days and stations move — only the suggestion chip.
+    const p = this.state.partial
+    if (PROFILES[this.meta.profile].contest && !r.committed && p.call !== undefined && p.grid === undefined) {
+      const grid = this.loggedLoc(p.call)
+      if (grid) this.state = { ...this.state, partial: { ...p, grid } }
+    }
     // Radio connected: a typed band / mode tunes it; its transceive then confirms.
     const next = this.state.sticky
     if (this.rigSets() && (next.band !== prev.band || next.mode !== prev.mode)) {
@@ -397,7 +410,9 @@ export class LoggingScreen implements Screen {
       await this.platform.clearJournal(this.logId)
       this.qsos.push(committed)
       this.renderRecent()
-      this.live.record(committed.call, committed.grid, dbDate(committed.timeOn))
+      // The band joins the call's QRV bands — not via a satellite (that's the uplink, not where it's QRV).
+      const band = PROFILES[this.meta.profile].fixedBand ? undefined : committed.signal.band
+      this.live.record(committed.call, committed.grid, dbDate(committed.timeOn), band)
       await this.platform.writeCallDb(this.live.toText(userHeader(new Date())))
       this.banner.hidden = true
       this.tickSixH()
@@ -724,7 +739,7 @@ export class LoggingScreen implements Screen {
     const dry = parseLine(this.line, this.state.sticky, this.state.partial, PROFILES[this.meta.profile])
     if (PROFILES[this.meta.profile].contest && this.state.sticky.band !== this.recentBand) this.renderRecent()
     this.renderHeader(dry.partial)
-    this.renderLine()
+    this.renderLine(dry.sticky)
     this.renderPreview(dry)
     this.renderStrip()
   }
@@ -769,7 +784,7 @@ export class LoggingScreen implements Screen {
       mid.append(button(`${this.rig.label}${state}`, () => void this.rig.reconnect(), up && !this.rig.detached ? 'hdr-keyer' : 'hdr-keyer hdr-keyer--off'))
     }
     if (profile.contest) {
-      const known = p.grid === undefined && p.call !== undefined ? this.db.lookup(p.call)?.loc : undefined
+      const known = p.grid === undefined && p.call !== undefined ? this.knownLoc(p.call) : undefined
       const az = bearingDeg(this.meta.myGrid, p.grid ?? known ?? '')
       if (az !== undefined) mid.append(el('b', known ? 'hdr-az hdr-az--guess' : 'hdr-az', `${az}°`))
     }
@@ -802,7 +817,8 @@ export class LoggingScreen implements Screen {
     this.nav.toLogList()
   }
 
-  private renderLine(): void {
+  /** `sticky`: after this line's band / mode, so `2G OK1EM` checks the dupe on 13cm. */
+  private renderLine(sticky: StickyState): void {
     if (!this.composing) this.syncSysInput()
     this.inputEl.classList.toggle('inputline--tx', this.txMode)
     if (this.txMode) {
@@ -814,7 +830,7 @@ export class LoggingScreen implements Screen {
     // DUPE: invert the input line. Satellite dupe keys on call + SAT_NAME
     // (a station can be re-worked on another bird); VHF contest call + band; otherwise call + band + mode.
     const call = this.effectiveCall()
-    const s = this.state.sticky
+    const s = sticky
     const dupe =
       call !== undefined &&
       (PROFILES[this.meta.profile].fixedBand
@@ -876,6 +892,7 @@ export class LoggingScreen implements Screen {
       // VHF contest: the QSO's points (= km + 1, IARU R1) as soon as the locator is known;
       // Provozní aktiv / FM pohár score by large-square rings — those points next to it.
       if (profile.contest && p.grid !== undefined) chips.push(...this.pointChips(p.grid))
+      if (profile.contest) chips.push(...this.qrvChip(p.call, dry.sticky.band))
       if (p.theirRef) chips.push(fieldChip('REF', p.theirRef.value))
       if (p.name) chips.push(fieldChip('NAME', p.name))
     } else if (p.grid !== undefined) {
@@ -907,10 +924,39 @@ export class LoggingScreen implements Screen {
     return chips
   }
 
-  /** The callsign database's locator for the call just entered, while none is typed. */
+  /** VHF contest: the other bands the database knows the call on (as Tučňák shows them);
+   *  `band` is the QSO's, a band typed on this line included. Bands already worked are struck out. */
+  private qrvChip(call: string, band: string): HTMLElement[] {
+    const bands = qrvLabels(this.db.lookup(call)?.qrv, band)
+    if (bands.length === 0) return []
+    const chip = el('span', 'tok')
+    bands.forEach(({ band: b, label }, i) => {
+      if (i > 0) chip.append(' ')
+      chip.append(isDupe(this.qsos, call, b, this.dupeMode()) ? el('s', undefined, label) : label)
+    })
+    chip.append(el('small', undefined, 'QRV'))
+    return [chip]
+  }
+
+  /** The call's locator in this log (the latest QSO with one), if worked already. */
+  private loggedLoc(call: string): string | undefined {
+    const c = call.toUpperCase()
+    for (let i = this.qsos.length - 1; i >= 0; i--) {
+      const q = this.qsos[i]
+      if (q && q.grid && q.call.toUpperCase() === c) return q.grid
+    }
+    return undefined
+  }
+
+  /** The call's locator: from this log when worked already (another band), else the database's. */
+  private knownLoc(call: string): string | undefined {
+    return this.loggedLoc(call) ?? this.db.lookup(call)?.loc
+  }
+
+  /** The known locator for the call just entered, while none is typed. */
   private locSuggestion(): string | undefined {
     const call = this.state.partial.call
-    return call && this.state.partial.grid === undefined ? this.db.lookup(call)?.loc : undefined
+    return call && this.state.partial.grid === undefined ? this.knownLoc(call) : undefined
   }
 
   /** Locator entered before the call (VHF contest): buttons for the calls the database

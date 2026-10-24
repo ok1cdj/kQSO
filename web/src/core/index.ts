@@ -138,7 +138,20 @@ export type { EdiStation, EdiEquipment, EdiSettings } from './edi'
 export { announceUpdate, checksGitHub, compareVersions, parseVersion } from './version'
 export { WHATS_NEW, notesSince, seenBaseline } from './whatsnew'
 export type { WhatsNewEntry } from './whatsnew'
-export { LiveDb, LIVE_MAX, baseSource, combineSources, dbDate, mergeEntry, parseDb, serializeDb, userHeader } from './calldb'
+export {
+  LiveDb,
+  LIVE_MAX,
+  bandLetter,
+  baseSource,
+  combineSources,
+  dbDate,
+  mergeEntry,
+  parseDb,
+  qrvBands,
+  qrvLabels,
+  serializeDb,
+  userHeader,
+} from './calldb'
 export type { Entry, ParsedDb } from './calldb'
 export {
   WAVELOG_SETTINGS,

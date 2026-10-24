@@ -8,12 +8,59 @@
 
 import type { SuggestionSource } from './suggest'
 
-/** One callsign. `last` is YYYYMMDD of the latest sighting (missing = oldest). */
+/** One callsign. `last` is YYYYMMDD of the latest sighting (missing = oldest).
+ *  `qrv`: the band letters it's been heard on (as in Tučňák's C_W file, e.g. 'CEG'). */
 export interface Entry {
   readonly call: string
   readonly loc?: string
   readonly last?: string
   readonly count: number
+  readonly qrv?: string
+}
+
+/** Tučňák's band letters (its bandchar) ↔ our band keys, and the short label the
+ *  QRV chip shows: the bare number (6m keeps its m, 6 is 6cm); from 24 GHz up the GHz,
+ *  nobody remembers the mm. HF has no letter. */
+const BAND_LETTERS: Readonly<Record<string, readonly [band: string, short: string]>> = {
+  A: ['6m', '6m'],
+  B: ['4m', '4'],
+  C: ['2m', '2'],
+  E: ['70cm', '70'],
+  G: ['23cm', '23'],
+  H: ['13cm', '13'],
+  I: ['9cm', '9'],
+  J: ['6cm', '6'],
+  K: ['3cm', '3'],
+  L: ['1.25cm', '24G'],
+  M: ['6mm', '47G'],
+  N: ['4mm', '76G'],
+  O: ['2.5mm', '122G'],
+  P: ['2mm', '134G'],
+  Q: ['1mm', '248G'],
+}
+
+/** The letter for a band ('23cm' → 'G'), or undefined (HF, unknown). */
+export function bandLetter(band: string): string | undefined {
+  return Object.keys(BAND_LETTERS).find((l) => BAND_LETTERS[l]?.[0] === band)
+}
+
+/** The bands of a QRV string ('CEG' → ['2m', '70cm', '23cm']); unknown letters are skipped. */
+export function qrvBands(qrv: string | undefined): string[] {
+  return [...(qrv ?? '')].flatMap((l) => BAND_LETTERS[l]?.[0] ?? [])
+}
+
+/** The QRV chip's bands with their labels ('CG' → 2m '2', 23cm '23'), without the band given. */
+export function qrvLabels(qrv: string | undefined, except?: string): { band: string; label: string }[] {
+  return [...(qrv ?? '')].flatMap((l) => {
+    const b = BAND_LETTERS[l]
+    return b && b[0] !== except ? [{ band: b[0], label: b[1] }] : []
+  })
+}
+
+/** Both QRV strings' letters, sorted, once each; undefined when none. */
+function unionQrv(a: string | undefined, b: string | undefined): string | undefined {
+  const u = [...new Set((a ?? '') + (b ?? ''))].sort().join('')
+  return u || undefined
 }
 
 export interface ParsedDb {
@@ -26,8 +73,8 @@ export interface ParsedDb {
 export const LIVE_MAX = 20_000
 
 /**
- * Parse a DB TSV (UTF-8, LF). `#` lines are the header/comments. Tolerant to 1–4
- * columns: CALL [LOC [LAST [COUNT]]]; an empty field counts as missing.
+ * Parse a DB TSV (UTF-8, LF). `#` lines are the header/comments. Tolerant to 1–5
+ * columns: CALL [LOC [LAST [COUNT [QRV]]]]; an empty field counts as missing.
  */
 export function parseDb(text: string): ParsedDb {
   const header: Record<string, string> = {}
@@ -41,21 +88,23 @@ export function parseDb(text: string): ParsedDb {
       }
       continue
     }
-    const [call, loc, last, count] = line.split('\t').map((f) => f.trim())
+    const [call, loc, last, count, qrv] = line.split('\t').map((f) => f.trim())
     if (!call) continue
     const e: { -readonly [K in keyof Entry]: Entry[K] } = { call: call.toUpperCase(), count: Number(count) || 0 }
     if (loc) e.loc = loc.toUpperCase()
     if (last && /^\d{8}$/.test(last)) e.last = last
+    const q = unionQrv(qrv?.toUpperCase().replace(/[^A-Z]/g, ''), undefined)
+    if (q) e.qrv = q
     entries.push(e)
   }
   return { header, entries }
 }
 
-/** Serialize with all four columns, sorted by call — deterministic, so a roundtrip is identical. */
+/** Serialize with four columns (a fifth, QRV, when known), sorted by call — deterministic, so a roundtrip is identical. */
 export function serializeDb(entries: Iterable<Entry>, headerLine: string): string {
   const rows = [...entries]
     .sort((a, b) => (a.call < b.call ? -1 : a.call > b.call ? 1 : 0))
-    .map((e) => [e.call, e.loc ?? '', e.last ?? '', String(e.count)].join('\t'))
+    .map((e) => [e.call, e.loc ?? '', e.last ?? '', String(e.count), ...(e.qrv ? [e.qrv] : [])].join('\t'))
   return [headerLine, ...rows].join('\n') + '\n'
 }
 
@@ -64,7 +113,7 @@ const newer = (a: string | undefined, b: string | undefined): boolean => (a ?? '
 
 /**
  * Import rule: the newer `last` wins loc/last; a tie or missing date keeps the
- * existing record. Counts add up (each side holds its own history).
+ * existing record. Counts add up (each side holds its own history), QRV bands join.
  */
 export function mergeEntry(existing: Entry, incoming: Entry): Entry {
   const win = newer(incoming.last, existing.last) ? incoming : existing
@@ -72,6 +121,8 @@ export function mergeEntry(existing: Entry, incoming: Entry): Entry {
   const loc = win.loc ?? (win === incoming ? existing.loc : incoming.loc)
   if (loc !== undefined) e.loc = loc
   if (win.last !== undefined) e.last = win.last
+  const qrv = unionQrv(existing.qrv, incoming.qrv)
+  if (qrv) e.qrv = qrv
   return e
 }
 
@@ -97,8 +148,8 @@ export class LiveDb {
     return this.map.values()
   }
 
-  /** A committed QSO: count+1, latest date; the locator updates unless this sighting is older. */
-  record(call: string, loc: string | undefined, date: string): void {
+  /** A committed QSO: count+1, latest date, its band joins QRV; the locator updates unless this sighting is older. */
+  record(call: string, loc: string | undefined, date: string, band?: string): void {
     const c = call.toUpperCase()
     const prev = this.map.get(c)
     const e: { -readonly [K in keyof Entry]: Entry[K] } = { call: c, count: (prev?.count ?? 0) + 1 }
@@ -106,6 +157,8 @@ export class LiveDb {
     const l = isNewest ? (loc ?? prev?.loc) : (prev?.loc ?? loc)
     if (l !== undefined) e.loc = l
     e.last = isNewest ? date : prev!.last!
+    const qrv = unionQrv(prev?.qrv, band ? bandLetter(band) : undefined)
+    if (qrv) e.qrv = qrv
     this.map.set(c, e)
     this.cap()
   }
@@ -147,7 +200,7 @@ export function baseSource(entries: readonly Entry[]): Map<string, Entry> {
 
 /**
  * The one source the UI queries. `lookup`: live first, locator falls back to the
- * base. `search`: substring match over both, deduped by call, ordered by own count,
+ * base, QRV bands from both. `search`: substring match over both, deduped by call, ordered by own count,
  * then base count, prefix before substring, then alphabetically.
  */
 export function combineSources(base: ReadonlyMap<string, Entry> | null, live: LiveDb): SuggestionSource {
@@ -156,9 +209,9 @@ export function combineSources(base: ReadonlyMap<string, Entry> | null, live: Li
       const c = call.toUpperCase()
       const l = live.get(c)
       const b = base?.get(c)
-      if (!l) return b
-      if (l.loc !== undefined || b?.loc === undefined) return l
-      return { ...l, loc: b.loc }
+      if (!l || !b) return l ?? b
+      const qrv = unionQrv(l.qrv, b.qrv)
+      return { ...l, ...(l.loc === undefined && b.loc !== undefined ? { loc: b.loc } : {}), ...(qrv ? { qrv } : {}) }
     },
     search(fragment, limit) {
       const f = fragment.toUpperCase()

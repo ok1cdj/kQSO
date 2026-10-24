@@ -1,5 +1,17 @@
 import { describe, it, expect } from 'vitest'
-import { LIVE_MAX, LiveDb, baseSource, combineSources, dbDate, mergeEntry, parseDb, serializeDb } from '../src/core/calldb'
+import {
+  LIVE_MAX,
+  LiveDb,
+  bandLetter,
+  baseSource,
+  combineSources,
+  dbDate,
+  mergeEntry,
+  parseDb,
+  qrvBands,
+  qrvLabels,
+  serializeDb,
+} from '../src/core/calldb'
 import { emptySuggestions } from '../src/core/suggest'
 
 const H = '# kQSO callsign DB | set=user | exported=20260924'
@@ -159,5 +171,38 @@ describe('helpers', () => {
     expect(serializeDb([{ call: 'B', count: 1 }, { call: 'A', loc: 'JO70', last: '20260101', count: 2 }], H)).toBe(
       `${H}\nA\tJO70\t20260101\t2\nB\t\t\t1\n`,
     )
+  })
+})
+
+describe('QRV bands — Tučňák band letters in the 5th column', () => {
+  it('reads, cleans and writes the 5th column; rows without it stay four columns', () => {
+    const { entries } = parseDb('OK1KPA\tJN79US\t20260705\t1145\tkhcE G\nOK1ABC\tJO70AA\t20260101\t1\t\n')
+    expect(entries[0]?.qrv).toBe('CEGHK')
+    expect(entries[1]?.qrv).toBeUndefined()
+    expect(serializeDb(entries, H)).toBe(`${H}\nOK1ABC\tJO70AA\t20260101\t1\nOK1KPA\tJN79US\t20260705\t1145\tCEGHK\n`)
+  })
+
+  it('letters ↔ bands', () => {
+    expect(qrvBands('CEGK')).toEqual(['2m', '70cm', '23cm', '3cm'])
+    expect(qrvBands('CDZ')).toEqual(['2m'])
+    expect(qrvBands(undefined)).toEqual([])
+    expect(qrvLabels('CL')).toEqual([
+      { band: '2m', label: '2' },
+      { band: '1.25cm', label: '24G' },
+    ])
+    expect(bandLetter('23cm')).toBe('G')
+    expect(bandLetter('20m')).toBeUndefined()
+    expect(qrvLabels('ACEGJKLMNO', '23cm').map((q) => q.label)).toEqual(['6m', '2', '70', '6', '3', '24G', '47G', '76G', '122G'])
+  })
+
+  it('merge, record and lookup join the bands of both sides', () => {
+    expect(mergeEntry({ call: 'A', count: 1, qrv: 'CG' }, { call: 'A', count: 1, qrv: 'EG' }).qrv).toBe('CEG')
+    const live = new LiveDb()
+    live.record('OK1KPA', undefined, '20261024', '3cm')
+    live.record('OK1KPA', undefined, '20261024', '20m')
+    expect(live.get('OK1KPA')?.qrv).toBe('K')
+    const db = combineSources(baseSource(parseDb('OK1KPA\tJN79US\t20260705\t9\tCEG\nOK1XYZ\tJO70AA\t20260705\t9\tC\n').entries), live)
+    expect(db.lookup('OK1KPA')).toMatchObject({ loc: 'JN79US', qrv: 'CEGK' })
+    expect(db.lookup('OK1XYZ')?.qrv).toBe('C')
   })
 })
