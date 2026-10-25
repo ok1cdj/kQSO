@@ -15,11 +15,14 @@ import { EdiExportScreen } from './screens/ediexport'
 import { MapScreen } from './screens/map'
 import { StatsScreen } from './screens/stats'
 import { WhatsNewScreen } from './screens/whatsnew'
+import { ChatScreen } from './screens/chat'
+import type { ChatContext } from './screens/chat'
 import { takeUnseenNotes } from './whatsnew'
 import { WHATS_NEW } from '../core/index'
 import type { WhatsNewEntry } from '../core/index'
 import { trackScreen } from './stats'
 import { KeyerController } from './keyer'
+import { KST_SETTINGS, KstController } from './kst'
 import { RigController } from './rig'
 
 export interface Screen {
@@ -33,6 +36,8 @@ export class App {
   // A radio via the keyer rides on the keyer's link (its CI-V tunnel).
   private readonly rig = new RigController(this.platform)
   private readonly keyer = new KeyerController(this.platform, this.rig)
+  // ON4KST chat: one link too, it stays up while moving between screens.
+  private readonly kst = new KstController(this.platform)
   private root!: HTMLElement
   private current: Screen | null = null
   // System Back (Android button / gesture, the browser's Back, the iOS edge swipe) does
@@ -58,6 +63,17 @@ export class App {
     this.rig.attachKeyer(this.keyer.civLink)
     // The keyer's settings first: a radio via the keyer may bring its link up.
     void this.keyer.init().then(() => this.rig.init())
+    this.kst.init()
+    // Until the chat has its screens: try it from the console (npm run dev + the local relay).
+    if (import.meta.env.DEV) {
+      const w = window as unknown as { kqsoKst?: KstController; kqsoKstLogin?: (call: string, pass: string) => Promise<void> }
+      w.kqsoKst = this.kst
+      w.kqsoKstLogin = async (call, pass) => {
+        await this.platform.setSetting(KST_SETTINGS.call, call)
+        await this.platform.setSetting(KST_SETTINGS.pass, pass)
+        await this.kst.connect()
+      }
+    }
     void this.start()
   }
 
@@ -120,7 +136,7 @@ export class App {
 
   showSettings(): void {
     this.show(
-      new SettingsScreen(this.platform, this.keyer, this.rig, {
+      new SettingsScreen(this.platform, this.keyer, this.rig, this.kst, {
         back: () => this.showLogList(),
         openHelp: () => this.showHelp(() => this.showSettings()),
         openWhatsNew: () => this.showWhatsNew(WHATS_NEW, () => this.showSettings()),
@@ -142,17 +158,24 @@ export class App {
     )
   }
 
-  showLogging(logId: string): void {
+  /** `line`: typed in on open (the chat's "Log": call + locator). */
+  showLogging(logId: string, line = ''): void {
     this.show(
-      new LoggingScreen(this.platform, this.keyer, this.rig, logId, {
+      new LoggingScreen(this.platform, this.keyer, this.rig, this.kst, logId, {
         toLogList: () => this.showLogList(),
         toQsoList: () => this.showQsoList(logId),
         editQso: (index) => this.showQsoEdit(logId, index, () => this.showLogging(logId)),
         toHelp: () => this.showHelp(() => this.showLogging(logId)),
-      }),
+        toChat: (ctx) => this.showChat(logId, ctx),
+      }, line),
       'logging',
       () => this.showLogList(), // an entered partial QSO is in the journal, as with "‹ Logs"
     )
+  }
+
+  showChat(logId: string, ctx: ChatContext): void {
+    const back = (): void => this.showLogging(logId)
+    this.show(new ChatScreen(this.platform, this.kst, logId, ctx, { back, toLog: (line) => this.showLogging(logId, line) }), 'chat', back)
   }
 
   showEdiExport(logId: string): void {

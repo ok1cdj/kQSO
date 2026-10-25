@@ -55,6 +55,23 @@ export interface RigTransport {
   onState(cb: (s: KeyerLinkState, name?: string) => void): void
 }
 
+/** Link state of a TCP connection; `reason` on 'off' says why (shown to the user). */
+export type TcpLinkState = 'off' | 'connecting' | 'on'
+
+/**
+ * Plain TCP text link, for the ON4KST chat (core/kst.ts). Native sockets in the apps;
+ * on the web a WebSocket to the kQSO relay, which knows the target itself. Text is
+ * UTF-8 both ways; one connection at a time (connect closes the previous one).
+ */
+export interface TcpTransport {
+  connect(host: string, port: number): void
+  close(): void
+  /** Ignored when not connected. */
+  write(text: string): void
+  onData(cb: (text: string) => void): void
+  onState(cb: (s: TcpLinkState, reason?: string) => void): void
+}
+
 /** Device position for the own locator (the locate button in New Log). Only the locator is kept. */
 export interface GeoPosition {
   readonly lat: number
@@ -127,6 +144,9 @@ export interface KQSOPlatform {
 
   /** IC-705 over BLE; APK only. */
   readonly rig?: RigTransport | undefined
+
+  /** TCP for the ON4KST chat; undefined where there is none (web build without a relay). */
+  readonly tcp?: TcpTransport | undefined
 
   /** Device position, asked only on a tap; undefined where the host has none.
    *  Rejects with an Error whose message is a GeoFailure. */

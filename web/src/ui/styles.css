@@ -76,7 +76,8 @@ body {
     'strip'
     'recent';
 }
-.screen--nokb .hdr {
+.screen--nokb .hdr,
+.screen--nokb .logtop {
   grid-area: hdr;
 }
 .screen--nokb .recent {
@@ -862,6 +863,12 @@ body {
   display: flex;
   flex-direction: column;
 }
+/* The folded section's title must stand out (the state line under it stays grey). */
+.setting__head > .field-label {
+  color: var(--fg);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
 .setting--fold > summary .icon {
   flex: none;
   transition: transform var(--transition);
@@ -1005,7 +1012,8 @@ body {
       'input   kb'
       'preview kb';
   }
-  .hdr {
+  .hdr,
+  .logtop {
     grid-area: hdr;
   }
   .strip {
@@ -1063,13 +1071,24 @@ body {
       'strip   board'
       'recent  board';
   }
-  .board {
+  .side {
     grid-area: board;
   }
 }
 
+/* The right column of the contest layout: the board, under it the chat's stations. */
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-height: 0;
+  overflow: hidden;
+}
+.side[hidden] {
+  display: none;
+}
 .board {
-  align-self: start;
+  align-self: stretch;
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
@@ -1166,4 +1185,199 @@ a.help-text,
 .about a {
   color: var(--fg);
   text-underline-offset: 2px;
+}
+
+/* --- ON4KST chat ------------------------------------------------------------ */
+
+/* Header + the chat line under it, one grid item. */
+.logtop {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+/* The last message to me: tap = "@CALL " in the input line. */
+.chatline {
+  font: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  text-align: left;
+  padding: 0.3rem 0.6rem;
+  border: var(--border-w) solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.chatline[hidden] {
+  display: none;
+}
+.hdr-chat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding-top: 0.1rem;
+  padding-bottom: 0.1rem;
+}
+.hdr-chat .icon {
+  height: 1.2rem;
+  width: 1.2rem;
+}
+.hdr-chat--off {
+  color: var(--ghost);
+  border-color: var(--ghost);
+  border-style: dashed;
+}
+/* A chat line being typed (@CALL text): dashed, not a QSO. */
+.inputline--chat {
+  border-style: dashed;
+  font-size: 1.1rem;
+}
+/* Active stations under the board. */
+.kst-side {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+}
+.kst-side-head {
+  color: var(--muted);
+  padding: 0 0.2rem 0.2rem;
+}
+.kst-side-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  min-height: 0;
+}
+.kst-side-list li {
+  display: flex;
+  gap: 0.2rem;
+}
+.kst-side-row,
+.kst-side-sked {
+  font: inherit;
+  padding: 0.25rem 0.3rem;
+  border: 0;
+  border-bottom: var(--border-w) solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+}
+.kst-side-row {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  white-space: pre;
+  overflow: hidden;
+}
+.kst-side-row--new {
+  font-weight: 700;
+}
+.kst-side-sked {
+  flex: none;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius);
+}
+.kst-side-row:active,
+.kst-side-sked:active {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* Chat screen: the list scrolls, the line to write stays at the bottom. */
+.screen--chat {
+  overflow: hidden;
+}
+.chat-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.chat-msgs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.chat-msg {
+  width: 100%;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  padding: 0.3rem 0.4rem;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.chat-time {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.chat-msg--me {
+  border-left: 4px solid var(--accent);
+  font-weight: 600;
+}
+.chat-msg--mention {
+  border-left: 4px dashed var(--accent);
+}
+.chat-msg--mine {
+  color: var(--muted);
+}
+.chat-stations {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.chat-stations td {
+  padding: 0.3rem 0.3rem;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.chat-stations td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.chat-st-call {
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.chat-st-name {
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--muted);
+}
+.chat-st-acts {
+  display: flex;
+  gap: 0.3rem;
+  justify-content: flex-end;
+}
+.chat-st--worked td {
+  color: var(--ghost);
+  text-decoration: line-through;
+}
+.chat-st--away td {
+  color: var(--ghost);
+}
+.chat-st--new .chat-st-call {
+  text-decoration: underline;
+}
+.chat-compose {
+  display: flex;
+  gap: 0.4rem;
+}
+.chat-compose .chat-input {
+  flex: 1;
+  min-width: 0;
+  text-transform: none;
 }

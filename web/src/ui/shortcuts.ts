@@ -1,6 +1,6 @@
 // Hardware-keyboard shortcuts on the logging screen, as in Tučňák: macros from F5 (F1–F4
 // belong to the browser / system), PgUp / PgDn the CW speed, Alt+letter the line commands
-// and navigation, Ctrl+Enter save now, Ctrl+M ESM. Pure — DOM-free, so it can be unit-tested; the
+// and navigation (Alt+O the ON4KST chat), Ctrl+Enter save now, Ctrl+M ESM. Pure — DOM-free, so it can be unit-tested; the
 // logging screen decides whether a shortcut applies (keyer, radio) and lets the key
 // through when it doesn't.
 
@@ -19,6 +19,7 @@ export type Shortcut =
   | { readonly type: 'back' }
   | { readonly type: 'save' }
   | { readonly type: 'esm' } // ESM on / off
+  | { readonly type: 'chat' } // the ON4KST chat
 
 export interface KeyInput {
   readonly key: string
@@ -42,6 +43,7 @@ const ALT: Readonly<Record<string, Shortcut>> = {
   KeyM: { type: 'mode' },
   KeyL: { type: 'list' },
   KeyQ: { type: 'back' },
+  KeyO: { type: 'chat' },
 }
 
 /** The shortcut a key press stands for, or undefined (ordinary typing, or the browser's).

@@ -3,7 +3,7 @@
 // references, radio CI-V, M5 keyer); storage, and About with the "How to log" help.
 // Language follows navigator.language with no in-app switch.
 
-import { LiveDb, WAVELOG_SETTINGS, apiBase, dbDate, userHeader, MACRO_SLOTS, ESM_ONLY_SLOTS, infoLabel, cqLabel, WPM_MAX, WPM_MIN, withMacro, resetMacros, xvertBands, rigHasBand, RIG_MODELS, parseMHz, bandForFreq } from '../../core/index'
+import { LiveDb, SKED_DEFAULT, WAVELOG_SETTINGS, apiBase, dbDate, userHeader, MACRO_SLOTS, ESM_ONLY_SLOTS, infoLabel, cqLabel, WPM_MAX, WPM_MIN, withMacro, resetMacros, xvertBands, rigHasBand, RIG_MODELS, parseMHz, bandForFreq } from '../../core/index'
 import type { ProfileId, RunMode, WavelogStation, Xvert } from '../../core/index'
 import { platformKind } from '../../platform/index'
 import type { KQSOPlatform } from '../../platform/index'
@@ -19,6 +19,8 @@ import { MAP_LABELS_SETTING } from './map'
 import { RADAR_SETTING } from '../radar'
 import { STATS_SETTING, setStatsEnabled } from '../stats'
 import { KEYER_SETTINGS } from '../keyer'
+import { KST_SETTINGS, kstStatus } from '../kst'
+import type { KstController } from '../kst'
 import { KEYBOARD_MODES, KEYBOARD_SETTING, parseKeyboardMode } from '../keyboard'
 import type { KeyboardMode } from '../keyboard'
 import { keyerGuideLink } from '../keyer-guide'
@@ -66,11 +68,13 @@ export class SettingsScreen implements Screen {
   private unsubscribe: (() => void) | undefined
   private unsubscribeRig: (() => void) | undefined
   private unsubscribeRigCw: (() => void) | undefined
+  private unsubscribeKst: (() => void) | undefined
 
   constructor(
     private readonly platform: KQSOPlatform,
     private readonly keyer: KeyerController,
     private readonly rig: RigController,
+    private readonly kst: KstController,
     private readonly nav: SettingsNav,
   ) {}
 
@@ -83,6 +87,7 @@ export class SettingsScreen implements Screen {
     this.unsubscribe?.()
     this.unsubscribeRig?.()
     this.unsubscribeRigCw?.()
+    this.unsubscribeKst?.()
   }
 
   private async render(): Promise<void> {
@@ -100,6 +105,7 @@ export class SettingsScreen implements Screen {
       ...(this.platform.refTiles ? [await this.refsSetting()] : []),
       ...(this.rig.available ? [await this.rigSetting()] : []),
       ...(this.keyer.available ? [await this.keyerSetting()] : []),
+      ...(this.kst.available ? [await this.kstSetting()] : []),
       this.storageSetting(persisted),
       ...(this.platform.nativeVersion
         ? checksUpdates(this.platform)
@@ -444,6 +450,64 @@ export class SettingsScreen implements Screen {
     pick.classList.add('segmented--wrap')
     wrap.append(el('span', 'field-label', t('settings.wl')), url.row, token.row, hint, actions, pick, status)
     return wrap
+  }
+
+  /**
+   * ON4KST chat: the account (call, password — never shown back) and the sked template.
+   * "Save and connect" stores them and connects, so a wrong password shows right here.
+   */
+  private async kstSetting(): Promise<HTMLElement> {
+    const K = KST_SETTINGS
+    const p = this.platform
+    const savedPass = (await p.getSetting(K.pass)) ?? ''
+    const call = fieldRow(t('settings.kstCall'), (await p.getSetting(K.call)) ?? '', { placeholder: 'OK1ABC' })
+    const pass = fieldRow(t('settings.kstPass'), '', { placeholder: savedPass ? `•••• ${t('settings.kstPassSaved')}` : '' })
+    pass.input.type = 'password'
+    pass.input.autocapitalize = 'off'
+    const sked = fieldRow(t('settings.kstSked'), (await p.getSetting(K.sked)) || SKED_DEFAULT)
+    sked.input.autocapitalize = 'off'
+    const state = el('span')
+    const status = el('div', 'about')
+    const paint = (): void => {
+      status.textContent = kstStatus(this.kst)
+      state.textContent = this.kst.link === 'on' || this.kst.wanted ? status.textContent : savedPass ? t('kst.off') : t('settings.kstSummaryOff')
+    }
+    this.unsubscribeKst?.()
+    this.unsubscribeKst = this.kst.subscribe(paint)
+    paint()
+
+    const save = async (): Promise<void> => {
+      await p.setSetting(K.call, call.input.value.trim().toUpperCase())
+      const pw = pass.input.value
+      if (pw) await p.setSetting(K.pass, pw)
+      await p.setSetting(K.sked, sked.input.value.trim() === SKED_DEFAULT ? '' : sked.input.value.trim())
+      pass.input.value = ''
+      if (pw || savedPass) pass.input.placeholder = `•••• ${t('settings.kstPassSaved')}`
+      this.kst.disconnect()
+      await this.kst.connect()
+    }
+    const actions = el('div', 'segmented')
+    actions.append(
+      button(t('settings.kstSave'), () => void save(), 'btn'),
+      button(t('kst.disconnect'), () => this.kst.disconnect(), 'btn'),
+      button(t('settings.kstForget'), () => {
+        void (async () => {
+          this.kst.disconnect()
+          await p.setSetting(K.pass, '')
+          pass.input.placeholder = ''
+          status.textContent = t('settings.kstForgotten')
+        })()
+      }, 'btn'),
+    )
+    const reg = el('div', 'about')
+    const a = el('a', undefined, t('settings.kstRegister'))
+    a.href = 'https://www.on4kst.org/'
+    a.target = '_blank'
+    a.rel = 'noopener'
+    reg.append(a)
+    const hints = [el('div', 'about', t('settings.kstPassHint'))]
+    if (!this.platform.nativeVersion) hints.push(el('div', 'about', t('settings.kstWeb')))
+    return this.fold('kst', t('settings.kst'), state, el('div', undefined, t('settings.kstAbout')), call.row, pass.row, ...hints, sked.row, actions, status, reg)
   }
 
   /** Web only: anonymous usage statistics (stats.ts) on/off, default on. */
