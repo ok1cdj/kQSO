@@ -72,6 +72,33 @@ describe('parse → ADIF → parse roundtrip', () => {
     expect(roundtrip(qso)).toEqual(qso)
   })
 
+  it('BOTA, two bunkers at once', () => {
+    const qso: Qso = {
+      ...BASE,
+      call: 'OK2XYZ',
+      signal: { band: '40m', mode: 'SSB' },
+      theirRef: { kind: 'BOTA', value: 'B/OK-0456' },
+      myRefs: [
+        { kind: 'BOTA', value: 'B/OK-0001' },
+        { kind: 'BOTA', value: 'B/OK-0002' },
+      ],
+    }
+    expect(roundtrip(qso)).toEqual(qso)
+  })
+
+  it('a summit with a bunker on it keeps both', () => {
+    const qso: Qso = {
+      ...BASE,
+      call: 'OK2XYZ',
+      signal: { band: '40m', mode: 'CW' },
+      myRefs: [
+        { kind: 'SOTA', value: 'OK/JC-001' },
+        { kind: 'BOTA', value: 'B/OK-0001' },
+      ],
+    }
+    expect(roundtrip(qso)).toEqual(qso)
+  })
+
   it('Obecný with grid + name', () => {
     const qso: Qso = {
       ...BASE,

@@ -24,8 +24,10 @@ function twoPartKind(prefix: string): ReferenceKind {
   return 'POTA'
 }
 
-/** Three-part kind by association / region: GMA-only summits have their own (OL, OM0, DA; G/HCE). */
+/** Three-part kind by its first part: B = a bunker (BOTA, B/OK-0123); else a summit, GMA-only
+ *  associations have their own (OL, OM0, DA; G/HCE). No SOTA association is called B. */
 function summitKind(association: string, region: string): ReferenceKind {
+  if (association === 'B') return 'BOTA'
   return isGmaSummit(association, region) ? 'GMA' : 'SOTA'
 }
 
@@ -40,6 +42,7 @@ function summitKind(association: string, region: string): ReferenceKind {
  *   CZ/0001    → POTA (two parts)     → "CZ-0001"
  *   OKFF/0001  → WWFF (prefix ends FF)→ "OKFF-0001"
  *   OKR/1001   → TOTA (3+ chars, ends R) → "OKR-1001"
+ *   B/OK/0123  → BOTA (three parts, B first) → "B/OK-0123"
  */
 export function matchReference(raw: string): AwardReference | null {
   if (!raw.includes('/')) return null
@@ -68,7 +71,7 @@ export function matchReference(raw: string): AwardReference | null {
 /**
  * Lenient reference parser for the classic forms (new log, QSO edit), where a full
  * keyboard is available. Accepts BOTH the parser's slash convention (OK/ZC/001) and
- * the already-canonical dash form (OK/ZC-001, CZ-0001, OKFF-0001, OKR-1001). Returns null if
+ * the already-canonical dash form (OK/ZC-001, CZ-0001, OKFF-0001, OKR-1001, B/OK-0123). Returns null if
  * it is not a recognizable reference.
  */
 export function parseReferenceInput(raw: string): AwardReference | null {
@@ -89,8 +92,9 @@ export function parseReferenceInput(raw: string): AwardReference | null {
   return { kind, value: `${head}-${num}` }
 }
 
-/** A log carries one summit, one WWFF area, one tower — but POTA parks can be several (n-fer). */
-export const oncePerLog = (kind: ReferenceKind): boolean => kind !== 'POTA'
+/** A log carries one summit, one WWFF area, one tower — but POTA parks (n-fer) and BOTA
+ *  bunkers (several within reach at once) can be several. */
+export const oncePerLog = (kind: ReferenceKind): boolean => kind !== 'POTA' && kind !== 'BOTA'
 
 export type MyRefsResult =
   | { readonly ok: true; readonly refs: AwardReference[] }

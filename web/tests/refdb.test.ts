@@ -27,6 +27,8 @@ describe('parseRefTile', () => {
   it('CRLF and a missing name', () => {
     const t = parseRefTile('# kQSO refs | field=JN | updated=2026-10-19\r\nTOTA\tOKR-1001\t49.6418\t14.8732\r\n')!
     expect(t.refs).toEqual([{ kind: 'TOTA', value: 'OKR-1001', lat: 49.6418, lon: 14.8732, name: '' }])
+    const b = parseRefTile('# kQSO refs | field=JO | updated=2026-10-25\nBOTA\tB/OK-0001\t49.9301\t18.3536\tMO-S 2 U skoly\n')!
+    expect(b.refs[0]).toMatchObject({ kind: 'BOTA', value: 'B/OK-0001', name: 'MO-S 2 U skoly' })
   })
   it('rejects text without the header (an HTML error page)', () => {
     expect(parseRefTile('<!doctype html><title>404</title>')).toBeUndefined()
@@ -80,6 +82,12 @@ describe('nearestRefs', () => {
     const r = nearestRefs([tile], 50.7359, 15.7398)
     expect(r.filter((x) => x.kind === 'SOTA')).toHaveLength(3)
     expect(r.some((x) => x.kind === 'WWFF')).toBe(false)
+  })
+  it('only the chosen programs', () => {
+    const r = nearestRefs([tile], 50.7359, 15.7398, { kinds: new Set(['POTA'] as const) })
+    expect(r.length).toBeGreaterThan(0)
+    expect(r.every((x) => x.kind === 'POTA')).toBe(true)
+    expect(nearestRefs([tile], 50.7359, 15.7398, { kinds: new Set() })).toEqual([])
   })
   it('nothing near', () => {
     expect(nearestRefs([tile], 55, 10)).toEqual([])
