@@ -57,8 +57,6 @@ export class KstController {
   /** Why the link is off / failed: LOGSTAT text ("Wrong password"), the relay's close reason. */
   reason: string | undefined
   room: KstRoom = 2
-  /** My locator as ON4KST knows it (from the login). */
-  locator: string | undefined
   /** Messages to me (/CQ MYCALL) not yet seen in the chat screen. */
   unread = 0
   /** The last message to me, shown on the logging screen until the next one. */
@@ -77,6 +75,7 @@ export class KstController {
   /** The account in use (after connect). */
   call = ''
   private pass = ''
+  private loginLocator: string | undefined
   private sinceTs = 0 // newest message before this login: history after it was missed, not old
   private wantLink = false // the operator wants to be connected (not after disconnect / a refused login)
   private retry = 0
@@ -126,6 +125,20 @@ export class KstController {
   subscribe(cb: () => void): () => void {
     this.listeners.add(cb)
     return () => this.listeners.delete(cb)
+  }
+
+  /** My locator as ON4KST knows it: from the frames about me, else from the login. */
+  get locator(): string | undefined {
+    return this.chat.myLoc ?? this.loginLocator
+  }
+
+  /** /SETLOC: ON4KST gets my locator (the others' QRB / az to me come from it). */
+  setLocator(loc: string): boolean {
+    if (!this.send(`/SETLOC ${loc}`)) return false
+    // Shown at once; the server's frame about me confirms (or corrects) it.
+    this.chat.myLoc = loc
+    this.emit()
+    return true
   }
 
   /** The current room's stations and messages; empty until the first login. */
@@ -248,7 +261,7 @@ export class KstController {
       case 'state':
         if (e.state === 'on') {
           this.retry = 0
-          this.locator = this.session?.locator
+          this.loginLocator = this.session?.locator
           this.setLink('on')
         }
         return

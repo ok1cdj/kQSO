@@ -146,6 +146,8 @@ const EN: readonly Section[] = [
     rows: [
       { text: 'VHF-contest log on 6m and up, account in Settings → ON4KST. Under the contest panel: who wrote in the last 30 min, sorted and filtered as in the chat\'s station list; a tap = @CALL, S = the sked request.' },
       { code: 'O ⏎ / Alt+O', text: 'Open the chat.' },
+      { text: 'When ON4KST has you in another locator than the log (portable), the chat and the list under the contest panel offer "Set JN89AB": it sends /SETLOC, so the others see the right QRB.' },
+      { code: '/SETNAME text', text: 'Commands go from the chat line as typed: /SETNAME Ondra 2/70/23 (name, often with the bands), /SETLOC JN79US.' },
       { code: '@OK1ABC text ⏎', text: 'Send to OK1ABC from the log line (@ text with a space after @ = to everyone).' },
       { code: 'G 144.300 ⏎', text: 'Sked QRG for this band ({QRG} in the sked request instead of the radio\'s frequency; any text). G ⏎ shows it, G - ⏎ clears it. Alt+G = G with the current QRG to change.' },
     ],
@@ -292,6 +294,8 @@ const CS: readonly Section[] = [
     rows: [
       { text: 'Log VKV závodu od 6m výš, účet v Nastavení → ON4KST. Pod závodním panelem: kdo psal posledních 30 min, seřazení a filtry jako v seznamu stanic v chatu; klepnutí = @ZNAČKA, S = žádost o sked.' },
       { code: 'O ⏎ / Alt+O', text: 'Otevřít chat.' },
+      { text: 'Když tě ON4KST má v jiném lokátoru než log (portejbl), chat i seznam pod závodním panelem nabídnou „Nastavit JN89AB“: pošle /SETLOC, aby ostatní viděli správné QRB.' },
+      { code: '/SETNAME text', text: 'Příkazy jdou z řádku chatu, jak jsou napsané: /SETNAME Ondra 2/70/23 (jméno, často s pásmy), /SETLOC JN79US.' },
       { code: '@OK1ABC text ⏎', text: 'Poslat OK1ABC přímo ze vstupního řádku (@ text s mezerou za @ = všem).' },
       { code: 'G 144.300 ⏎', text: 'QRG pro sked na tomto pásmu ({QRG} v žádosti o sked místo kmitočtu z rádia; libovolný text). G ⏎ ho ukáže, G - ⏎ smaže. Alt+G = G s aktuálním QRG k úpravě.' },
     ],

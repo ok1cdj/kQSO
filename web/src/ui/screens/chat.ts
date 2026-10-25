@@ -5,7 +5,7 @@
 // the log with the call and locator typed in. Text from the chat is only ever set as
 // text, never as HTML.
 
-import { PROFILES, baseCall, expandSked, isDupe, kstStations, readLogFile, roomForBand, viewStations, SKED_DEFAULT } from '../../core/index'
+import { PROFILES, baseCall, expandSked, isDupe, kstStations, locatorToSet, readLogFile, roomForBand, viewStations, SKED_DEFAULT } from '../../core/index'
 import type { KstEntry, KstRoom, KstSort, KstStation, LogMeta, Qso } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
@@ -43,6 +43,7 @@ export class ChatScreen implements Screen {
   private readonly root = el('div', 'screen screen--list screen--chat')
   private readonly statusEl = el('div', 'about chat-status')
   private readonly roomsEl = el('div', 'segmented')
+  private readonly locEl = el('div', 'chat-loc')
   private readonly tabsEl = el('div', 'segmented')
   private readonly toolsEl = el('div', 'segmented segmented--wrap chat-tools')
   private readonly bodyEl = el('div', 'chat-body')
@@ -78,7 +79,7 @@ export class ChatScreen implements Screen {
     })
     const compose = el('div', 'chat-compose')
     compose.append(this.input, button(t('kst.send'), () => this.send(), 'btn'))
-    this.root.replaceChildren(bar, this.roomsEl, this.statusEl, this.tabsEl, this.toolsEl, this.bodyEl, this.noticeEl, compose)
+    this.root.replaceChildren(bar, this.roomsEl, this.statusEl, this.locEl, this.tabsEl, this.toolsEl, this.bodyEl, this.noticeEl, compose)
     host.replaceChildren(this.root)
     this.unsubscribe = this.kst.subscribe(() => this.schedule())
     void this.init()
@@ -120,6 +121,7 @@ export class ChatScreen implements Screen {
         return b
       }),
     )
+    this.renderLoc()
     const unread = k.unread > 0 ? ` (${k.unread})` : ''
     this.tabsEl.replaceChildren(
       this.toggle(t('kst.messages') + unread, tab === 'messages', () => (tab = 'messages')),
@@ -127,6 +129,23 @@ export class ChatScreen implements Screen {
     )
     if (tab === 'messages') this.renderMessages()
     else this.renderStations()
+  }
+
+  /** ON4KST has me in another locator than the log: say so, one tap sends /SETLOC. */
+  private renderLoc(): void {
+    const k = this.kst
+    const want = k.link === 'on' && this.meta ? locatorToSet(k.locator, this.meta.myGrid) : undefined
+    this.locEl.hidden = want === undefined
+    if (!want) return this.locEl.replaceChildren()
+    this.locEl.replaceChildren(
+      el('span', undefined, t('kst.locDiffers', { kst: k.locator ?? '', log: want })),
+      button(t('kst.setLoc', { loc: want }), () => {
+        if (!k.setLocator(want)) {
+          const wait = Math.ceil((k.waitUntil - Date.now()) / 1000)
+          this.noticeEl.textContent = wait > 0 ? t('kst.wait', { s: wait }) : t('kst.notSent')
+        }
+      }, 'btn btn--small'),
+    )
   }
 
   private toggle(label: string, on: boolean, set: () => void): HTMLButtonElement {

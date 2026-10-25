@@ -99,6 +99,18 @@ describe('KstController', () => {
     expect(tcp.written).toEqual(['LOGINC|OK1CDJ|pw|2|kQSO test|25|0|1|0|0|\r', 'SDONE|2|\r'])
   })
 
+  it('my locator: from the list about me, set by /SETLOC, confirmed by the server', async () => {
+    const { kst, tcp } = await online()
+    tcp.recv('UA0|2|OK1CDJ|Ondra|JN79US|0|\r\nUE|2|1|\r\n')
+    expect(kst.locator).toBe('JN79US')
+    expect(kst.chat.users.has('OK1CDJ')).toBe(false)
+    expect(kst.setLocator('JN89AB')).toBe(true)
+    expect(tcp.written.at(-1)).toBe('MSG|2|0|/SETLOC JN89AB|0|\r')
+    expect(kst.locator).toBe('JN89AB')
+    tcp.recv('LOC|1000|OK1CDJ|JN89AC|\r\n')
+    expect(kst.locator).toBe('JN89AC')
+  })
+
   it('falls back to the log call; no password = failed without connecting', async () => {
     const a = setup({ kstPass: 'pw' })
     await a.kst.connect('ok2xx')

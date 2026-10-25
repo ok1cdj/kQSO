@@ -47,6 +47,7 @@ import {
   chatTarget,
   expandSked,
   kstStations,
+  locatorToSet,
   matchSkedQrg,
   isActive,
   viewStations,
@@ -1475,6 +1476,14 @@ export class LoggingScreen implements Screen {
     this.renderAll()
   }
 
+  private setKstLocator(loc: string): void {
+    if (!this.kst.setLocator(loc)) {
+      const wait = Math.ceil((this.kst.waitUntil - Date.now()) / 1000)
+      this.notice = wait > 0 ? t('kst.wait', { s: wait }) : t('kst.notSent')
+      this.renderAll()
+    }
+  }
+
   private sendChat(): void {
     if (this.kst.send(this.line)) {
       this.line = ''
@@ -1501,11 +1510,20 @@ export class LoggingScreen implements Screen {
       this.kst.view,
     ).slice(0, CHAT_ROWS)
     const head = this.kst.link === 'on' ? t('kst.active', { n: rows.length }) : this.kst.link === 'off' || this.kst.link === 'failed' ? t('kst.off') : t('kst.connecting')
-    const key = [this.kst.room, head, ...rows.map((s) => `${s.call}|${s.loc}|${s.km}|${s.az}|${s.isNew}|${s.worked}|${s.away}`)].join(';')
+    const loc = this.kst.link === 'on' ? locatorToSet(this.kst.locator, this.meta.myGrid) : undefined
+    const key = [this.kst.room, head, loc, ...rows.map((s) => `${s.call}|${s.loc}|${s.km}|${s.az}|${s.isNew}|${s.worked}|${s.away}`)].join(';')
     if (key === this.stationsKey) return
     this.stationsKey = key
     const title = el('div', 'kst-side-head', `KST · ${head}`)
     const list = el('ol', 'kst-side-list')
+    if (loc) {
+      // ON4KST has me elsewhere: the others' QRB is wrong — a tap sends /SETLOC.
+      const li = el('li')
+      const set = this.suggestButton(`${t('kst.setLoc', { loc })} (ON4KST ${this.kst.locator ?? ''})`, () => this.setKstLocator(loc), 'kst-side-row kst-side-row--new')
+      set.title = t('kst.locDiffers', { kst: this.kst.locator ?? '', log: loc })
+      li.append(set)
+      list.append(li)
+    }
     for (const s of rows) {
       const li = el('li')
       const row = this.suggestButton(`${s.call.padEnd(10)} ${s.loc.padEnd(6)} ${String(s.km ?? '').padStart(4)} ${String(s.az ?? '').padStart(3)}°`, () => this.addressChat(s.call), ['kst-side-row', s.isNew ? 'kst-side-row--new' : '', s.worked ? 'kst-side-row--worked' : '', s.away ? 'kst-side-row--away' : ''].filter(Boolean).join(' '))

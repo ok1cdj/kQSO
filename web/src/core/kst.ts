@@ -190,6 +190,15 @@ export function matchSkedQrg(line: string): string | undefined {
   return m ? (m[1] ?? '').trim() : undefined
 }
 
+/** The log's locator when ON4KST has another one for me (QRB / az for the others come from
+ *  it); undefined = the same or unknown. A shorter one counts as the same where they agree. */
+export function locatorToSet(kst: string | undefined, log: string): string | undefined {
+  const a = (kst ?? '').toUpperCase()
+  const b = log.trim().toUpperCase()
+  if (!a || !b) return undefined
+  return a.startsWith(b) || b.startsWith(a) ? undefined : b
+}
+
 /** "Please wait 42 second(s)…" from the server (one command a minute) → 42. */
 export function waitSeconds(text: string): number | undefined {
   const m = /please wait (\d+) second/i.exec(text)
@@ -227,6 +236,8 @@ export class KstState {
   lastTs = 0
   /** The station list after login is complete (UE received). */
   listDone = false
+  /** My locator from the server's frames about me (the list at login, a change after /SETLOC). */
+  myLoc: string | undefined
   private readonly seen = new Set<string>()
 
   constructor(readonly myCall: string) {}
@@ -242,7 +253,10 @@ export class KstState {
       case 'message':
         return this.addMessage(frame.msg)
       case 'user': {
-        if (this.isMe(frame.call)) return undefined
+        if (this.isMe(frame.call)) {
+          if (frame.loc) this.myLoc = frame.loc
+          return undefined
+        }
         const old = this.users.get(frame.call)
         const isNew = (frame.change === 'joined' && this.listDone) || (old?.isNew ?? false)
         this.users.set(frame.call, { call: frame.call, name: frame.name, loc: frame.loc, away: frame.away, isNew })
@@ -260,6 +274,7 @@ export class KstState {
         this.listDone = true
         return undefined
       case 'loc': {
+        if (this.isMe(frame.call)) this.myLoc = frame.loc
         const u = this.users.get(frame.call)
         if (u) this.users.set(u.call, { ...u, loc: frame.loc })
         return undefined

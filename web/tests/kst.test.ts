@@ -13,6 +13,7 @@ import {
   chatTarget,
   expandSked,
   matchSkedQrg,
+  locatorToSet,
   waitSeconds,
   KstState,
   KstSession,
@@ -82,6 +83,14 @@ describe('text helpers', () => {
     expect(expandSked('pse sked {QRG} {MODE}?', { qrgMHz: '144.05', skedQrg: '144.290 ±5', mode: 'CW', loc: '' })).toBe('pse sked 144.290 ±5 CW?')
     expect(expandSked('pse sked {QRG} {MODE}?', { skedQrg: '432.210', mode: 'SSB', loc: '' })).toBe('pse sked 432.210 SSB?')
     expect(expandSked('pse sked {QRG} {MODE}?', { qrgMHz: '144.05', skedQrg: '', mode: 'CW', loc: '' })).toBe('pse sked 144.050 CW?')
+  })
+  it('locatorToSet: the log\'s locator when ON4KST has another', () => {
+    expect(locatorToSet('JN79US', 'jn89ab')).toBe('JN89AB')
+    expect(locatorToSet('JN79US', 'JN79US')).toBeUndefined()
+    expect(locatorToSet('JN79', 'JN79US')).toBeUndefined()
+    expect(locatorToSet('JN79US', 'JN79')).toBeUndefined()
+    expect(locatorToSet(undefined, 'JN79US')).toBeUndefined()
+    expect(locatorToSet('JN79US', '')).toBeUndefined()
   })
   it('matchSkedQrg: G text, G alone shows, else not the command', () => {
     expect(matchSkedQrg('g 144.300')).toBe('144.300')

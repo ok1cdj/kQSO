@@ -1364,6 +1364,17 @@ a.help-text,
   text-overflow: ellipsis;
   color: var(--muted);
 }
+.chat-loc {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
+  padding: 0.3rem 0;
+  font-size: 0.85rem;
+}
+.chat-loc[hidden] {
+  display: none;
+}
 /* Phone upright: the call, locator, km, az and the buttons need the width more. */
 @media (max-width: 600px) {
   .chat-st-name {
