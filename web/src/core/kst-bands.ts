@@ -61,8 +61,14 @@ function listBands(list: string, unit: string | undefined): string[] {
 
 /** The bands in a piece of free text (a name or a message), in no order, each once. */
 export function bandsInText(text: string): string[] {
-  const s = text.replace(CALL, ' ')
   const out = new Set<string>()
+  // Frequencies first, then out of the way: "144.300, 432.200" is two frequencies, not a band list.
+  const s = text.replace(CALL, ' ').replace(MHZ, (f, int: string, frac: string) => {
+    const b = bandForFreq(Number(`${int}.${frac}`) * 1e6)
+    if (!b || !bandLetter(b)) return f
+    out.add(b)
+    return ' '.repeat(f.length)
+  })
   const taken: [number, number][] = []
   for (const m of s.matchAll(LIST)) {
     for (const b of listBands(m[1]!, m[2])) out.add(b)
@@ -72,10 +78,6 @@ export function bandsInText(text: string): string[] {
   for (const m of s.matchAll(WITH_UNIT)) {
     const b = free(m.index!) ? unitBand(m[1]!, m[2]!) : undefined
     if (b) out.add(b)
-  }
-  for (const m of s.matchAll(MHZ)) {
-    const b = free(m.index!) ? bandForFreq(Number(`${m[1]}.${m[2]}`) * 1e6) : undefined
-    if (b && bandLetter(b)) out.add(b)
   }
   for (const m of s.matchAll(KHZ)) {
     const b = bandForFreq(Number(m[1]) * 1e3)

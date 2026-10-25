@@ -2,7 +2,8 @@
 // login, messages to me, rooms, the "Please wait" lock, the silence watch and the
 // reconnect after a drop.
 import { describe, it, expect } from 'vitest'
-import { KstController, kstReportMailto } from '../../src/ui/kst'
+import { KstController, kstReportMailto, notSentWhy } from '../../src/ui/kst'
+import { t } from '../../src/ui/i18n'
 import type { KQSOPlatform, TcpLinkState, TcpTransport } from '../../src/platform/index'
 import type { Timers } from '../../src/core/index'
 
@@ -151,6 +152,13 @@ describe('KstController', () => {
     expect(kst.muted).toEqual([])
   })
 
+  it('why not sent: a command without the link is "not sent", never "no text"', async () => {
+    const { kst } = setup()
+    expect(notSentWhy(kst)).toBe(t('kst.notSent'))
+    expect(notSentWhy(kst, '@OK1ABC')).toBe(t('kst.noText'))
+    expect(notSentWhy(kst, '@OK1ABC hi')).toBe(t('kst.notSent'))
+  })
+
   it('the rules first: no connection before agreeing, then it connects', async () => {
     const { kst, tcp } = setup(undefined, false)
     await kst.connect()
@@ -295,5 +303,14 @@ describe('kstReportMailto', () => {
     expect(body).toContain('Reported by: OK1CDJ')
     expect(body.indexOf('bad words')).toBeLessThan(body.indexOf(': hi'))
     expect(body.match(/bad words/g)!.length).toBe(1)
+  })
+
+  it('long messages with emoji (and a broken surrogate) never throw', () => {
+    const m = (ts: number, text: string) => ({ room: 2, ts, call: 'XX1XX', name: 'X', text, to: undefined, forMe: false, mentionsMe: false })
+    const long = '😀'.repeat(400)
+    for (let pad = 0; pad < 4; pad++) {
+      const msgs = [m(1, 'x'.repeat(pad) + long), m(2, long), m(3, 'bad \uD83D here')]
+      expect(() => decodeURIComponent(kstReportMailto({ call: 'XX1XX', name: 'X', room: 2, me: 'OK1CDJ', messages: msgs }))).not.toThrow()
+    }
   })
 })

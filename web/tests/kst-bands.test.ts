@@ -70,6 +70,8 @@ describe('bandsInMessage', () => {
     expect(bandsInMessage('Bonjour Bernard test 23+13 QRG ?').on.sort()).toEqual(['13cm', '23cm'])
     expect(bandsInMessage('tnx qso 70cm, 23cm 1296.180?').on.sort()).toEqual(['23cm', '70cm'])
     expect(bandsInMessage('qrv 2/70').on.sort()).toEqual(['2m', '70cm'])
+    expect(bandsInMessage('qrv 144.300, 432.200').on.sort()).toEqual(['2m', '70cm'])
+    expect(bandsInMessage('144.300/432.200').on.sort()).toEqual(['2m', '70cm'])
     for (const t of ['.377 possible ?', 'test 23?', 'RX .280', 'at 13:40 25/10', '73 JN79US']) expect(bandsInMessage(t).on).toEqual([])
   })
   it('no / nil take a band off; not qrv / qrt all of them', () => {

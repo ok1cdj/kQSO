@@ -42,9 +42,10 @@ export function kstStatus(k: KstController): string {
   }
 }
 
-/** Why send() refused `input`: no text after @CALL, the server's wait, or no link. */
-export function notSentWhy(k: KstController, input = ' '): string {
-  if (chatText(input) === undefined) return t('kst.noText')
+/** Why send() refused `input`: no text after @CALL, the server's wait, or no link.
+ *  Without `input` (a command like /SETLOC) only the last two. */
+export function notSentWhy(k: KstController, input?: string): string {
+  if (input !== undefined && chatText(input) === undefined) return t('kst.noText')
   const wait = Math.ceil((k.waitUntil - Date.now()) / 1000)
   return wait > 0 ? t('kst.wait', { s: wait }) : t('kst.notSent')
 }
@@ -90,7 +91,10 @@ export function kstReportMailto(
     '',
   ].join('\n')
   const subject = `kQSO: ON4KST report ${r.call}`
-  return `mailto:${KST_REPORT_TO}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body.slice(0, 1500))}`
+  // Cut by characters, not UTF-16 units: half an emoji would make encodeURIComponent throw.
+  // A lone surrogate (a broken &#…; from the chat) would make it throw too.
+  const short = [...body].slice(0, 1500).join('').replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '\uFFFD')
+  return `mailto:${KST_REPORT_TO}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(short)}`
 }
 
 /** A saved JSON setting; undefined when missing or broken. */

@@ -1426,6 +1426,9 @@ a.help-text,
   -webkit-user-select: none;
   user-select: none;
 }
+.chat-msg--worked {
+  color: var(--ghost);
+}
 .chat-msg--picked {
   outline: var(--border-w) solid var(--fg);
 }

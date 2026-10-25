@@ -498,6 +498,11 @@ export class SettingsScreen implements Screen {
       pass.input.value = ''
       if (pw || savedPass) pass.input.placeholder = `•••• ${t('settings.kstPassSaved')}`
       this.kst.disconnect()
+      // Empty = the log's call, which only the log knows: the chat connects from there.
+      if (!call.input.value.trim()) {
+        status.textContent = t('settings.kstLogCall')
+        return
+      }
       await this.kst.connect()
     }
     const actions = el('div', 'segmented')

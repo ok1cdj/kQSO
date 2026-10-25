@@ -197,7 +197,9 @@ export class ChatScreen implements Screen {
     const mine = this.kst.chat.isMe(m.call)
     const other = mine ? m.to : m.call
     const li = el('li')
-    const cls = ['chat-msg', m.forMe ? 'chat-msg--me' : '', m.mentionsMe ? 'chat-msg--mention' : '', mine ? 'chat-msg--mine' : '', picked ? 'chat-msg--picked' : '']
+    // Already worked on the log's band: grey, so the stations still to work stand out.
+    const worked = other !== undefined && this.worked(baseCall(other))
+    const cls = ['chat-msg', m.forMe ? 'chat-msg--me' : '', m.mentionsMe ? 'chat-msg--mention' : '', mine ? 'chat-msg--mine' : '', worked ? 'chat-msg--worked' : '', picked ? 'chat-msg--picked' : '']
     const b = button('', () => this.address(other), cls.filter(Boolean).join(' '))
     if (other) onLongPress(b, () => this.openDetail(other, mine ? undefined : m))
     b.append(el('span', 'chat-time', hhmm(m.ts)), ' ', el('b', undefined, m.call))
