@@ -13,7 +13,7 @@ import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
 import { el, button, onLongPress } from '../dom'
 import { t } from '../i18n'
-import { KST_SETTINGS, kstReportMailto, kstStatus, notSentWhy } from '../kst'
+import { KST_SETTINGS, kstConsentPanel, kstReportMailto, kstStatus, notSentWhy } from '../kst'
 import type { KstController } from '../kst'
 
 export interface ChatNav {
@@ -129,7 +129,14 @@ export class ChatScreen implements Screen {
       }),
     )
     this.renderLoc()
-    this.tabsEl.hidden = this.detail !== undefined
+    // Before the first connection: the rules, and Agree connects.
+    const consent = k.link === 'failed' && k.reason === 'consent'
+    this.tabsEl.hidden = consent || this.detail !== undefined
+    if (consent) {
+      this.toolsEl.replaceChildren()
+      this.bodyEl.replaceChildren(kstConsentPanel(k, () => void k.connect(this.meta?.myCall ?? '')))
+      return
+    }
     if (this.detail) return this.renderDetail(this.detail.call, this.detail.picked)
     const unread = k.unread > 0 ? ` (${k.unread})` : ''
     this.tabsEl.replaceChildren(

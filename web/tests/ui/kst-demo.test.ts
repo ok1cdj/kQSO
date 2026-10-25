@@ -39,7 +39,7 @@ function setup() {
   const timers = new FakeTimers()
   const written: string[] = []
   const tcp = { connect: () => written.push('real'), close() {}, write() {}, onData() {}, onState() {} }
-  const settings: Record<string, string> = { kstCall: 'demo' }
+  const settings: Record<string, string> = { kstCall: 'demo', kstConsent: '1' }
   const platform = {
     tcp,
     getSetting: async (k: string) => settings[k] ?? null,

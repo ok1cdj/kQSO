@@ -65,7 +65,8 @@ class FakeTimers implements Timers {
   }
 }
 
-function setup(settings: Record<string, string> = { kstCall: 'ok1cdj', kstPass: 'pw' }) {
+function setup(given: Record<string, string> = { kstCall: 'ok1cdj', kstPass: 'pw' }, consent = true) {
+  const settings: Record<string, string> = consent ? { kstConsent: '1', ...given } : { ...given }
   const tcp = new FakeTcp()
   const timers = new FakeTimers()
   const platform = {
@@ -148,6 +149,18 @@ describe('KstController', () => {
     expect(kst.lastForMe).toBeUndefined()
     kst.setMuted('SV0SYH', false)
     expect(kst.muted).toEqual([])
+  })
+
+  it('the rules first: no connection before agreeing, then it connects', async () => {
+    const { kst, tcp } = setup(undefined, false)
+    await kst.connect()
+    expect(kst.link).toBe('failed')
+    expect(kst.reason).toBe('consent')
+    expect(tcp.connects).toBe(0)
+    await kst.agree()
+    await kst.connect()
+    expect(kst.link).toBe('connecting')
+    expect(tcp.connects).toBe(1)
   })
 
   it('falls back to the log call; no password = failed without connecting', async () => {

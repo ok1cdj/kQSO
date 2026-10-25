@@ -1364,6 +1364,23 @@ a.help-text,
   text-overflow: ellipsis;
   color: var(--muted);
 }
+/* The chat rules before the first connection (chat and Settings). */
+.kst-consent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+  padding: 0.6rem;
+  border: var(--border-w) solid var(--fg);
+  border-radius: var(--radius);
+}
+.kst-consent ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+.kst-consent li {
+  margin-bottom: 0.3rem;
+}
 .chat-detail {
   display: flex;
   flex-direction: column;

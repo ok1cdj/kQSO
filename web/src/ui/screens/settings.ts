@@ -19,7 +19,7 @@ import { MAP_LABELS_SETTING } from './map'
 import { RADAR_SETTING } from '../radar'
 import { STATS_SETTING, setStatsEnabled } from '../stats'
 import { KEYER_SETTINGS } from '../keyer'
-import { KST_SETTINGS, kstStatus } from '../kst'
+import { KST_SETTINGS, kstConsentPanel, kstStatus } from '../kst'
 import type { KstController } from '../kst'
 import { KEYBOARD_MODES, KEYBOARD_SETTING, parseKeyboardMode } from '../keyboard'
 import type { KeyboardMode } from '../keyboard'
@@ -478,8 +478,11 @@ export class SettingsScreen implements Screen {
       rows.append(...list.map((c) => button(`${c} ✕`, () => this.kst.setMuted(c, false), 'btn btn--small')))
       muted.replaceChildren(el('span', 'field-label', t('settings.kstMuted')), list.length ? rows : el('div', 'about', t('settings.kstMutedNone')))
     }
+    const consent = el('div')
     const paint = (): void => {
       paintMuted()
+      const ask = this.kst.link === 'failed' && this.kst.reason === 'consent'
+      if (ask !== (consent.firstChild !== null)) consent.replaceChildren(...(ask ? [kstConsentPanel(this.kst, () => void this.kst.connect())] : []))
       status.textContent = kstStatus(this.kst)
       state.textContent = this.kst.link === 'on' || this.kst.wanted ? status.textContent : savedPass ? t('kst.off') : t('settings.kstSummaryOff')
     }
@@ -503,8 +506,12 @@ export class SettingsScreen implements Screen {
       button(t('kst.disconnect'), () => this.kst.disconnect(), 'btn'),
       button(t('settings.kstForget'), () => {
         void (async () => {
+          // The whole account: also the call (DEMO after trying the demo stays otherwise).
           this.kst.disconnect()
+          await p.setSetting(K.call, '')
           await p.setSetting(K.pass, '')
+          call.input.value = ''
+          pass.input.value = ''
           pass.input.placeholder = ''
           status.textContent = t('settings.kstForgotten')
         })()
@@ -518,7 +525,7 @@ export class SettingsScreen implements Screen {
     reg.append(a)
     const hints = [el('div', 'about', t('settings.kstPassHint'))]
     if (!this.platform.nativeVersion) hints.push(el('div', 'about', t('settings.kstWeb')))
-    return this.fold('kst', t('settings.kst'), state, el('div', undefined, t('settings.kstAbout')), call.row, pass.row, ...hints, sked.row, actions, status, muted, reg)
+    return this.fold('kst', t('settings.kst'), state, el('div', undefined, t('settings.kstAbout')), call.row, pass.row, ...hints, sked.row, actions, status, consent, muted, reg)
   }
 
   /** Web only: anonymous usage statistics (stats.ts) on/off, default on. */

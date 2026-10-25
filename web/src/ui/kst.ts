@@ -7,6 +7,7 @@
 import { KST_HOST, KST_PORT, KST_VIEW_DEFAULT, KstSession, KstState, baseCall, chatText } from '../core/index'
 import type { KstEntry, KstEvent, KstRoom, KstView, Timers } from '../core/index'
 import type { KQSOPlatform, TcpLinkState, TcpTransport } from '../platform/index'
+import { button, el } from './dom'
 import { t } from './i18n'
 import { KST_DEMO_CALL, KstDemo } from './kst-demo'
 import { browserTimers } from './rig'
@@ -18,6 +19,7 @@ export const KST_SETTINGS = {
   view: 'kstView', // station lists: sort, direction, filters (JSON)
   skedQrg: 'kstSkedQrg', // sked QRG per band, {"2m": "144.300"} (JSON)
   muted: 'kstMuted', // muted stations, ["OK1ABC"] (JSON, base calls)
+  consent: 'kstConsent', // '1' = the chat rules agreed to (asked before the first connection)
 } as const
 
 /** off → connecting (socket) → login (LOGINC sent) → on; failed = login refused. */
@@ -33,6 +35,7 @@ export function kstStatus(k: KstController): string {
     case 'login':
       return t('kst.login')
     case 'failed':
+      if (k.reason === 'consent') return t('kst.needConsent')
       return k.reason === 'account' ? t('kst.noAccount') : t('kst.failed', { reason: k.reason ?? '' })
     case 'off':
       return k.wanted && k.reason ? t('kst.dropped', { reason: k.reason }) : t('kst.off')
@@ -44,6 +47,22 @@ export function notSentWhy(k: KstController, input = ' '): string {
   if (chatText(input) === undefined) return t('kst.noText')
   const wait = Math.ceil((k.waitUntil - Date.now()) / 1000)
   return wait > 0 ? t('kst.wait', { s: wait }) : t('kst.notSent')
+}
+
+/** The chat rules, agreed to once before the first connection: whose chat it is, no
+ *  tolerance for abuse, mute and report, the password in clear. `onAgree` connects. */
+export function kstConsentPanel(k: KstController, onAgree: () => void): HTMLElement {
+  const box = el('div', 'kst-consent')
+  const list = el('ul')
+  for (const key of ['kst.consent1', 'kst.consent2', 'kst.consent3', 'kst.consent4'] as const) list.append(el('li', undefined, t(key)))
+  box.append(
+    el('b', undefined, t('kst.consentTitle')),
+    list,
+    button(t('kst.consentAgree'), () => {
+      void k.agree().then(onAgree)
+    }, 'btn'),
+  )
+  return box
 }
 
 /** Where reports go: the kQSO author, who passes abuse on to ON4KST (privacy.html). */
@@ -225,6 +244,11 @@ export class KstController {
     if (!this.available) return
     if (this.wantLink && this.link !== 'off') return // already (being) connected
     const p = this.platform
+    // The rules first (App Store 1.2: content from other users); the screens show them.
+    if ((await p.getSetting(KST_SETTINGS.consent)) !== '1') {
+      this.setLink('failed', 'consent')
+      return
+    }
     this.call = ((await p.getSetting(KST_SETTINGS.call)) || fallbackCall).trim().toUpperCase()
     this.pass = (await p.getSetting(KST_SETTINGS.pass)) ?? ''
     this.pick(this.call)
@@ -260,6 +284,11 @@ export class KstController {
     const ok = this.session.send(input)
     if (ok) this.heard()
     return ok
+  }
+
+  /** The operator agreed to the chat rules (kstConsentPanel); connect next. */
+  async agree(): Promise<void> {
+    await this.platform.setSetting(KST_SETTINGS.consent, '1')
   }
 
   /** Changes the station lists' sort / filters everywhere and saves them. */
