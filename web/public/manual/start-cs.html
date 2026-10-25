@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kQSO — první kroky</title>
+<link rel="stylesheet" href="manual.css">
+</head>
+<body class="manual-page">
+<main class="manual" data-lang="cs">
+<p class="manual-lang"><a href="start-en.html">English</a></p>
+<h1>kQSO — první kroky</h1>
+<p class="muted">Dva celé příklady od založení logu po odeslání: VKV závod a SOTA aktivace. Podrobnosti ke každému kroku jsou v <a href="cs.html">návodu</a>.</p>
+
+<nav class="manual-toc">
+<ol>
+<li><a href="#contest">VKV závod</a></li>
+<li><a href="#sota">SOTA aktivace</a></li>
+</ol>
+</nav>
+
+<h2 id="contest">1. VKV závod</h2>
+
+<h3>Krok 1: založ log</h3>
+<p>V seznamu logů klepni na <b>+ Nový log</b> a vyber profil <b>VKV závod</b>. Vyplň svou volačku a lokátor (6 znaků; tlačítko se zaměřovačem ho vezme z polohy). Závod <b>IARU R1</b> platí pro všechny <a href="https://vkvzavody.crk.cz/">závody ČRK</a> včetně Polního dne; účast <b>celý závod</b> nebo <b>6 hodin</b>. Vyber pásmo a mód, na kterých budeš závod začínat (další pásma přepneš během závodu v deníku, viz krok 4), a klepni na <b>Založit</b>.</p>
+<figure class="phone"><img src="img/cs/newlog-vkv.webp" alt="Nový log, VKV závod" width="390" height="1300" loading="lazy"><figcaption>Nový VKV log: závod a účast.</figcaption></figure>
+<p class="note">Lokátor v hlavičce logu už nejde změnit a počítají se od něj body. Zkontroluj ho hned.</p>
+
+<h3>Krok 2: první spojení</h3>
+<p>V hlavičce je pásmo, mód a v rámečku <b>číslo, které dáváš</b> protistanici. Napiš, co slyšíš: značku, report s číslem a lokátor, a stiskni <b>Enter</b>. Pak <b>prázdný Enter</b> spojení zapíše a číslo v rámečku se zvýší.</p>
+<figure class="crop"><img src="img/cs/logging-preview.webp" alt="Celé spojení na řádku" width="390" height="170" loading="lazy"><figcaption><code>OK2KZR 59123 JN99AF</code> ⏎ ⏎: report 59, číslo 123, lokátor; hned je vidět QRB.</figcaption></figure>
+<p>Report psát nemusíš: <code>OK2KZR 123 JN99AF</code> je totéž (59 se doplní samo). A spojení nemusí být na jednom řádku: každou část můžeš poslat Enterem zvlášť, jak ji protistanice odvysílá (<a href="cs.html#logging">Po částech</a>). Zapíše se, až má značku, číslo i lokátor.</p>
+
+<h3>Krok 3: nech si napovídat</h3>
+<p>Od dvou znaků nabízí lišta značky z databáze stanic, které jezdí VKV závody. Klepnutí značku doplní a když databáze zná lokátor, nabídne ho jako <b>+ lokátor</b>. Stanice, které už v logu na tomhle pásmu máš, jsou inverzně; napsaná duplicita zčerná celý řádek.</p>
+<div class="figs">
+<figure class="crop"><img src="img/cs/logging-suggest.webp" alt="Návrhy" width="390" height="170" loading="lazy"><figcaption>Návrhy značek.</figcaption></figure>
+<figure class="crop"><img src="img/cs/logging-prefill.webp" alt="Lokátor z databáze" width="390" height="170" loading="lazy"><figcaption>Lokátor z databáze: <b>+ JO50HV</b>.</figcaption></figure>
+<figure class="crop"><img src="img/cs/logging-dupe.webp" alt="Duplicita" width="390" height="170" loading="lazy"><figcaption>Duplicita.</figcaption></figure>
+</div>
+
+<h3>Krok 4: přejdi na 70 cm</h3>
+<p>Pásmo se přepíná psaním: <code>70cm</code> ⏎. Číslování běží dál, je společné pro všechna pásma. Štítek <b>QRV</b> u značky ukazuje, na kterých dalších pásmech stanice bývá; přeškrtnutá jsou ta, kde už spojení máš. Stanici, kterou máš z 2 m, kQSO na 70 cm rovnou doplní lokátor z logu.</p>
+<div class="figs">
+<figure class="crop"><img src="img/cs/logging-header-70.webp" alt="Hlavička 70 cm" width="390" height="48" loading="lazy"><figcaption>Po <code>70cm</code> ⏎.</figcaption></figure>
+<figure class="crop"><img src="img/cs/logging-qrv.webp" alt="QRV pásma" width="390" height="196" loading="lazy"><figcaption>OK1EM: QRV až do 122 GHz, 23 cm a 3 cm už uděláno.</figcaption></figure>
+</div>
+<p>Zpátky na 2 m: <code>2m</code> ⏎. Víc v návodu: <a href="cs.html#band">Přepnutí pásma a módu</a>.</p>
+
+<h3>Krok 5: během závodu</h3>
+<p><b>QSO n ›</b> v hlavičce otevře seznam spojení s body a skóre pásma. Klepnutím na spojení ho opravíš; poslední spojení upravíš i příkazem <code>E</code> ⏎, smažeš <code>D</code> ⏎. Ze seznamu se dostaneš na <b>Statistiku</b> (spojení a body po hodinách, velké čtverce, nejdelší spojení) a na <b>Mapu</b>.</p>
+<div class="figs">
+<figure class="phone"><img src="img/cs/qsolist.webp" alt="Seznam QSO" width="390" height="844" loading="lazy"><figcaption>Seznam QSO s body.</figcaption></figure>
+<figure class="phone"><img src="img/cs/stats-hours.webp" alt="Statistika po hodinách" width="390" height="516" loading="lazy"><figcaption>Statistika po hodinách.</figcaption></figure>
+</div>
+<p>Na tabletu nebo počítači na šířku s klávesnicí ukáže kQSO vpravo <a href="cs.html#contest">závodní panel</a> s velkým číslem, rate a body.</p>
+
+<h3>Krok 6: po závodě pošli EDI</h3>
+<p>V seznamu logů klepni u závodu na <b>EDI</b>. Nahoře vyber kategorii (SO, MO, CHECK), u každého pásma vyplň výkon, anténu a vybavení (kQSO si je zapamatuje na příště) a ulož soubory, jeden na pásmo (<code>01OK1XXX.edi</code>). Ty pak pošli vyhodnocovateli podle propozic závodu.</p>
+<div class="figs">
+<figure class="phone"><img src="img/cs/edi.webp" alt="EDI" width="390" height="947" loading="lazy"><figcaption>EDI: závod a kategorie.</figcaption></figure>
+<figure class="phone"><img src="img/cs/edi-band.webp" alt="EDI, pásmo" width="390" height="478" loading="lazy"><figcaption>Vybavení pásma a export.</figcaption></figure>
+</div>
+<p>Do svého deníku dostaneš spojení tlačítkem <b>export</b> (ADIF se všemi pásmy) nebo <b>Wavelog</b>.</p>
+
+<h2 id="sota">2. SOTA aktivace</h2>
+
+<h3>Krok 1: na vrcholu založ log</h3>
+<p><b>+ Nový log</b>, profil <b>Aktivace</b>, volačka (klidně s <code>/P</code>). Klepni na tlačítko se zaměřovačem: vyplní lokátor z polohy a pod <b>Moje reference</b> nabídne nejbližší vrcholy SOTA, GMA, parky POTA a WWFF a rozhledny TOTA do 25 km. Klepnutím je přidáš, klidně víc naráz (vrchol + park). Funguje to i bez signálu, když máš oblast stažená (Nastavení → Reference offline; okolí domova se stáhne samo).</p>
+<figure class="phone"><img src="img/cs/start-sota-newlog.webp" alt="Nový log, aktivace s referencemi z polohy" width="390" height="1180" loading="lazy"><figcaption>Klínovec: vybraný vrchol OK/KA-001 a park DE-0409.</figcaption></figure>
+
+<h3>Krok 2: spojení</h3>
+<p>Napiš značku a přijatý report: <code>DL1ABC 579</code> ⏎, prázdný ⏎ zapíše. Odeslaný report je 59 / 599; jiný napiš s <b>T</b> (<code>DL1ABC 579 T559</code>). Když stanice nedá report, stačí samotná značka.</p>
+<figure class="crop"><img src="img/cs/start-sota-qso.webp" alt="Spojení v aktivaci" width="390" height="170" loading="lazy"><figcaption><code>DL1ABC 579</code>: 40 m CW.</figcaption></figure>
+<p>Pásmo a mód přepneš psaním: <code>20m ssb</code> ⏎. Platí pro další spojení, dokud je nezměníš.</p>
+
+<h3>Krok 3: vrchol–vrchol (S2S)</h3>
+<p>Když volá stanice z jiného vrcholu nebo parku, připiš její referenci za značku. Píše se s lomítkem, poslední lomítko se změní na pomlčku: <code>OK1ABC/P 57 OK/ZC/001</code> ⏎ ⏎. Pod řádkem je pak poslední zapsané spojení i s referencí.</p>
+<figure class="crop"><img src="img/cs/start-sota-saved.webp" alt="S2S spojení zapsané" width="390" height="170" loading="lazy"><figcaption>Zapsané S2S: OK1ABC/P z OK/ZC-001.</figcaption></figure>
+<p>Na platnou SOTA aktivaci potřebuješ aspoň 4 spojení; počet vidíš v hlavičce (<b>QSO n</b>).</p>
+
+<h3>Krok 4: doma log exportuj a nahraj</h3>
+<p>V seznamu logů klepni na <b>export</b>. Má-li aktivace víc vlastních referencí, objeví se řádek s <b>celým ADIF</b> a souborem pro každou referenci zvlášť, pojmenovaným tak, jak ho který program chce (třeba <code>OK1CDJ-P@DE-0409-20260815.adi</code>). Každý soubor nahraj do jeho programu: SOTA na sotadata.org.uk, POTA na pota.app.</p>
+<figure class="crop"><img src="img/cs/start-sota-export.webp" alt="Export po referencích" width="390" height="87" loading="lazy"><figcaption>Export: celý ADIF, SOTA OK/KA-001, POTA DE-0409.</figcaption></figure>
+<p>Aktivace se do Wavelogu neposílají. S jednou referencí uloží <b>export</b> rovnou jeden ADIF.</p>
+
+<p class="muted">Další: <a href="cs.html#keys">hardwarová klávesnice</a>, <a href="cs.html#radio">rádio a CW klíčovač</a>, <a href="cs.html#activation">satelity</a>. Celý <a href="cs.html">návod</a>.</p>
+</main>
+</body>
+</html>

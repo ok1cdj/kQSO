@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kQSO — first steps</title>
+<link rel="stylesheet" href="manual.css">
+</head>
+<body class="manual-page">
+<main class="manual" data-lang="en">
+<p class="manual-lang"><a href="start-cs.html">Česky</a></p>
+<h1>kQSO — first steps</h1>
+<p class="muted">Two complete examples from creating the log to sending it off: a VHF contest and a SOTA activation. The details of each step are in the <a href="en.html">manual</a>.</p>
+
+<nav class="manual-toc">
+<ol>
+<li><a href="#contest">VHF contest</a></li>
+<li><a href="#sota">SOTA activation</a></li>
+</ol>
+</nav>
+
+<h2 id="contest">1. VHF contest</h2>
+
+<h3>Step 1: create the log</h3>
+<p>On the log list tap <b>+ New log</b> and pick the <b>VHF contest</b> profile. Fill in your call and locator (6 characters; the crosshair button takes it from your position). The <b>IARU R1</b> contest covers all IARU Region 1 style contests, Field Day included; the entry is the <b>whole contest</b> or <b>6 hours</b>. Pick the band and mode you will start the contest on (you switch to the other bands in the log during the contest, see step 4), and tap <b>Create</b>.</p>
+<figure class="phone"><img src="img/en/newlog-vkv.webp" alt="New log, VHF contest" width="390" height="1300" loading="lazy"><figcaption>A new VHF contest log: contest and entry.</figcaption></figure>
+<p class="note">The log's locator can't be changed later, and the points are counted from it. Check it right away.</p>
+
+<h3>Step 2: the first QSO</h3>
+<p>The header shows the band, the mode and, boxed, <b>the serial you give</b> the other station. Type what you hear: the call, the report with the serial and the locator, and press <b>Enter</b>. Then an <b>empty Enter</b> saves the QSO and the boxed number goes up.</p>
+<figure class="crop"><img src="img/en/logging-preview.webp" alt="The whole QSO on one line" width="390" height="170" loading="lazy"><figcaption><code>OK2KZR 59123 JN99AF</code> ⏎ ⏎: report 59, serial 123, locator; the QRB shows at once.</figcaption></figure>
+<p>You don't have to type the report: <code>OK2KZR 123 JN99AF</code> is the same (59 is filled in). And the QSO doesn't have to be on one line: send each part with Enter as the other station gives it (<a href="en.html#logging">Piece by piece</a>). It is saved once it has the call, the serial and the locator.</p>
+
+<h3>Step 3: let it suggest</h3>
+<p>From two characters on, the strip offers calls from the database of stations that work VHF contests. A tap fills the call in, and when the database knows the locator it offers it as <b>+ locator</b>. Stations already in the log on this band are shown inverted; a dupe you type turns the whole line black.</p>
+<div class="figs">
+<figure class="crop"><img src="img/en/logging-suggest.webp" alt="Suggestions" width="390" height="170" loading="lazy"><figcaption>Call suggestions.</figcaption></figure>
+<figure class="crop"><img src="img/en/logging-prefill.webp" alt="Locator from the database" width="390" height="170" loading="lazy"><figcaption>Locator from the database: <b>+ JO50HV</b>.</figcaption></figure>
+<figure class="crop"><img src="img/en/logging-dupe.webp" alt="Dupe" width="390" height="170" loading="lazy"><figcaption>A dupe.</figcaption></figure>
+</div>
+
+<h3>Step 4: move to 70 cm</h3>
+<p>The band is switched by typing: <code>70cm</code> ⏎. The serials go on, they are shared by all bands. The <b>QRV</b> chip next to a call shows the other bands the station is usually on; the ones you already worked it on are struck out. For a station you have from 2 m, kQSO fills in its locator from the log right away.</p>
+<div class="figs">
+<figure class="crop"><img src="img/en/logging-header-70.webp" alt="Header on 70 cm" width="390" height="48" loading="lazy"><figcaption>After <code>70cm</code> ⏎.</figcaption></figure>
+<figure class="crop"><img src="img/en/logging-qrv.webp" alt="QRV bands" width="390" height="196" loading="lazy"><figcaption>OK1EM: QRV up to 122 GHz, 23 cm and 3 cm done already.</figcaption></figure>
+</div>
+<p>Back to 2 m: <code>2m</code> ⏎. More in the manual: <a href="en.html#band">Changing band and mode</a>.</p>
+
+<h3>Step 5: during the contest</h3>
+<p><b>QSO n ›</b> in the header opens the QSO list with points and the band's score. Tap a QSO to fix it; the last QSO can also be edited with <code>E</code> ⏎ and deleted with <code>D</code> ⏎. From the list you get to the <b>Statistics</b> (QSOs and points per hour, large squares, the longest QSOs) and the <b>Map</b>.</p>
+<div class="figs">
+<figure class="phone"><img src="img/en/qsolist.webp" alt="QSO list" width="390" height="844" loading="lazy"><figcaption>QSO list with points.</figcaption></figure>
+<figure class="phone"><img src="img/en/stats-hours.webp" alt="Statistics per hour" width="390" height="516" loading="lazy"><figcaption>Statistics per hour.</figcaption></figure>
+</div>
+<p>On a tablet or a computer in landscape with a keyboard, kQSO shows the <a href="en.html#contest">contest panel</a> on the right with the big serial, the rate and the points.</p>
+
+<h3>Step 6: after the contest, send the EDI</h3>
+<p>On the log list tap <b>EDI</b> next to the contest. Pick the category at the top (SO, MO, CHECK), fill in the power, antenna and equipment of each band (kQSO keeps them for next time) and save the files, one per band (<code>01OK1XXX.edi</code>). Send them to the contest manager as the contest rules say.</p>
+<div class="figs">
+<figure class="phone"><img src="img/en/edi.webp" alt="EDI" width="390" height="947" loading="lazy"><figcaption>EDI: contest and category.</figcaption></figure>
+<figure class="phone"><img src="img/en/edi-band.webp" alt="EDI, band" width="390" height="496" loading="lazy"><figcaption>The band's equipment and export.</figcaption></figure>
+</div>
+<p>The QSOs go to your own logbook with <b>export</b> (ADIF with all bands) or <b>Wavelog</b>.</p>
+
+<h2 id="sota">2. SOTA activation</h2>
+
+<h3>Step 1: on the summit, create the log</h3>
+<p><b>+ New log</b>, the <b>Activation</b> profile, your call (with <code>/P</code> if you like). Tap the crosshair button: it fills the locator from your position and, under <b>My reference</b>, offers the nearest SOTA and GMA summits, POTA and WWFF parks and TOTA towers within 25 km. Tap to add them, several at once if you like (a summit + a park). It works without signal too, when the area is downloaded (Settings → Offline references; the area around home downloads by itself).</p>
+<figure class="phone"><img src="img/en/start-sota-newlog.webp" alt="New log, activation with references from the position" width="390" height="1180" loading="lazy"><figcaption>Klínovec: summit OK/KA-001 and park DE-0409 picked.</figcaption></figure>
+
+<h3>Step 2: QSOs</h3>
+<p>Type the call and the received report: <code>DL1ABC 579</code> ⏎, an empty ⏎ saves. The sent report is 59 / 599; type another one with <b>T</b> (<code>DL1ABC 579 T559</code>). When the station gives no report, the call alone is enough.</p>
+<figure class="crop"><img src="img/en/start-sota-qso.webp" alt="A QSO in an activation" width="390" height="170" loading="lazy"><figcaption><code>DL1ABC 579</code>: 40 m CW.</figcaption></figure>
+<p>Band and mode are switched by typing: <code>20m ssb</code> ⏎. They stay for the next QSOs until you change them.</p>
+
+<h3>Step 3: summit-to-summit (S2S)</h3>
+<p>When a station calls from another summit or park, add its reference after the call. It is typed with slashes, the last one becomes a dash: <code>OK1ABC/P 57 OK/ZC/001</code> ⏎ ⏎. The last saved QSO then shows under the line, reference included.</p>
+<figure class="crop"><img src="img/en/start-sota-saved.webp" alt="S2S QSO saved" width="390" height="170" loading="lazy"><figcaption>A saved S2S: OK1ABC/P from OK/ZC-001.</figcaption></figure>
+<p>A valid SOTA activation needs at least 4 QSOs; the count is in the header (<b>QSO n</b>).</p>
+
+<h3>Step 4: at home, export and upload</h3>
+<p>On the log list tap <b>export</b>. When the activation has several own references, a row comes up with the <b>whole ADIF</b> and one file per reference, named the way each program wants it (e.g. <code>OK1CDJ-P@DE-0409-20260815.adi</code>). Upload each file to its program: SOTA to sotadata.org.uk, POTA to pota.app.</p>
+<figure class="crop"><img src="img/en/start-sota-export.webp" alt="Export per reference" width="390" height="87" loading="lazy"><figcaption>Export: whole ADIF, SOTA OK/KA-001, POTA DE-0409.</figcaption></figure>
+<p>Activations aren't pushed to Wavelog. With one reference, <b>export</b> saves a single ADIF straight away.</p>
+
+<p class="muted">Next: <a href="en.html#keys">hardware keyboard</a>, <a href="en.html#radio">radio and CW keyer</a>, <a href="en.html#activation">satellites</a>. The whole <a href="en.html">manual</a>.</p>
+</main>
+</body>
+</html>

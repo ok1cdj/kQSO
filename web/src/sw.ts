@@ -16,7 +16,7 @@ const NAV_TIMEOUT_MS = 3000
 
 /** The manual's pages, so it opens offline even if it was never opened online; its
  *  pictures are cached when the manual is first opened (screens/manual.ts). */
-const PRECACHE = ['manual/cs.html', 'manual/en.html', 'manual/manual.css']
+const PRECACHE = ['manual/cs.html', 'manual/en.html', 'manual/start-cs.html', 'manual/start-en.html', 'manual/manual.css']
 
 self.addEventListener('install', (event) => {
   // Activate the new worker immediately — don't wait for old tabs to close.

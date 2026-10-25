@@ -36,7 +36,8 @@ export class ManualScreen implements Screen {
 
   unmount(): void {}
 
-  private async load(page: string): Promise<void> {
+  /** `anchor` (#band): scroll there once the page is in. */
+  private async load(page: string, anchor = ''): Promise<void> {
     const url = new URL(`manual/${page}.html`, document.baseURI)
     try {
       const res = await fetch(url)
@@ -49,12 +50,14 @@ export class ManualScreen implements Screen {
       // The pictures load lazily; fetch them all now so the service worker has them offline
       for (const img of main.querySelectorAll('img')) void fetch(img.src).catch(() => {})
       this.root.scrollTop = 0
+      if (anchor) this.body.querySelector(anchor)?.scrollIntoView({ block: 'start' })
     } catch {
       this.body.replaceChildren(el('div', 'empty', t('manual.failed')))
     }
   }
 
-  /** In-page anchors scroll, the other language reloads here, anything else opens outside. */
+  /** In-page anchors scroll, the manual's other pages (the other language, First steps)
+   *  load here, anything else opens outside. */
   private wire(a: HTMLAnchorElement, base: URL): void {
     const href = a.getAttribute('href') ?? ''
     if (href.startsWith('#')) {
@@ -64,11 +67,11 @@ export class ManualScreen implements Screen {
       })
       return
     }
-    const other = /^(cs|en)\.html$/.exec(href)?.[1]
+    const other = /^((?:start-)?(?:cs|en))\.html(#[\w-]+)?$/.exec(href)
     if (other) {
       a.addEventListener('click', (e) => {
         e.preventDefault()
-        void this.load(other)
+        void this.load(other[1]!, other[2])
       })
       return
     }

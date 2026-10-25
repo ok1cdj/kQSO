@@ -11,6 +11,7 @@
 <p class="manual-lang"><a href="cs.html">Česky</a></p>
 <h1>kQSO — manual</h1>
 <p class="muted">A ham radio log for SOTA/POTA/WWFF/GMA/TOTA activations, VHF contests, satellites and everyday operating, on the web, Android and iOS. The quick reference for entering QSOs is in the app under <b>?</b> (How to log); this is the whole story, with pictures.</p>
+<p class="note">New to kQSO? Go through the <a href="start-en.html"><b>First steps</b></a>: a VHF contest and a SOTA activation, step by step.</p>
 
 <nav class="manual-toc">
 <ol>
@@ -57,7 +58,7 @@
 <figure class="phone right"><img src="img/en/logging.webp" alt="Logging screen" width="390" height="844" loading="lazy"><figcaption>The logging screen with the kQSO keyboard.</figcaption></figure>
 <p>From the top, the logging screen has:</p>
 <ul>
-<li>the <b>header</b>: back to the logs, band and mode, in a VHF contest your next serial (boxed) and the azimuth to the other station, <b>?</b> help and <b>QSO n ›</b> the QSO list;</li>
+<li>the <b>header</b>: back to the logs, band and mode (<a href="#band">how to change them</a>), in a VHF contest your next serial (boxed) and the azimuth to the other station, <b>?</b> help and <b>QSO n ›</b> the QSO list;</li>
 <li>the <b>input line</b> you type into;</li>
 <li><b>chips</b> with what the app has recognized so far (CALL, RST, NR, LOC, QRB…), dashed for what is still missing;</li>
 <li>the <b>strip</b> with call and locator suggestions, or the last saved QSO;</li>
@@ -70,6 +71,10 @@
 <figure class="crop"><img src="img/en/logging-preview.webp" alt="A whole QSO on the line" width="390" height="170" loading="lazy"><figcaption><code>OK2KZR 59123 JN99AF</code>: call, report 59 + serial 123, locator; the QRB of 179 km shows at once.</figcaption></figure>
 <p><b>You don't have to type the report.</b> In a VHF contest a bare number after the call is the received serial, and the report stays the default 59 (599 in CW). So <code>OK2KZR 123</code> is enough. Put another report in front of the number: <code>57123</code> or <code>57 123</code>.</p>
 <figure class="crop"><img src="img/en/logging-callnr.webp" alt="Call and number" width="390" height="170" loading="lazy"><figcaption><code>OK2KZR 123</code>: RST 59 filled in, 123 is the received serial.</figcaption></figure>
+
+<h3 id="reports">Reports</h3>
+<p>Outside a VHF contest, <b>a bare number after the call is the received report</b>: <code>OK1ABC 57</code>. The sent report defaults to <b>59</b> (<b>599</b> in CW) and you usually don't type it. When you give another one, type it with a <b>T</b> in front: <code>OK1ABC 57 T55</code> = received 57, sent 55. If you don't type the received report at all, 59 / 599 is saved too. The chips show <b>RST</b> (received) and <b>TX-RST</b> (sent).</p>
+<p>In a VHF contest a bare number after the call is the serial; a report goes in front of it (<code>57123</code>), see above.</p>
 
 <h3>Piece by piece, as you hear it</h3>
 <p>A QSO <b>doesn't have to be on one line</b>. Send each part with its own Enter, the way the other station gave it: the call, then the number, then the locator. The chips show what you have and what is missing. In a VHF contest an empty Enter saves the QSO only once it has the call, the number and the locator; until then it stays open.</p>
@@ -91,11 +96,28 @@
 <p>A <b>dupe</b> turns the whole line black. A dupe is the same call on the same band and mode; in a VHF contest on the same band (any mode), in a satellite log on the same satellite. It can still be logged; in a VHF contest it scores 0 points.</p>
 <figure class="crop"><img src="img/en/logging-dupe.webp" alt="Dupe" width="390" height="170" loading="lazy"><figcaption>OK1OTL is already in the log on 2 m: the line is inverted.</figcaption></figure>
 
-<h3>Band, mode, time</h3>
+<h3 id="band">Changing band and mode</h3>
+<p>The current band and mode are in the header (<b>2m SSB</b>). You pick the starting ones when you create the log; a reopened log carries on with the band and mode of its last QSO. There is no menu for it: <b>band and mode are switched by typing</b>, just like a QSO.</p>
 <ul>
-<li><code>40m</code>, <code>2m</code>, <code>23cm</code>, <code>ssb</code>, <code>cw</code>, <code>fm</code> switch band and mode; they stick until changed. Microwaves can be typed in GHz: <code>10G</code> = 3 cm, <code>24G</code> = 1.25 cm.</li>
-<li>The QSO time is taken in UTC at your first keystroke. To set it by hand (e.g. from paper), type it as the first part of the line: <code>1832 OK1ABC</code>.</li>
+<li>Type a band or a mode on the line and press Enter: <code>70cm</code> ⏎, <code>cw</code> ⏎, or both at once <code>70cm cw</code> ⏎. The header changes right away.</li>
+<li>Band and mode <b>stick</b> for all the following QSOs until you change them again. Saving a QSO or <code>W</code> doesn't change them.</li>
+<li>It also works <b>on the same line as the QSO</b> or in the middle of an unfinished one: <code>70cm OK1EM</code>. The QSO gets the band and mode in force when it is saved (empty Enter); the dupe check and the QRV chip already use the new band.</li>
+<li><b>Bands:</b> 160m 80m 60m 40m 30m 20m 17m 15m 12m 10m 6m 4m 2m 70cm 23cm 13cm 9cm 6cm 3cm 1.25cm 6mm 4mm. The kQSO keyboard has no dot, so microwaves can also be typed in GHz: <code>1G</code> = 23 cm, <code>2G</code> = 13 cm, <code>3G</code> = 9 cm, <code>5G</code> = 6 cm, <code>10G</code> = 3 cm, <code>24G</code> = 1.25 cm, <code>47G</code> = 6 mm, <code>76G</code> = 4 mm.</li>
+<li><b>Modes:</b> <code>cw</code>, <code>ssb</code>, <code>fm</code>. Case doesn't matter. With a hardware keyboard, <kbd>Alt+M</kbd> also switches the mode (CW → SSB → FM).</li>
+<li>A QSO saved on the wrong band or mode is fixed in the <b>QSO list</b> (tap the QSO), the last one with the <code>E</code> command.</li>
 </ul>
+<div class="figs">
+<figure class="crop"><img src="img/en/logging-band.webp" alt="Band on the QSO line" width="390" height="196" loading="lazy"><figcaption><code>70cm OK1EM</code>: the header still shows 2 m, but QRV already counts with 70 cm (it offers 2 m as another band).</figcaption></figure>
+<figure class="crop"><img src="img/en/logging-header-70.webp" alt="Header after the switch" width="390" height="48" loading="lazy"><figcaption>After <code>70cm</code> ⏎: header 70cm SSB, the serials go on.</figcaption></figure>
+</div>
+<ul>
+<li><b>VHF contest:</b> the serials are shared by all bands, so they carry on after a switch. Dupes and points are per band; the recent QSOs and the contest panel show only the current band. For a station you already have from another band, kQSO offers the locator from the log.</li>
+<li><b>Satellite:</b> the bands are set by the satellite chosen when the log was created; a typed band is ignored. On linear birds you can switch <code>ssb</code> / <code>cw</code>.</li>
+<li><b>With a radio (CI-V)</b> band and mode come from the radio, so switching on the radio is enough. A typed band or mode tunes the radio instead, see <a href="#radio">Radio</a>.</li>
+</ul>
+
+<h3>QSO time</h3>
+<p>The time is taken in UTC at your first keystroke. To set it by hand (e.g. from paper), type it as the first part of the line: <code>1832 OK1ABC</code>.</p>
 
 <h3>Commands</h3>
 <p>A single letter alone on the line, then Enter. The preview under the line shows what will happen before you press Enter.</p>
@@ -125,7 +147,14 @@
 
 <h2 id="contest">4. VHF contest</h2>
 <p>A <b>VHF contest</b> log scores the QSOs (1 point per km between locator centres, IARU R1; VKV PA and FM pohár by large-square rings), checks dupes per band and numbers your QSOs. The next serial to give is boxed in the header; the numbering is shared by all bands.</p>
-<p>In the <b>6 hours</b> entry the header shows the time left, and the statistics show which QSOs fall into the six-hour window.</p>
+<p>In the <b>6 hours</b> entry (on 2 m, 70 cm, 6 m and 4 m) kQSO keeps the six-hour window for each band separately:</p>
+<ul>
+<li>the window starts with the band's first QSO and the header shows the time left (<b>6H 0:29</b>);</li>
+<li>a gap of <b>2 hours or more</b> between QSOs is the break: the time stops and shows in brackets (<b>6H (2:15)</b>);</li>
+<li>the first QSO after the break starts <b>part 2</b> with what is left of the six hours, and kQSO says so;</li>
+<li>when the six hours are up, kQSO says so and the header shows <b>6H 0:00</b>. You can still log QSOs, but they don't count for the 6H entry (the log is sent whole).</li>
+</ul>
+<p>The statistics show which QSOs fall into the window.</p>
 <figure class="crop"><img src="img/en/logging-6h-header.webp" alt="6-hour header" width="390" height="48" loading="lazy"><figcaption>6 hours: 0:29 left.</figcaption></figure>
 
 <h3>Contest panel</h3>
@@ -167,12 +196,27 @@
 
 <h2 id="activation">5. Activations and satellites</h2>
 <h3>Activations</h3>
-<p>An activation exchanges reports: <code>DD2TC 55</code> is a received 55, the sent report stays 59. Give another sent report with T: <code>DD2TC 55 T57</code>. Add the other station's reference (S2S, P2P) after the call: <code>OK1ABC OK/ZC/001</code> (the last slash becomes a dash). GMA, POTA, WWFF and TOTA tower references work too.</p>
+<p>An activation exchanges reports: <code>DD2TC 55</code> is a received 55, the sent report stays 59. Give another sent report with T: <code>DD2TC 55 T57</code> (see <a href="#reports">Reports</a>).</p>
+<p><b>Summit-to-summit (S2S), park-to-park (P2P) and QSOs with another reference:</b> type the other station's reference on the line after its call, after the report too if that's when you hear it: <code>OK1ABC/P 55 OK/ZC/001</code>. The keyboard has no dash, so it is typed with a slash and <b>the last slash becomes a dash</b> (the REF chip shows <code>OK/ZC-001</code>). kQSO tells the kind of reference by its shape:</p>
+<table>
+<tr><td>SOTA</td><td><code>OK/ZC/001</code>, <code>OE/SB/257</code></td></tr>
+<tr><td>GMA</td><td><code>OL/LI/001</code>, <code>DA/BW/001</code></td></tr>
+<tr><td>POTA</td><td><code>CZ/0123</code>, <code>US/10000</code></td></tr>
+<tr><td>WWFF</td><td><code>OKFF/0001</code></td></tr>
+<tr><td>TOTA (lookout towers)</td><td><code>OKR/1001</code></td></tr>
+</table>
+<p>A QSO has one reference of the other station; typing another replaces it. In the ADIF, SOTA goes to <code>SOTA_REF</code>, POTA to <code>POTA_REF</code>, WWFF, GMA and TOTA to <code>SIG</code> / <code>SIG_INFO</code>, so an S2S is counted after the upload to sotadata.org.uk.</p>
+<figure class="crop"><img src="img/en/logging-s2s.webp" alt="S2S QSO" width="390" height="170" loading="lazy"><figcaption><code>OK1ABC/P 55 T57 OK/ZC/001</code>: received 55, sent 57, the other station on summit OK/ZC-001.</figcaption></figure>
 <figure class="phone"><img src="img/en/logging-activation.webp" alt="Activation" width="390" height="844" loading="lazy"><figcaption>Activation of OE/SB-257, 26 QSOs on 40, 20 and 10 m.</figcaption></figure>
 <p>When an activation has several own references (a summit + a park), <b>export</b> offers the whole ADIF plus one file per reference, as each program wants its own upload.</p>
 
+<h3 id="general">General log, e.g. portable</h3>
+<p>The <b>General</b> profile is for portable operation without an award programme, an outing, or a Field Day outside a VHF contest. You exchange a report and, when the other station gives them, a locator and a name: <code>OK1ABC 57 JN79US PETR</code>. The locator is taken after the call (4 or 6 characters); a word that is neither a call nor anything else is the name. Your own call can have a slash (<code>OK1CDJ/P</code>), and so can the other station's (<code>OK1ABC/P</code>, <code>HB0/OK1MCS/P</code>). A General log can be pushed to Wavelog.</p>
+<figure class="crop"><img src="img/en/logging-general.webp" alt="General log" width="390" height="170" loading="lazy"><figcaption>General log: call, report, locator and name.</figcaption></figure>
+
 <h3>Satellites</h3>
 <p>A satellite log is one pass. You pick the satellite when creating the log; it sets the uplink and downlink bands and SAT_NAME. The exchange is a report and a locator: <code>9A2U 59 JN75RO</code>. On linear birds you can switch <code>ssb</code> and <code>cw</code>.</p>
+<p><b>QSO list → Map</b> shows the locators of the stations from the pass, like the <a href="#contest">VHF contest map</a> (without the rain radar). The QSOs carry the uplink and downlink frequencies (ADIF FREQ / FREQ_RX), so Wavelog knows them after the push.</p>
 <figure class="phone"><img src="img/en/logging-sat.webp" alt="Satellite" width="390" height="844" loading="lazy"><figcaption>An FO-29 pass.</figcaption></figure>
 
 <h2 id="export">6. Export and Wavelog</h2>
@@ -185,7 +229,14 @@
 <figure class="crop"><img src="img/en/settings-wavelog.webp" alt="Wavelog in Settings" width="374" height="297" loading="lazy"><figcaption>Settings → Wavelog.</figcaption></figure>
 
 <h2 id="databases">7. Callsign database and offline references</h2>
-<p>The <b>callsign database</b> gives suggestions and locators. It is made of bundled sets and your own worked stations, which grow with every QSO. In Settings you can switch it off, export it, import (merges) and delete your own part.</p>
+<p>The <b>callsign database</b> gives suggestions and locators. It is made of the bundled set for the log type and your own worked stations, which grow with every QSO. In Settings you can switch it off, export it, import (merges) and delete your own part.</p>
+<table>
+<tr><td><b>VHF contest</b></td><td>about 3,000 calls from the public EDI logs of the last two years, with the locator and the bands the station works (the QRV chip). A locator counts once enough logs have it (144 MHz 5, 432 MHz 3, higher 2) or from the station's own log, which drops the typos. Refreshed about twice a year with a new app version.</td></tr>
+<tr><td><b>Activation</b></td><td>about 1,000 calls of stations that often call activations (chasers).</td></tr>
+<tr><td><b>Satellite</b></td><td>about 5,300 calls of satellite (LEO) operators with locators.</td></tr>
+<tr><td><b>General</b></td><td>no bundled set, only your own stations.</td></tr>
+</table>
+<p>Your own QSOs go into the database from every log; working a station on a new VHF band adds that band to its QRV.</p>
 <p><b>Offline references</b>: the SOTA, POTA, WWFF, GMA and TOTA lists for the nearby references offer. The area around you downloads by itself when online; before a trip download an area (field <code>JN</code> or locator <code>JN69</code>).</p>
 <div class="figs">
 <figure class="crop"><img src="img/en/settings-calldb.webp" alt="Callsign database" width="374" height="274" loading="lazy"><figcaption>Callsign database.</figcaption></figure>
@@ -195,18 +246,19 @@
 <h2 id="radio">8. Radio (CI-V) and the CW keyer</h2>
 <p class="note">Both are beta. Please report bugs on <a href="https://github.com/ok1cdj/kQSO/issues">GitHub Issues</a>.</p>
 <h3>Radio – CI-V</h3>
-<p>kQSO reads and tunes Icom radios:</p>
+<p>kQSO reads and tunes Icom radios. Known models: <b>IC-705, IC-706 / MkII / MkIIG, IC-910</b> (optional 23 cm unit), <b>IC-9700, IC-7300, IC-7610, IC-7100</b>; another radio with an unknown address is driven as a generic CI-V radio (band, mode, frequency).</p>
 <ul>
 <li><b>IC-705 over its Bluetooth</b> (Android and iOS apps): Settings → Radio → IC-705 Bluetooth → Connect. The first time open MENU → SET → Bluetooth Set → Pairing Reception on the radio.</li>
 <li><b>Any Icom through the M5-ESP32-keyer</b> on the radio's CI-V jack (firmware 2.1.0 and newer; apps and Chrome / Edge): Settings → Radio → Via the keyer. Switch CI-V Transceive on in the radio.</li>
 </ul>
 <p>Band, mode and the exact frequency then come from the radio. A typed band or mode tunes the radio, <code>F28300</code> tunes it to 28.300 MHz. A band the radio can't do switches only the log. The radio model goes by its CI-V address; choose it by hand if the address was changed.</p>
+<p><b>CW and voice through the radio:</b> the IC-705, 9700, 7300 and 7610 send the CW macros with their own keyer over CI-V (the IC-7100 too), so no M5 keyer is needed; in SSB and FM the strip offers the radio's voice memories <b>T1–T4</b> (record e.g. a CQ in the radio; F5–F8 on a keyboard, Esc stops). Older radios (IC-706, 910) are keyed by the M5 keyer's wire.</p>
 <figure class="crop"><img src="img/en/settings-rig-on.webp" alt="Radio CI-V" width="374" height="838" loading="lazy"><figcaption>Radio – CI-V on: picking the model.</figcaption></figure>
 <p><b>Transverters (XVERT):</b> per band the RF frequency and the IF on the radio. Tap a band to switch its transverter on. A typed band then tunes the radio to the IF and the log gets the RF frequency (XV in the header).</p>
 <figure class="crop"><img src="img/en/settings-xvert.webp" alt="Transverters" width="390" height="696" loading="lazy"><figcaption>The transverter table, prefilled with the usual values.</figcaption></figure>
 
 <h3>M5 CW keyer</h3>
-<p>The <a href="https://keyer.ok1cdj.com/build.html">M5-ESP32-keyer</a> connects over Bluetooth (Android and iOS apps, Chrome / Edge): Settings → M5 keyer → CW keying Yes → Connect. In CW the strip then offers the macros CQ, EX, TU, MY, LOC/REF and ?, and the header shows RUN or S&amp;P and the speed. Radios that key CW over CI-V (IC-705, 7300, 9700, 7610, 7100) send the macros with their own keyer; in SSB and FM the strip offers the voice memories T1–T4.</p>
+<p>The <a href="https://keyer.ok1cdj.com/build.html">M5-ESP32-keyer</a> is a home-built keyer; parts, schematics and the firmware flasher are at <a href="https://keyer.ok1cdj.com/build.html">keyer.ok1cdj.com</a>. It connects over Bluetooth (Android and iOS apps, Chrome / Edge): Settings → M5 keyer → CW keying Yes → Connect. In CW the strip then offers the macros CQ, EX, TU, MY, LOC/REF and ?, and the header shows RUN or S&amp;P and the speed. With a radio that keys CW over CI-V you don't need the M5 keyer (see <a href="#radio">Radio</a>).</p>
 <ul>
 <li>Each profile has its own macros for RUN (I call CQ) and S&amp;P (I answer). Variables: <code>{CALL}</code> <code>{MYCALL}</code> <code>{MYLOC}</code> <code>{MYREF}</code> <code>{RST}</code> <code>{NR}</code> <code>{LOC}</code> <code>{REF}</code> <code>{HI}</code> (GM / GA / GE by local time).</li>
 <li><b>ESM</b> (as in N1MM): Enter sends the macros by the state of the QSO. Switch it on in Settings or with the <code>ESM</code> command.</li>
@@ -259,6 +311,14 @@
 <dd>A browser may clear a site's data without persistent storage. Add kQSO to the home screen and check Settings → Storage. Export important logs.</dd>
 <dt>The keyer or the IC-705 won't connect.</dt>
 <dd>On Android allow Bluetooth for the app (on Android 11 also location, which the system requires for a device scan). On the web only Chrome or Edge. When the link drops, tap ✕ in the header or type <code>C</code>.</dd>
+<dt>I got my locator or call wrong when creating the log.</dt>
+<dd>The log header (call, locator, references) can't be changed after the log is created. If the log is still empty, delete it and create it again. Otherwise create a new log with the right data and log the next QSOs there; in a VHF contest check it right after the first QSO, as the points are counted from your locator.</dd>
+<dt>I'm copying QSOs from paper from another day.</dt>
+<dd>A time typed at the start of the line (<code>1832 OK1ABC</code>) is for today's UTC date. Log a QSO from another day and fix its date in the <b>QSO list</b> (tap the QSO, the Date UTC field).</dd>
+<dt>How do I move my logs to another phone or computer?</dt>
+<dd>kQSO has no import and no sync: logs are exported (ADIF, EDI) or pushed to Wavelog, and that's it. A new device starts with an empty list. The callsign database moves with Settings → Callsign database → export / import.</dd>
+<dt>How do I switch the language?</dt>
+<dd>kQSO is in Czech or English by the system language (the browser's on the web). There is no separate switch in the app.</dd>
 <dt>The app didn't take a call or a locator.</dt>
 <dd>Look at the chips under the line: they show what kQSO recognized. A locator counts only after the call (in a VHF contest a full locator any time). If something looks wrong, please write to <a href="https://github.com/ok1cdj/kQSO/issues">GitHub Issues</a>.</dd>
 </dl>

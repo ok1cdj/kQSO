@@ -5,7 +5,7 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 ## [Unreleased]
 
 ### Added
-- **Manual** (Czech and English, with screenshots): Settings → About → Manual, and at the end of How to log. Also on the web at kqso.ok1cdj.com/manual/en.html (cs.html). Works offline.
+- **Manual** (Czech and English, with screenshots): Settings → About → Manual, and at the end of How to log. Also on the web at kqso.ok1cdj.com/manual/en.html (cs.html). Works offline. With it **First steps**: a VHF contest and a SOTA activation step by step (manual/start-en.html, start-cs.html).
 - **EDI files are signed** in [Remarks]: `Created by kQSO 1.x https://kqso.ok1cdj.com/`, as other loggers do.
 
 ### Fixed
