@@ -1,6 +1,6 @@
 import { beforeEach, describe, it, expect } from 'vitest'
 import { MemoryPlatform } from '../../src/platform/memory'
-import { REFS_SETTINGS, REFS_URL, clearParsedTiles, downloadTile, ensureTiles, programsOn, removeTile, setProgramOn, storedTiles } from '../../src/ui/refsync'
+import { REFS_SETTINGS, REFS_URL, clearParsedTiles, downloadTile, ensureTiles, programsOn, removeTile, setProgramsOn, storedTiles } from '../../src/ui/refsync'
 
 const tile = (field: string, updated: string, ref = 'OK/KR-001'): string =>
   `# kQSO refs | field=${field} | updated=${updated}\nSOTA\t${ref}\t50.7359\t15.7398\tSněžka\n`
@@ -105,12 +105,9 @@ describe('programs offered nearby', () => {
   it('all by default; off ones are kept, so a program added later is on', async () => {
     const p = new MemoryPlatform()
     expect([...(await programsOn(p))]).toEqual(['SOTA', 'GMA', 'POTA', 'WWFF', 'TOTA', 'BOTA'])
-    await setProgramOn(p, 'BOTA', false)
-    await setProgramOn(p, 'GMA', false)
+    await setProgramsOn(p, new Set(['SOTA', 'POTA', 'WWFF', 'TOTA'] as const))
     expect(await p.getSetting(REFS_SETTINGS.off)).toBe('["GMA","BOTA"]')
     expect([...(await programsOn(p))]).toEqual(['SOTA', 'POTA', 'WWFF', 'TOTA'])
-    await setProgramOn(p, 'GMA', true)
-    expect((await programsOn(p)).has('GMA')).toBe(true)
     await p.setSetting(REFS_SETTINGS.off, 'broken')
     expect((await programsOn(p)).size).toBe(6)
   })

@@ -30,7 +30,7 @@ import { RIG_SETTINGS } from '../rig'
 import type { RigController } from '../rig'
 import { UPDATE_SETTINGS, checksUpdates } from '../update'
 import { fieldsAround, parseField } from '../../core/refdb'
-import { REFS_URL, downloadTile, programsOn, removeTile, setProgramOn, storedTiles } from '../refsync'
+import { REFS_URL, downloadTile, programsOn, removeTile, setProgramsOn, storedTiles } from '../refsync'
 import { REF_PROGRAMS } from '../../core/refdb'
 
 export interface SettingsNav {
@@ -366,18 +366,24 @@ export class SettingsScreen implements Screen {
     sources.append(a)
 
     // The programs offered nearby in New log (typing a reference recognises all of them).
+    // One set in memory, written whole on each tap: quick taps can't undo each other.
     const programs = el('div', 'segmented segmented--wrap')
-    const paintPrograms = async (): Promise<void> => {
-      const on = await programsOn(this.platform)
+    const on = await programsOn(this.platform)
+    const paintPrograms = (): void => {
       programs.replaceChildren(
         ...REF_PROGRAMS.map((k) => {
-          const b = button(k, () => void setProgramOn(this.platform, k, !on.has(k)).then(paintPrograms), 'btn btn--small')
+          const b = button(k, () => {
+            if (on.has(k)) on.delete(k)
+            else on.add(k)
+            paintPrograms()
+            void setProgramsOn(this.platform, on)
+          }, 'btn btn--small')
           b.setAttribute('aria-pressed', String(on.has(k)))
           return b
         }),
       )
     }
-    await paintPrograms()
+    paintPrograms()
     const programsRow = el('div', 'setting')
     programsRow.append(el('span', 'field-label', t('settings.refsPrograms')), programs)
 

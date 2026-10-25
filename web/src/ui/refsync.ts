@@ -32,11 +32,9 @@ export async function programsOn(platform: KQSOPlatform): Promise<Set<ReferenceK
   return new Set(REF_PROGRAMS.filter((k) => !skip.has(k)))
 }
 
-export async function setProgramOn(platform: KQSOPlatform, kind: ReferenceKind, on: boolean): Promise<void> {
-  const now = await programsOn(platform)
-  if (on) now.add(kind)
-  else now.delete(kind)
-  await platform.setSetting(REFS_SETTINGS.off, JSON.stringify(REF_PROGRAMS.filter((k) => !now.has(k))))
+/** Saves the programs offered nearby (stored as the ones that are off). */
+export async function setProgramsOn(platform: KQSOPlatform, on: ReadonlySet<ReferenceKind>): Promise<void> {
+  await platform.setSetting(REFS_SETTINGS.off, JSON.stringify(REF_PROGRAMS.filter((k) => !on.has(k))))
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000
