@@ -150,14 +150,15 @@ export function msgLine(room: KstRoom, text: string): string {
 }
 
 /** What the user typed → chat text: "@CALL text" → "/CQ CALL text", "@ text" → public,
- *  the rest as is. */
+ *  the rest as is; undefined = nothing to send (also "@CALL" without text — sent as is it
+ *  would go to everyone). */
 export function chatText(input: string): string | undefined {
   const t = input.trim()
   const pub = /^@\s+(.+)$/.exec(t)
   if (pub) return pub[1]
-  if (!t || t === '@') return undefined
+  if (!t.startsWith('@')) return t || undefined
   const m = /^@(\S+)\s+(.+)$/.exec(t)
-  return m ? `/CQ ${m[1]!.toUpperCase()} ${m[2]}` : t
+  return m ? `/CQ ${m[1]!.toUpperCase()} ${m[2]}` : undefined
 }
 
 /** Where a typed chat line goes: the addressee of "@CALL text", '' for "@ text" (public). */

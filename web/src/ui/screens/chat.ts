@@ -11,7 +11,7 @@ import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
 import { el, button } from '../dom'
 import { t } from '../i18n'
-import { KST_SETTINGS, kstStatus } from '../kst'
+import { KST_SETTINGS, kstStatus, notSentWhy } from '../kst'
 import type { KstController } from '../kst'
 
 export interface ChatNav {
@@ -140,10 +140,7 @@ export class ChatScreen implements Screen {
     this.locEl.replaceChildren(
       el('span', undefined, t('kst.locDiffers', { kst: k.locator ?? '', log: want })),
       button(t('kst.setLoc', { loc: want }), () => {
-        if (!k.setLocator(want)) {
-          const wait = Math.ceil((k.waitUntil - Date.now()) / 1000)
-          this.noticeEl.textContent = wait > 0 ? t('kst.wait', { s: wait }) : t('kst.notSent')
-        }
+        if (!k.setLocator(want)) this.noticeEl.textContent = notSentWhy(k)
       }, 'btn btn--small'),
     )
   }
@@ -250,9 +247,6 @@ export class ChatScreen implements Screen {
     if (k.send(this.input.value)) {
       this.input.value = ''
       this.noticeEl.textContent = ''
-    } else {
-      const wait = Math.ceil((k.waitUntil - Date.now()) / 1000)
-      this.noticeEl.textContent = wait > 0 ? t('kst.wait', { s: wait }) : t('kst.notSent')
-    }
+    } else this.noticeEl.textContent = notSentWhy(k, this.input.value)
   }
 }

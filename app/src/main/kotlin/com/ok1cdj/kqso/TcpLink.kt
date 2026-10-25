@@ -14,7 +14,8 @@ import kotlin.concurrent.thread
  * time: connect closes the previous one. Only the ON4KST port may be opened.
  *
  * Results go back to JS as window.__kqsoTcp.{state,data}(…):
- *  - state('connecting' | 'on' | 'off', reason) — reason only when it dropped by itself
+ *  - state('connecting' | 'on' | 'off', reason) — off only when it dropped by itself:
+ *    close() stays quiet (a late 'off' would land on the page's next connection)
  *  - data(text) — UTF-8 text as it arrives
  *
  * The socket blocks, so each connection reads on its own thread and writes go through
@@ -39,8 +40,7 @@ class TcpLink(private val activity: MainActivity) {
     }
 
     fun close() {
-        val had = synchronized(this) { drop() }
-        if (had) state("off", null)
+        synchronized(this) { drop() }
     }
 
     fun write(text: String) {
@@ -94,9 +94,8 @@ class TcpLink(private val activity: MainActivity) {
         state("off", reason)
     }
 
-    /** Forgets and closes the connection (call holding the lock); true when there was one. */
-    private fun drop(): Boolean {
-        val had = current != 0
+    /** Forgets and closes the connection (call holding the lock). */
+    private fun drop() {
         current = 0
         socket?.let {
             try {
@@ -105,7 +104,6 @@ class TcpLink(private val activity: MainActivity) {
             }
         }
         socket = null
-        return had
     }
 
     private fun state(s: String, reason: String?) =

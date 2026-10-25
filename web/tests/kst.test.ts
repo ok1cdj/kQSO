@@ -65,7 +65,8 @@ describe('text helpers', () => {
   it('chatText turns @CALL into /CQ', () => {
     expect(chatText('@ok1kpa pse sked 432.200')).toBe('/CQ OK1KPA pse sked 432.200')
     expect(chatText('  cq contest  ')).toBe('cq contest')
-    expect(chatText('@OK1KPA')).toBe('@OK1KPA')
+    expect(chatText('@OK1KPA')).toBeUndefined() // no text: never to everyone by mistake
+    expect(chatText('@OK1KPA  ')).toBeUndefined()
     expect(chatText('   ')).toBeUndefined()
     expect(chatText('@ cq contest JN79')).toBe('cq contest JN79')
     expect(chatText('@')).toBeUndefined()

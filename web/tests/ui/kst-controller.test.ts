@@ -17,8 +17,7 @@ class FakeTcp implements TcpTransport {
     this.state('connecting')
   }
   close(): void {
-    this.closes++
-    this.state('off')
+    this.closes++ // quiet, as the real transports
   }
   write(t: string): void {
     this.written.push(t)
@@ -109,6 +108,24 @@ describe('KstController', () => {
     expect(kst.locator).toBe('JN89AB')
     tcp.recv('LOC|1000|OK1CDJ|JN89AC|\r\n')
     expect(kst.locator).toBe('JN89AC')
+  })
+
+  it('/SETLOC answered "Please wait": the old locator again', async () => {
+    const { kst, tcp } = await online()
+    tcp.recv('UA0|2|OK1CDJ|Ondra|JN79US|0|\r\nUE|2|1|\r\n')
+    expect(kst.setLocator('JN89AB')).toBe(true)
+    tcp.recv('CH|2|1000|SERVER|Server|0|Please wait 42 second(s) before sending a new command|OK1CDJ|\r\n')
+    expect(kst.locator).toBe('JN79US')
+  })
+
+  it('Save and connect while on: the new login goes through', async () => {
+    const { kst, tcp } = await online()
+    kst.disconnect()
+    await kst.connect()
+    tcp.up()
+    tcp.recv('login\r\n' + LOGIN_OK)
+    expect(tcp.written.filter((w) => w.startsWith('LOGINC')).length).toBe(2)
+    expect(kst.link).toBe('on')
   })
 
   it('falls back to the log call; no password = failed without connecting', async () => {

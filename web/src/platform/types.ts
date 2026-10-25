@@ -62,6 +62,8 @@ export type TcpLinkState = 'off' | 'connecting' | 'on'
  * Plain TCP text link, for the ON4KST chat (core/kst.ts). Native sockets in the apps;
  * on the web a WebSocket to the kQSO relay, which knows the target itself. Text is
  * UTF-8 both ways; one connection at a time (connect closes the previous one).
+ * onState reports only what happens by itself: close() and a replaced connection stay
+ * quiet (a late 'off' would land on the next connection).
  */
 export interface TcpTransport {
   connect(host: string, port: number): void

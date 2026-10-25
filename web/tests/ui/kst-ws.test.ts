@@ -95,10 +95,10 @@ describe('WsTcpTransport', () => {
     sockets[0]!.serverClose(1000, 'ws closed')
     expect(read()).toBe('')
     expect(states.map((s) => s[0])).toEqual(['connecting', 'on', 'connecting'])
+    // Closing on purpose is quiet: a late 'off' would land on the next connection.
     t.close()
     expect(sockets[1]!.closed).toBe(1000)
-    expect(states.at(-1)).toEqual(['off', undefined])
     t.close()
-    expect(states.length).toBe(4)
+    expect(states.map((s) => s[0])).toEqual(['connecting', 'on', 'connecting'])
   })
 })

@@ -4,7 +4,7 @@
 // room, so switching rooms and reconnecting keep the messages. Screens subscribe and
 // re-render on change. Nothing connects until a screen asks (connect / setRoom).
 
-import { KST_HOST, KST_PORT, KST_VIEW_DEFAULT, KstSession, KstState } from '../core/index'
+import { KST_HOST, KST_PORT, KST_VIEW_DEFAULT, KstSession, KstState, chatText } from '../core/index'
 import type { KstEntry, KstEvent, KstRoom, KstView, Timers } from '../core/index'
 import type { KQSOPlatform, TcpLinkState, TcpTransport } from '../platform/index'
 import { t } from './i18n'
@@ -37,6 +37,13 @@ export function kstStatus(k: KstController): string {
   }
 }
 
+/** Why send() refused `input`: no text after @CALL, the server's wait, or no link. */
+export function notSentWhy(k: KstController, input = ' '): string {
+  if (chatText(input) === undefined) return t('kst.noText')
+  const wait = Math.ceil((k.waitUntil - Date.now()) / 1000)
+  return wait > 0 ? t('kst.wait', { s: wait }) : t('kst.notSent')
+}
+
 /** A saved JSON setting; undefined when missing or broken. */
 function parseJson<T>(v: string | null): T | undefined {
   if (!v) return undefined
@@ -49,6 +56,7 @@ function parseJson<T>(v: string | null): T | undefined {
 
 const SILENCE_PING_MS = 90_000 // nothing heard: poke the server
 const SILENCE_DROP_MS = 210_000 // still nothing: the link is dead, reconnect
+const LOC_UNDO_MS = 15_000 // "Please wait" this soon after /SETLOC is its answer
 const RETRY_MS = [2_000, 5_000, 15_000, 30_000, 60_000] // after an unexpected drop
 
 export class KstController {
@@ -76,6 +84,7 @@ export class KstController {
   call = ''
   private pass = ''
   private loginLocator: string | undefined
+  private locUndo: { loc: string | undefined; at: number } | undefined // the last /SETLOC
   private sinceTs = 0 // newest message before this login: history after it was missed, not old
   private wantLink = false // the operator wants to be connected (not after disconnect / a refused login)
   private retry = 0
@@ -113,7 +122,8 @@ export class KstController {
       this.skedQrgs = parseJson<Record<string, string>>(v) ?? {}
     })
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && this.wantLink && this.link === 'off') void this.connect()
+      // The call of the last login: with none saved it was the log's, which only screens know.
+      if (!document.hidden && this.wantLink && this.link === 'off') void this.connect(this.call)
     })
   }
 
@@ -134,9 +144,12 @@ export class KstController {
 
   /** /SETLOC: ON4KST gets my locator (the others' QRB / az to me come from it). */
   setLocator(loc: string): boolean {
+    const before = this.chat.myLoc
     if (!this.send(`/SETLOC ${loc}`)) return false
-    // Shown at once; the server's frame about me confirms (or corrects) it.
+    // Shown at once; the server's frame about me confirms (or corrects) it, its
+    // "Please wait" (command dropped) puts the old one back.
     this.chat.myLoc = loc
+    this.locUndo = { loc: before, at: this.now() }
     this.emit()
     return true
   }
@@ -268,12 +281,15 @@ export class KstController {
       case 'failed':
         // A wrong password does not get better by retrying.
         this.wantLink = false
+        this.stopTimers()
         this.setLink('failed', e.text || String(e.code))
         this.session = undefined
         this.transport?.close()
         return
       case 'wait':
         this.waitUntil = this.now() + e.seconds * 1000
+        if (this.locUndo && this.now() - this.locUndo.at < LOC_UNDO_MS) this.chat.myLoc = this.locUndo.loc
+        this.locUndo = undefined
         break
       case 'message':
         // The history at the first login is old; after a drop it holds what was missed.

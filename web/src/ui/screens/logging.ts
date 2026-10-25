@@ -45,6 +45,7 @@ import {
   ringPoints,
   roomForBand,
   chatTarget,
+  chatText,
   expandSked,
   kstStations,
   locatorToSet,
@@ -69,7 +70,7 @@ import { matchShortcut, nextMode } from '../shortcuts'
 import type { Shortcut } from '../shortcuts'
 import { ContestBoard } from '../contest-board'
 import type { RigController } from '../rig'
-import { KST_SETTINGS } from '../kst'
+import { KST_SETTINGS, notSentWhy } from '../kst'
 import type { KstController } from '../kst'
 import type { ChatContext } from './chat'
 
@@ -377,7 +378,12 @@ export class LoggingScreen implements Screen {
     const k = e.key
     // Shortcuts first (also in the system keyboard's input); one that doesn't apply now
     // lets the key through (F5 without the keyer still reloads).
-    const sc = matchShortcut(e)
+    // A chat line takes what macOS Option types ('@' is Option+L on a German Mac) — that is
+    // another character than the key's letter; Alt+letter elsewhere stays a shortcut.
+    const optionChar =
+      e.altKey && !e.ctrlKey && !e.metaKey && k.length === 1 && e.code.startsWith('Key') && k.toLowerCase() !== e.code.slice(3).toLowerCase()
+    const chatTyping = optionChar && (this.isChatLine() || (k === '@' && this.line === '' && this.chatOn()))
+    const sc = chatTyping ? undefined : matchShortcut(e)
     if (sc && this.runShortcut(sc)) {
       e.preventDefault()
       return
@@ -1128,7 +1134,11 @@ export class LoggingScreen implements Screen {
     if (this.isChatLine()) {
       const to = chatTarget(this.line)
       const on = this.kst.link === 'on'
-      this.previewEl.replaceChildren(fieldChip('KST', on ? (to ? `→ ${to}` : t('kst.public')) : t('kst.notSent'), !on))
+      const text = chatText(this.line) !== undefined
+      const where = to ? `→ ${to}` : t('kst.public')
+      this.previewEl.replaceChildren(
+        fieldChip('KST', !on ? t('kst.notSent') : text ? where : `${where} · ${t('kst.noText')}`, !on || !text),
+      )
       return
     }
     if (this.chatOn() && this.line.trim().toUpperCase() === 'O') {
@@ -1478,8 +1488,7 @@ export class LoggingScreen implements Screen {
 
   private setKstLocator(loc: string): void {
     if (!this.kst.setLocator(loc)) {
-      const wait = Math.ceil((this.kst.waitUntil - Date.now()) / 1000)
-      this.notice = wait > 0 ? t('kst.wait', { s: wait }) : t('kst.notSent')
+      this.notice = notSentWhy(this.kst)
       this.renderAll()
     }
   }
@@ -1488,10 +1497,7 @@ export class LoggingScreen implements Screen {
     if (this.kst.send(this.line)) {
       this.line = ''
       this.notice = ''
-    } else {
-      const wait = Math.ceil((this.kst.waitUntil - Date.now()) / 1000)
-      this.notice = wait > 0 ? t('kst.wait', { s: wait }) : t('kst.notSent')
-    }
+    } else this.notice = notSentWhy(this.kst, this.line)
     this.renderAll()
   }
 

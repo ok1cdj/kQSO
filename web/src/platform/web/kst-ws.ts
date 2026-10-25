@@ -57,21 +57,21 @@ export class WsTcpTransport implements TcpTransport {
     }
   }
 
+  /** Quiet: the caller knows the link is off. */
   close(): void {
-    if (this.drop()) this.stateCb('off')
+    this.drop()
   }
 
   write(text: string): void {
     if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(this.encoder.encode(text))
   }
 
-  /** Forgets the socket and closes it; true when there was one. */
-  private drop(): boolean {
+  /** Forgets the socket and closes it. */
+  private drop(): void {
     const ws = this.ws
-    if (!ws) return false
+    if (!ws) return
     this.ws = undefined
     ws.close(1000)
-    return true
   }
 }
 
