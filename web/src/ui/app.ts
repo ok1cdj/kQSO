@@ -22,7 +22,7 @@ import { WHATS_NEW } from '../core/index'
 import type { WhatsNewEntry } from '../core/index'
 import { trackScreen } from './stats'
 import { KeyerController } from './keyer'
-import { KST_SETTINGS, KstController } from './kst'
+import { KstController } from './kst'
 import { RigController } from './rig'
 
 export interface Screen {
@@ -64,16 +64,6 @@ export class App {
     // The keyer's settings first: a radio via the keyer may bring its link up.
     void this.keyer.init().then(() => this.rig.init())
     this.kst.init()
-    // Until the chat has its screens: try it from the console (npm run dev + the local relay).
-    if (import.meta.env.DEV) {
-      const w = window as unknown as { kqsoKst?: KstController; kqsoKstLogin?: (call: string, pass: string) => Promise<void> }
-      w.kqsoKst = this.kst
-      w.kqsoKstLogin = async (call, pass) => {
-        await this.platform.setSetting(KST_SETTINGS.call, call)
-        await this.platform.setSetting(KST_SETTINGS.pass, pass)
-        await this.kst.connect()
-      }
-    }
     void this.start()
   }
 

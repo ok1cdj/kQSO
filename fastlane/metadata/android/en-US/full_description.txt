@@ -2,9 +2,9 @@ kQSO is a ham radio logger with a single, smart input line. Type a whole QSO on 
 
 <b>Log profiles</b>
 <ul>
-<li><b>Activation</b> — SOTA, GMA, POTA, WWFF, TOTA lookout towers; your reference is set with the log, the other station's reference is logged for S2S.</li>
+<li><b>Activation</b> — SOTA, GMA, POTA, WWFF, TOTA lookout towers, BOTA bunkers; your reference is set with the log, the other station's reference is logged for S2S.</li>
 <li><b>General</b> — adds the name.</li>
-<li><b>VHF contest</b> — serials, 6-character locator, IARU R1 scoring (points per km), score per band, EDI (REG1TEST) export per band.</li>
+<li><b>VHF contest</b> — serials, 6-character locator, IARU R1 scoring (points per km), score per band, EDI (REG1TEST) export per band, and the ON4KST chat for skeds (stations with distance, bearing and QRV bands).</li>
 <li><b>Satellite</b> — one log per pass; the satellite sets uplink / downlink band and frequency.</li>
 </ul>
 

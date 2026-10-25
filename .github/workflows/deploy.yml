@@ -34,7 +34,11 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      # The web app reaches the ON4KST chat through the kQSO relay (relay/kst on the VPS);
+      # the APK and the iOS app connect natively and are built without it.
       - run: npm run build
+        env:
+          VITE_KST_RELAY_URL: wss://kst.kqso.ok1cdj.com/kst
       # The site = the web app + refs/ (offline references by locator field). refs/ stays
       # out of web/dist, which the APK and the iOS bundle are built from. When a source
       # is down or changed its format, the references online now are carried over, so

@@ -10,8 +10,8 @@ Android app and as an iOS app for iPhone and iPad (the same web app in a native 
 Built for the **Mudita Kompakt** (480×800 e-ink), and just as usable on any other
 phone, tablet or desktop.
 
-- **Live web:** <https://kqso.ok1cdj.com/> (web 1.13.1; the old `ok1cdj.github.io/kQSO/` redirects there)
-- **Android:** [Google Play](https://play.google.com/store/apps/details?id=com.ok1cdj.kqso), or the APK from [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.13.1) — the same signature, so either updates the other
+- **Live web:** <https://kqso.ok1cdj.com/> (web 1.14; the old `ok1cdj.github.io/kQSO/` redirects there)
+- **Android:** [Google Play](https://play.google.com/store/apps/details?id=com.ok1cdj.kqso), or the APK from [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.14) — the same signature, so either updates the other
 - **iOS (iPhone, iPad):** App Store (in review)
 - **Manual** (with screenshots): [English](https://kqso.ok1cdj.com/manual/en.html) · [česky](https://kqso.ok1cdj.com/manual/cs.html), also in the app under Settings → About
 - **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
@@ -41,8 +41,10 @@ and the map.
 
 - **One smart input line** with its own alphabetical keyboard (a hardware keyboard
   works too); a preview under the line shows what will be saved.
-- **Log profiles:** activation (SOTA / GMA / POTA / WWFF / TOTA), general, VHF
+- **Log profiles:** activation (SOTA / GMA / POTA / WWFF / TOTA / BOTA), general, VHF
   contest (serials, locators, IARU R1 scoring, EDI export), satellite (one log per pass).
+- **ON4KST chat** in a VHF contest log: stations with QRB, bearing and QRV bands, skeds,
+  writing from the log line; native in the apps, through a relay on the web.
 - **Bands** 160 m to 76 GHz; microwaves can be typed in GHz (`24G`).
 - **Callsign database:** suggestions and locator prefill from a bundled set plus your
   own worked stations; the VHF set (from the ČRK contest logs) knows the bands each
@@ -112,7 +114,7 @@ tokens are ignored. See **Settings → How to log** in the app for the full gram
   6mm 4mm (ADIF names; EDI `PBand` 1,3…76 GHz). Microwaves can be typed in GHz —
   `1G 2G 3G 5G 10G 24G 47G 76G` — handy for `24G`, since the keyboard has no dot.
 - **Log profiles**, chosen when a log is created:
-  - **Activation** (SOTA / GMA / POTA / WWFF / TOTA lookout towers) — your references are set when the log is
+  - **Activation** (SOTA / GMA / POTA / WWFF / TOTA lookout towers / BOTA bunkers) — your references are set when the log is
     created, several at once (a summit + POTA parks + a WWFF area …), and export also gives one file per
     reference; the worked station's reference is logged for S2S.
   - **General** — adds the name.

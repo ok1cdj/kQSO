@@ -1,0 +1,1 @@
+ON4KST chat in a VHF contest log: messages, stations with distance, bearing and QRV bands, a sked in one tap, writing from the log line (@CALL text); without an account use the call DEMO. BOTA bunkers: references B/OK/0123 and the nearest bunkers in New log; Settings lets you choose which programs are offered nearby. A manual with pictures and First steps.

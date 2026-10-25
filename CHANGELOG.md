@@ -4,7 +4,18 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 
 ## [Unreleased]
 
+## [1.14] – 2026-10-25
+
 ### Added
+- **ON4KST chat** in a VHF contest log (6 m and up; the room follows the log's band, 50/70 MHz, 144/432 MHz or microwaves). The Android and iOS apps connect to www.on4kst.org directly; the web app through the kQSO relay (WebSocket → TCP, passes the data on, logs no content). Settings → ON4KST chat: call (empty = the log's), password, sked request template; the chat rules are shown once before the first connection.
+  - **Messages**: to me in bold, "Only to me", stations already worked on the band greyed; a tap writes `@CALL`. **Stations**: locator, QRB and bearing from the log's locator, the bands each is QRV on (read from its name, its messages and skeds, plus the callsign database; worked ones struck out), sort by call / km / bearing both ways, hide worked / away (the same sort and filters under the contest panel). **Sked** fills in the request (`{QRG}` = the band's sked QRG or the radio's frequency, `{MODE}`, `{LOC}`); **Log** goes back with call and locator typed in.
+  - **In the log**: the last message to me under the header (tap = answer); `@CALL text` ⏎ in the input line sends it; `O` ⏎ / Alt+O opens the chat; `G 144.290` ⏎ / Alt+G sets the band's sked QRG; on a tablet in landscape the stations that wrote in the last 30 minutes under the contest panel.
+  - **Station details** (long press or ⋯): its data and messages, Write / Sked / Log, and **Mute** (hidden on this device; list in Settings) and **Report** (an e-mail to the author) out of the way of the contest buttons.
+  - **Locator**: when ON4KST has you elsewhere than the log (portable), "Set JN89AB" sends `/SETLOC`. ON4KST commands (`/SETNAME`, `/SETLOC`) can be typed in the chat line.
+  - **DEMO**: the call DEMO without a password runs a simulated chat (nothing goes to on4kst.org), to try it without an ON4KST account.
+  - The chat disconnects in the list of logs; it reconnects after a dropout or when the app comes back.
+- **BOTA (Bunkers on the Air)**: references `B/OK/0123` → `B/OK-0123`, several bunkers in one log; ADIF `MY_SIG` / `SIG` = `WWBOTA` (several bunkers comma-separated), as wwbota.net asks. The offline references include the WWBOTA list (about 32,000 bunkers, OKBOTA included).
+- **Choice of programs** in Settings → Offline references: which of SOTA, GMA, POTA, WWFF, TOTA and BOTA New log offers nearby (all by default). A reference of any program can still be typed.
 - **Manual** (Czech and English, with screenshots): Settings → About → Manual, and at the end of How to log. Also on the web at kqso.ok1cdj.com/manual/en.html (cs.html). Works offline. With it **First steps**: a VHF contest and a SOTA activation step by step (manual/start-en.html, start-cs.html).
 - **EDI files are signed** in [Remarks]: `Created by kQSO 1.x https://kqso.ok1cdj.com/`, as other loggers do.
 

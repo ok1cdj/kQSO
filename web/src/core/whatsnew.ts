@@ -14,6 +14,19 @@ export interface WhatsNewEntry {
 /** Newest first. */
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    version: '1.14',
+    cs: [
+      'ON4KST chat přímo v logu VKV závodu: zprávy, stanice se vzdáleností, azimutem a pásmy, na kterých jsou QRV, žádost o sked jedním klepnutím a psaní ze vstupního řádku (@ZNAČKA text). Na tabletu na šířku aktivní stanice pod závodním panelem. Nastavení → ON4KST chat; bez účtu si ho vyzkoušíš se značkou DEMO.',
+      'BOTA — bunkry (Bunkers on the Air): reference B/OK/0123 a nejbližší bunkry v Novém logu. V Nastavení → Reference offline si vybereš, které programy se v okolí nabízejí.',
+      'Návod s obrázky (Nastavení → O aplikaci → Návod) a První kroky: VKV závod a SOTA aktivace krok za krokem.',
+    ],
+    en: [
+      'ON4KST chat right in a VHF contest log: messages, stations with distance, bearing and the bands they are QRV on, a sked request in one tap and writing from the input line (@CALL text). On a tablet in landscape the active stations under the contest panel. Settings → ON4KST chat; without an account try it with the call DEMO.',
+      'BOTA — bunkers (Bunkers on the Air): references B/OK/0123 and the nearest bunkers in New log. Settings → Offline references lets you choose which programs are offered nearby.',
+      'A manual with pictures (Settings → About → Manual) and First steps: a VHF contest and a SOTA activation step by step.',
+    ],
+  },
+  {
     version: '1.13.1',
     cs: ['Esc smaže rozepsaný řádek — třeba značku, kterou si jen ověřuješ v logu. Co už prošlo Enterem, zůstane.'],
     en: ['Esc clears the line being typed — e.g. a call you only looked up in the log. What Enter took in stays.'],
