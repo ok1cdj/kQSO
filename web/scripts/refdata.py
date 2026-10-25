@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the offline reference tiles: SOTA, POTA, WWFF, GMA and TOTA references
+"""Build the offline reference tiles: SOTA, POTA, WWFF, GMA, TOTA and BOTA references
 that are valid today, split by Maidenhead field (JO, JN, ...).
 
 Sources (downloaded into the cache dir unless already there):
@@ -8,6 +8,7 @@ Sources (downloaded into the cache dir unless already there):
   WWFF  https://wwff.co/wwff-data/wwff_directory.csv
   GMA   https://www.gma.rocks/download/summits.csv
   TOTA  https://wwtota.com/apidata/get_rozhledny.php
+  BOTA  https://api.wwbota.org/bunkers/?format=CSV
 
 Output (into --out):
   <FIELD>.tsv   '# kQSO refs | field=JO | updated=YYYY-MM-DD', then
@@ -37,6 +38,7 @@ SOURCES = {
     'wwff': 'https://wwff.co/wwff-data/wwff_directory.csv',
     'gma': 'https://www.gma.rocks/download/summits.csv',
     'tota': 'https://wwtota.com/apidata/get_rozhledny.php',
+    'bota': 'https://api.wwbota.org/bunkers/?format=CSV',
 }
 EXT = {'tota': 'json'}
 NAME_MAX = 40
@@ -49,6 +51,7 @@ POTA  Parks on the Air, https://pota.app/ (all_parks_ext.csv)
 WWFF  World Wide Flora & Fauna, https://wwff.co/ (wwff_directory.csv)
 GMA   GMA Outdoor Activities, DL0QW, https://www.gma.rocks/ (summits.csv)
 TOTA  Towers on the Air, https://wwtota.com/
+BOTA  Worldwide Bunkers on the Air (WWBOTA, OKBOTA), https://wwbota.net/
 
 Only references valid on the date in each file are included; names are
 shortened. The programs' lists are authoritative. Check them before an
@@ -131,7 +134,13 @@ def tota(text, today):
             yield r['ref'], r['lat'], r['lon'], r['nazev']
 
 
-READERS = {'sota': sota, 'pota': pota, 'wwff': wwff, 'gma': gma, 'tota': tota}
+def bota(text, today):
+    # WWBOTA lists only current bunkers (Scheme,DXCC,Reference,Name,Type,Lat,Long,Locator).
+    for r in rows(text):
+        yield r['Reference'], r['Lat'], r['Long'], r['Name']
+
+
+READERS = {'sota': sota, 'pota': pota, 'wwff': wwff, 'gma': gma, 'tota': tota, 'bota': bota}
 
 
 def field(lat, lon):

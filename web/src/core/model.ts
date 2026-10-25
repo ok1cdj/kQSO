@@ -22,12 +22,12 @@ export interface Report {
   readonly rcvd: string // ADIF RST_RCVD
 }
 
-export type ReferenceKind = 'SOTA' | 'GMA' | 'POTA' | 'WWFF' | 'TOTA'
+export type ReferenceKind = 'SOTA' | 'GMA' | 'POTA' | 'WWFF' | 'TOTA' | 'BOTA'
 
 /** One award reference, already normalized (last slash → dash). */
 export interface AwardReference {
   readonly kind: ReferenceKind
-  readonly value: string // e.g. "OK/ZC-001", "OL/LI-001", "CZ-0001", "OKFF-0001", "OKR-1001"
+  readonly value: string // e.g. "OK/ZC-001", "OL/LI-001", "CZ-0001", "OKFF-0001", "OKR-1001", "B/OK-0123"
 }
 
 /** One committed contact. `call` is the only mandatory field. */

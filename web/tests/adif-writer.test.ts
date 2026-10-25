@@ -86,6 +86,21 @@ describe('writeQso against reference output', () => {
     )
   })
 
+  it('Aktivace BOTA — SIG / MY_SIG = WWBOTA, several bunkers comma-separated (wwbota.net)', () => {
+    const qso: Qso = {
+      ...BASE,
+      call: 'OK2XYZ',
+      theirRef: { kind: 'BOTA', value: 'B/OK-0456' },
+      myRefs: [
+        { kind: 'BOTA', value: 'B/OK-0001' },
+        { kind: 'BOTA', value: 'B/OK-0002' },
+      ],
+    }
+    expect(writeQso(qso)).toBe(
+      `${HEAD} <SIG:6>WWBOTA <SIG_INFO:9>B/OK-0456 <MY_SIG:6>WWBOTA <MY_SIG_INFO:19>B/OK-0001,B/OK-0002 <EOR>`,
+    )
+  })
+
   it('Obecný — GRIDSQUARE + NAME', () => {
     const qso: Qso = { ...BASE, call: 'OK2XYZ', grid: 'JO60UN', name: 'PETR' }
     expect(writeQso(qso)).toBe(`${HEAD} <GRIDSQUARE:6>JO60UN <NAME:4>PETR <EOR>`)

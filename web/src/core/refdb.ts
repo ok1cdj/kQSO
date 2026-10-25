@@ -1,4 +1,4 @@
-// Offline award references (SOTA, POTA, WWFF, GMA, TOTA), one tile per Maidenhead
+// Offline award references (SOTA, POTA, WWFF, GMA, TOTA, BOTA), one tile per Maidenhead
 // field, built by scripts/refdata.py:
 //   # kQSO refs | field=JO | updated=2026-10-19
 //   SOTA<TAB>OK/KR-001<TAB>50.7359<TAB>15.7398<TAB>Sněžka
@@ -23,7 +23,9 @@ export interface NearRef extends RefPoint {
   readonly km: number
 }
 
-const KINDS: ReadonlySet<string> = new Set<ReferenceKind>(['SOTA', 'GMA', 'POTA', 'WWFF', 'TOTA'])
+/** The programs, in the order Settings lists them. */
+export const REF_PROGRAMS: readonly ReferenceKind[] = ['SOTA', 'GMA', 'POTA', 'WWFF', 'TOTA', 'BOTA']
+const KINDS: ReadonlySet<string> = new Set<ReferenceKind>(REF_PROGRAMS)
 const FIELD_OR_LOCATOR = /^[A-R]{2}(\d{2}([A-X]{2})?)?$/
 const KM_PER_DEG = 111.2
 
@@ -71,12 +73,13 @@ export function fieldsAround(lat: number, lon: number, km: number): string[] {
   return out
 }
 
-/** References within maxKm of a point, at most perKind of each program, nearest first. */
+/** References within maxKm of a point, at most perKind of each program (only `kinds`,
+ *  when given), nearest first. */
 export function nearestRefs(
   tiles: readonly RefTile[],
   lat: number,
   lon: number,
-  opts: { maxKm?: number; perKind?: number } = {},
+  opts: { maxKm?: number; perKind?: number; kinds?: ReadonlySet<ReferenceKind> } = {},
 ): NearRef[] {
   const maxKm = opts.maxKm ?? 25
   const perKind = opts.perKind ?? 3
@@ -86,6 +89,7 @@ export function nearestRefs(
   const near: NearRef[] = []
   for (const tile of tiles) {
     for (const r of tile.refs) {
+      if (opts.kinds && !opts.kinds.has(r.kind)) continue
       if (Math.abs(r.lat - lat) > dLat) continue
       const lonGap = Math.abs(((r.lon - lon + 540) % 360) - 180)
       if (lonGap > dLon) continue

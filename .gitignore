@@ -25,3 +25,4 @@ ios/build/
 
 # vkvdb.py download cache (EDI logs carry addresses and phone numbers)
 .cache/
+__pycache__/

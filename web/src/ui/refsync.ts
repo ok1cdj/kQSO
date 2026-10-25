@@ -6,7 +6,8 @@
 // fetched at most once a day. A stored tile older than the index is fetched again.
 // A field missing from the index has no references (sea), which is not an error.
 
-import { parseRefTile, type RefTile } from '../core/refdb'
+import { REF_PROGRAMS, parseRefTile, type RefTile } from '../core/refdb'
+import type { ReferenceKind } from '../core/model'
 import type { KQSOPlatform } from '../platform/index'
 
 // VITE_REFS_URL (e.g. http://localhost:8099/) points a dev build at local tiles.
@@ -16,7 +17,27 @@ export const REFS_SETTINGS = {
   index: 'refsIndex', // last index.json, as fetched
   indexAt: 'refsIndexAt', // ms of the last successful index fetch
   tiles: 'refsTiles', // {"JO": {"updated": "2026-10-19", "count": 30752}} of the stored tiles
+  off: 'refsOff', // ["BOTA"]: programs not offered nearby (a program added later is on)
 } as const
+
+/** The programs offered in the nearby list (Settings → Offline references). */
+export async function programsOn(platform: KQSOPlatform): Promise<Set<ReferenceKind>> {
+  let off: unknown
+  try {
+    off = JSON.parse((await platform.getSetting(REFS_SETTINGS.off)) || '[]')
+  } catch {
+    off = []
+  }
+  const skip = new Set(Array.isArray(off) ? off : [])
+  return new Set(REF_PROGRAMS.filter((k) => !skip.has(k)))
+}
+
+export async function setProgramOn(platform: KQSOPlatform, kind: ReferenceKind, on: boolean): Promise<void> {
+  const now = await programsOn(platform)
+  if (on) now.add(kind)
+  else now.delete(kind)
+  await platform.setSetting(REFS_SETTINGS.off, JSON.stringify(REF_PROGRAMS.filter((k) => !now.has(k))))
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000
 

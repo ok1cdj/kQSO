@@ -10,7 +10,7 @@
 <main class="manual" data-lang="cs">
 <p class="manual-lang"><a href="en.html">English</a></p>
 <h1>kQSO — návod</h1>
-<p class="muted">Deník pro radioamatéry: aktivace SOTA/POTA/WWFF/GMA/TOTA, VKV závody, satelity i běžný provoz. Pro web, Android a iOS. Rychlý tahák k zápisu spojení je v aplikaci pod <b>?</b> (Jak zadávat spojení); tady je všechno podrobně a s obrázky.</p>
+<p class="muted">Deník pro radioamatéry: aktivace SOTA/POTA/WWFF/GMA/TOTA/BOTA, VKV závody, satelity i běžný provoz. Pro web, Android a iOS. Rychlý tahák k zápisu spojení je v aplikaci pod <b>?</b> (Jak zadávat spojení); tady je všechno podrobně a s obrázky.</p>
 <p class="note">Začínáš? Projdi si <a href="start-cs.html"><b>První kroky</b></a>: VKV závod a SOTA aktivace krok za krokem.</p>
 
 <nav class="manual-toc">
@@ -42,7 +42,7 @@
 <h2 id="logs">2. Logy a profily</h2>
 <p><b>+ Nový log</b> založí log. Vyplň název, svou volačku a lokátor (tlačítko se zaměřovačem ho vyplní z polohy), počáteční pásmo a mód. Volačka a lokátor se pamatují pro příští log. Hlavní volba je <b>profil</b>, který určuje, co se předává a jak se log exportuje:</p>
 <ul>
-<li><b>Aktivace</b> (SOTA, GMA, POTA, WWFF, TOTA): reporty a reference. Do <b>Moje reference</b> napiš jednu nebo víc referencí oddělených mezerou, např. <code>OK/ZC-001 CZ-0123</code>. Tlačítko polohy nabídne nejbližší reference do 25 km, klepnutím se přidají.</li>
+<li><b>Aktivace</b> (SOTA, GMA, POTA, WWFF, TOTA, BOTA): reporty a reference. Do <b>Moje reference</b> napiš jednu nebo víc referencí oddělených mezerou, např. <code>OK/ZC-001 CZ-0123</code>; parků POTA a bunkrů BOTA může být víc. Tlačítko polohy nabídne nejbližší reference do 25 km (jen programy vybrané v Nastavení → Reference offline), klepnutím se přidají.</li>
 <li><b>Obecný:</b> běžný provoz, navíc jméno protistanice.</li>
 <li><b>VKV závod:</b> pořadová čísla, lokátory, body za km, export EDI. Volíš závod (IARU R1, <a href="https://vkvpa.hamradio.cz/">VKV PA</a>, <a href="https://fmpohar.nagano.cz/">FM pohár</a>) a účast (celý závod nebo 6 hodin). Lokátor je povinný, 6 znaků.</li>
 <li><b>Satelit:</b> co přelet, to log. Družice nastaví uplink a downlink.</li>
@@ -204,8 +204,9 @@
 <tr><td>POTA</td><td><code>CZ/0123</code>, <code>US/10000</code></td></tr>
 <tr><td>WWFF</td><td><code>OKFF/0001</code></td></tr>
 <tr><td>TOTA (rozhledny)</td><td><code>OKR/1001</code></td></tr>
+<tr><td>BOTA (bunkry)</td><td><code>B/OK/0123</code></td></tr>
 </table>
-<p>U jednoho spojení je jedna reference protistanice; napsaná znovu nahradí předchozí. V ADIF jde SOTA do <code>SOTA_REF</code>, POTA do <code>POTA_REF</code>, WWFF, GMA a TOTA do <code>SIG</code> / <code>SIG_INFO</code>, takže S2S po nahrání na sotadata.org.uk sedí.</p>
+<p>U jednoho spojení je jedna reference protistanice; napsaná znovu nahradí předchozí. V ADIF jde SOTA do <code>SOTA_REF</code>, POTA do <code>POTA_REF</code>, WWFF, GMA a TOTA do <code>SIG</code> / <code>SIG_INFO</code>, BOTA jako <code>SIG</code> <code>WWBOTA</code> (tak ho chce wwbota.net, i <code>MY_SIG</code> u tvých bunkrů, víc oddělených čárkou), takže S2S po nahrání na sotadata.org.uk sedí.</p>
 <figure class="crop"><img src="img/cs/logging-s2s.webp" alt="S2S spojení" width="390" height="170" loading="lazy"><figcaption><code>OK1ABC/P 55 T57 OK/ZC/001</code>: přijato 55, odesláno 57, protistanice na vrcholu OK/ZC-001.</figcaption></figure>
 <figure class="phone"><img src="img/cs/logging-activation.webp" alt="Aktivace" width="390" height="844" loading="lazy"><figcaption>Aktivace OE/SB-257, 26 spojení na 40, 20 a 10 m.</figcaption></figure>
 <p>Má-li aktivace víc vlastních referencí (vrchol + park), <b>export</b> nabídne celý ADIF a k tomu soubor pro každou referenci zvlášť, jak je chce nahrát každý program.</p>
@@ -237,7 +238,7 @@
 <tr><td><b>Obecný</b></td><td>bez přibalené sady, jen tvoje stanice.</td></tr>
 </table>
 <p>Tvoje vlastní spojení se do databáze zapisují ve všech logech; když stanici uděláš na novém pásmu VKV, přibude jí to pásmo do QRV.</p>
-<p><b>Reference offline</b>: seznamy SOTA, POTA, WWFF, GMA a TOTA pro nabídku referencí v okolí. Okolí se stáhne samo, když je síť; před výletem si stáhni oblast (pole <code>JN</code> nebo lokátor <code>JN69</code>).</p>
+<p><b>Reference offline</b>: seznamy SOTA, POTA, WWFF, GMA, TOTA a BOTA (bunkry z <a href="https://wwbota.net/">WWBOTA</a>, u nás <a href="http://www.okbota.cz/">OKBOTA</a>) pro nabídku referencí v okolí. Které programy se v okolí nabízejí, vybereš tamtéž; napsat jde reference každého. Okolí se stáhne samo, když je síť; před výletem si stáhni oblast (pole <code>JN</code> nebo lokátor <code>JN69</code>).</p>
 <div class="figs">
 <figure class="crop"><img src="img/cs/settings-calldb.webp" alt="Databáze značek" width="374" height="275" loading="lazy"><figcaption>Databáze značek.</figcaption></figure>
 <figure class="crop"><img src="img/cs/settings-refs.webp" alt="Reference offline" width="374" height="320" loading="lazy"><figcaption>Reference offline.</figcaption></figure>

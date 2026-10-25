@@ -34,6 +34,22 @@ describe('reference detection', () => {
     expect(matchReference('US/10000')).toEqual({ kind: 'POTA', value: 'US-10000' })
   })
 
+  it('BOTA — three parts with B first (no SOTA association is B)', () => {
+    expect(matchReference('B/OK/0123')).toEqual({ kind: 'BOTA', value: 'B/OK-0123' })
+    expect(matchReference('B/G/1524')).toEqual({ kind: 'BOTA', value: 'B/G-1524' })
+    expect(matchReference('B/9A/0001')).toEqual({ kind: 'BOTA', value: 'B/9A-0001' })
+    expect(parseReferenceInput('b/ok-0123')).toEqual({ kind: 'BOTA', value: 'B/OK-0123' })
+    expect(matchReference('OK/ZC/001')).toEqual({ kind: 'SOTA', value: 'OK/ZC-001' })
+  })
+  it('several bunkers in one log, as POTA parks', () => {
+    expect(parseMyRefsInput('B/OK-0001 B/OK/0002')).toEqual({
+      ok: true,
+      refs: [
+        { kind: 'BOTA', value: 'B/OK-0001' },
+        { kind: 'BOTA', value: 'B/OK-0002' },
+      ],
+    })
+  })
   it('TOTA — prefix of 3+ chars ending with R', () => {
     expect(matchReference('OKR/1001')).toEqual({ kind: 'TOTA', value: 'OKR-1001' })
     expect(matchReference('GBR/0012')).toEqual({ kind: 'TOTA', value: 'GBR-0012' })

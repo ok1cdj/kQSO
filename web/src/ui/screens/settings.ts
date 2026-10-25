@@ -28,7 +28,8 @@ import { RIG_SETTINGS } from '../rig'
 import type { RigController } from '../rig'
 import { UPDATE_SETTINGS, checksUpdates } from '../update'
 import { fieldsAround, parseField } from '../../core/refdb'
-import { REFS_URL, downloadTile, removeTile, storedTiles } from '../refsync'
+import { REFS_URL, downloadTile, programsOn, removeTile, setProgramOn, storedTiles } from '../refsync'
+import { REF_PROGRAMS } from '../../core/refdb'
 
 export interface SettingsNav {
   back(): void
@@ -358,8 +359,24 @@ export class SettingsScreen implements Screen {
     a.rel = 'noopener'
     sources.append(a)
 
+    // The programs offered nearby in New log (typing a reference recognises all of them).
+    const programs = el('div', 'segmented segmented--wrap')
+    const paintPrograms = async (): Promise<void> => {
+      const on = await programsOn(this.platform)
+      programs.replaceChildren(
+        ...REF_PROGRAMS.map((k) => {
+          const b = button(k, () => void setProgramOn(this.platform, k, !on.has(k)).then(paintPrograms), 'btn btn--small')
+          b.setAttribute('aria-pressed', String(on.has(k)))
+          return b
+        }),
+      )
+    }
+    await paintPrograms()
+    const programsRow = el('div', 'setting')
+    programsRow.append(el('span', 'field-label', t('settings.refsPrograms')), programs)
+
     await showList()
-    return this.fold('refs', t('settings.refs'), state, el('div', undefined, t('settings.refsAbout')), list, area.row, actions, status, sources)
+    return this.fold('refs', t('settings.refs'), state, el('div', undefined, t('settings.refsAbout')), programsRow, list, area.row, actions, status, sources)
   }
 
   /**

@@ -10,7 +10,7 @@
 <main class="manual" data-lang="en">
 <p class="manual-lang"><a href="cs.html">Česky</a></p>
 <h1>kQSO — manual</h1>
-<p class="muted">A ham radio log for SOTA/POTA/WWFF/GMA/TOTA activations, VHF contests, satellites and everyday operating, on the web, Android and iOS. The quick reference for entering QSOs is in the app under <b>?</b> (How to log); this is the whole story, with pictures.</p>
+<p class="muted">A ham radio log for SOTA/POTA/WWFF/GMA/TOTA/BOTA activations, VHF contests, satellites and everyday operating, on the web, Android and iOS. The quick reference for entering QSOs is in the app under <b>?</b> (How to log); this is the whole story, with pictures.</p>
 <p class="note">New to kQSO? Go through the <a href="start-en.html"><b>First steps</b></a>: a VHF contest and a SOTA activation, step by step.</p>
 
 <nav class="manual-toc">
@@ -42,7 +42,7 @@
 <h2 id="logs">2. Logs and profiles</h2>
 <p><b>+ New log</b> creates a log. Fill in the name, your callsign and locator (the crosshair button fills it from your position), the starting band and mode. The callsign and locator are remembered for the next log. The main choice is the <b>profile</b>, which decides what is exchanged and how the log is exported:</p>
 <ul>
-<li><b>Activation</b> (SOTA, GMA, POTA, WWFF, TOTA): reports and references. Type one or more references, separated by spaces, into <b>My reference</b>, e.g. <code>OK/ZC-001 CZ-0123</code>. The locate button offers the nearest references within 25 km; tap to add.</li>
+<li><b>Activation</b> (SOTA, GMA, POTA, WWFF, TOTA, BOTA): reports and references. Type one or more references, separated by spaces, into <b>My reference</b>, e.g. <code>OK/ZC-001 CZ-0123</code>; POTA parks and BOTA bunkers can be several. The locate button offers the nearest references within 25 km (only the programs chosen in Settings → Offline references); tap to add.</li>
 <li><b>General:</b> everyday operating, plus the other station's name.</li>
 <li><b>VHF contest:</b> serial numbers, locators, points per km, EDI export. You choose the contest (IARU R1, <a href="https://vkvpa.hamradio.cz/">VKV PA</a>, <a href="https://fmpohar.nagano.cz/">FM pohár</a>) and the entry (whole contest or 6 hours). The locator is required, 6 characters.</li>
 <li><b>Satellite:</b> one log per pass. The satellite sets the uplink and downlink.</li>
@@ -204,8 +204,9 @@
 <tr><td>POTA</td><td><code>CZ/0123</code>, <code>US/10000</code></td></tr>
 <tr><td>WWFF</td><td><code>OKFF/0001</code></td></tr>
 <tr><td>TOTA (lookout towers)</td><td><code>OKR/1001</code></td></tr>
+<tr><td>BOTA (bunkers)</td><td><code>B/OK/0123</code></td></tr>
 </table>
-<p>A QSO has one reference of the other station; typing another replaces it. In the ADIF, SOTA goes to <code>SOTA_REF</code>, POTA to <code>POTA_REF</code>, WWFF, GMA and TOTA to <code>SIG</code> / <code>SIG_INFO</code>, so an S2S is counted after the upload to sotadata.org.uk.</p>
+<p>A QSO has one reference of the other station; typing another replaces it. In the ADIF, SOTA goes to <code>SOTA_REF</code>, POTA to <code>POTA_REF</code>, WWFF, GMA and TOTA to <code>SIG</code> / <code>SIG_INFO</code>, BOTA with <code>SIG</code> <code>WWBOTA</code> (as wwbota.net asks, also <code>MY_SIG</code> for your bunkers, several comma-separated), so an S2S is counted after the upload to sotadata.org.uk.</p>
 <figure class="crop"><img src="img/en/logging-s2s.webp" alt="S2S QSO" width="390" height="170" loading="lazy"><figcaption><code>OK1ABC/P 55 T57 OK/ZC/001</code>: received 55, sent 57, the other station on summit OK/ZC-001.</figcaption></figure>
 <figure class="phone"><img src="img/en/logging-activation.webp" alt="Activation" width="390" height="844" loading="lazy"><figcaption>Activation of OE/SB-257, 26 QSOs on 40, 20 and 10 m.</figcaption></figure>
 <p>When an activation has several own references (a summit + a park), <b>export</b> offers the whole ADIF plus one file per reference, as each program wants its own upload.</p>
@@ -237,7 +238,7 @@
 <tr><td><b>General</b></td><td>no bundled set, only your own stations.</td></tr>
 </table>
 <p>Your own QSOs go into the database from every log; working a station on a new VHF band adds that band to its QRV.</p>
-<p><b>Offline references</b>: the SOTA, POTA, WWFF, GMA and TOTA lists for the nearby references offer. The area around you downloads by itself when online; before a trip download an area (field <code>JN</code> or locator <code>JN69</code>).</p>
+<p><b>Offline references</b>: the SOTA, POTA, WWFF, GMA, TOTA and BOTA lists (bunkers from <a href="https://wwbota.net/">WWBOTA</a>) for the nearby references offer. Choose there which programs are offered nearby; a reference of any program can always be typed. The area around you downloads by itself when online; before a trip download an area (field <code>JN</code> or locator <code>JN69</code>).</p>
 <div class="figs">
 <figure class="crop"><img src="img/en/settings-calldb.webp" alt="Callsign database" width="374" height="274" loading="lazy"><figcaption>Callsign database.</figcaption></figure>
 <figure class="crop"><img src="img/en/settings-refs.webp" alt="Offline references" width="374" height="342" loading="lazy"><figcaption>Offline references.</figcaption></figure>

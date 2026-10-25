@@ -23,14 +23,14 @@ import {
   satelliteSignal,
 } from '../../core/index'
 import type { ContestKind, LogMeta, MyRefsResult, ProfileId } from '../../core/index'
-import { fieldsAround, nearestRefs } from '../../core/refdb'
+import { REF_PROGRAMS, fieldsAround, nearestRefs } from '../../core/refdb'
 import type { GeoPosition, KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
 import { el, button, fieldError, fieldRow, selectRow, strokeIcon, tilePicker } from '../dom'
 import type { Tile } from '../dom'
 import { lang, t } from '../i18n'
 import { categoryPicker } from '../contest-category'
-import { ensureTiles } from '../refsync'
+import { ensureTiles, programsOn } from '../refsync'
 import { trackEvent } from '../stats'
 
 export interface NewLogNav {
@@ -274,8 +274,9 @@ export class NewLogScreen implements Screen {
     inline.after(note)
   }
 
-  /** The nearest references of every program; a tap adds one to My reference or takes it
-   *  out again (another summit, WWFF area or tower replaces the one there — parks add up).
+  /** The nearest references of the chosen programs; a tap adds one to My reference or takes
+   *  it out again (another summit, WWFF area or tower replaces the one there — parks and
+   *  bunkers add up).
    *  Tiles come from the device, or are downloaded for the field around the position. */
   private async showNearby(box: HTMLElement, p: GeoPosition, input: HTMLInputElement): Promise<void> {
     const seq = ++this.nearSeq
@@ -284,8 +285,10 @@ export class NewLogScreen implements Screen {
     const fields = fieldsAround(p.lat, p.lon, NEAR_KM)
     // Storage can fail (full): say the area isn't there rather than search for ever.
     const { tiles, missing } = await ensureTiles(this.platform, fields).catch(() => ({ tiles: [], missing: fields }))
+    // Only the programs chosen in Settings → Offline references.
+    const kinds = await programsOn(this.platform)
     if (seq !== this.nearSeq) return
-    const refs = nearestRefs(tiles, p.lat, p.lon, { maxKm: NEAR_KM, perKind: NEAR_PER_KIND })
+    const refs = nearestRefs(tiles, p.lat, p.lon, { maxKm: NEAR_KM, perKind: NEAR_PER_KIND, kinds })
     // The field stays the one source: the list reads and edits its tokens.
     const tokens = (): string[] => input.value.toUpperCase().split(/[\s,;]+/).filter((s) => s !== '')
     const isRef = (token: string, value: string): boolean => parseReferenceInput(token)?.value === value
@@ -311,6 +314,7 @@ export class NewLogScreen implements Screen {
     if (missing.length > 0) notes.push(el('span', 'field-note', t('newlog.nearMissing', { fields: missing.join(', ') })))
     if (refs.length === 0 && missing.length === 0) notes.push(el('span', 'field-note', t('newlog.nearNone', { km: NEAR_KM })))
     if (refs.some((r) => r.kind === 'POTA' || r.kind === 'WWFF')) notes.push(el('span', 'field-note', t('newlog.nearParks')))
+    if (kinds.size < REF_PROGRAMS.length) notes.push(el('span', 'field-note', t('newlog.nearOnly', { kinds: [...kinds].join(', ') || '—' })))
     const sync = (): void => {
       if (seq !== this.nearSeq) return
       const toks = tokens()
