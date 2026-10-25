@@ -30,7 +30,7 @@ export function platformKind(): 'native' | 'opfs' | 'memory' {
   return opfsAvailable() ? 'opfs' : 'memory'
 }
 
-export type { KQSOPlatform, LogSummary, KeyerTransport, RigTransport, KeyerLinkState, GeoPosition, GeoFailure } from './types'
+export type { KQSOPlatform, LogSummary, KeyerTransport, RigTransport, KeyerLinkState, TcpTransport, TcpLinkState, GeoPosition, GeoFailure } from './types'
 export { MemoryPlatform } from './memory'
 export { inNativeShell } from './native'
 export { WebPlatform, opfsAvailable } from './web/opfs'

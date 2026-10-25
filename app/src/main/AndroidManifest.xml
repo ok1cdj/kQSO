@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!-- The app itself is local assets (offline); INTERNET is only for the optional
-         Wavelog push to the user's own instance. -->
+         Wavelog push to the user's own instance and the ON4KST chat (TCP to on4kst.org). -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- CW keyer over BLE (optional, asked only on the first Connect). Android 12+:

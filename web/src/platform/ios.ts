@@ -84,6 +84,9 @@ export function iosBridge(): NativeBridge | undefined {
     rigForget: send('rigForget'),
     rigWrite: send('rigWrite'),
     rigMtu: () => window.KQSOIos?.rigMtu ?? 20,
+    tcpConnect: send('tcpConnect'),
+    tcpClose: send('tcpClose'),
+    tcpWrite: send('tcpWrite'),
     position: call<GeoPosition>('position'),
   }
 }

@@ -36,6 +36,8 @@ describe('matchShortcut', () => {
     expect(matchShortcut(alt('KeyM'))).toEqual({ type: 'mode' })
     expect(matchShortcut(alt('KeyL'))).toEqual({ type: 'list' })
     expect(matchShortcut(alt('KeyQ'))).toEqual({ type: 'back' })
+    expect(matchShortcut(alt('KeyO'))).toEqual({ type: 'chat' })
+    expect(matchShortcut(alt('KeyG', '©'))).toEqual({ type: 'skedQrg' })
     expect(matchShortcut(alt('KeyZ'))).toBeUndefined()
   })
 

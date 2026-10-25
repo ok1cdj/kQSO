@@ -18,7 +18,7 @@
 <li><a href="#start">Začínáme</a></li>
 <li><a href="#logs">Logy a profily</a></li>
 <li><a href="#logging">Zápis spojení</a></li>
-<li><a href="#contest">VKV závod</a></li>
+<li><a href="#contest">VKV závod a ON4KST chat</a></li>
 <li><a href="#activation">Aktivace a satelity</a></li>
 <li><a href="#export">Export a Wavelog</a></li>
 <li><a href="#databases">Databáze značek a reference offline</a></li>
@@ -126,6 +126,9 @@
 <tr><td><code>D</code></td><td>smaže poslední zapsané spojení (nejdřív se zeptá)</td></tr>
 <tr><td><code>E</code></td><td>upraví poslední zapsané spojení</td></tr>
 <tr><td><code>H</code></td><td>nápověda</td></tr>
+<tr><td><code>O</code></td><td>otevře <a href="#chat">ON4KST chat</a> (log VKV závodu)</td></tr>
+<tr><td><code>G 144.290</code></td><td>QRG pro sked na pásmu; <code>G</code> ho ukáže, <code>G -</code> smaže</td></tr>
+<tr><td><code>@OK1ABC text</code></td><td>zpráva do chatu (spojení se nezapisuje)</td></tr>
 </table>
 <p><b>Esc</b> smaže rozepsaný řádek (třeba značku, kterou si jen ověřuješ v logu).</p>
 
@@ -145,7 +148,7 @@
 </ul>
 <figure class="phone"><img src="img/cs/logging-system-kbd.webp" alt="Systémová klávesnice" width="390" height="844" loading="lazy"><figcaption>Systémová klávesnice: řádek nahoře, poslední spojení pod ním.</figcaption></figure>
 
-<h2 id="contest">4. VKV závod</h2>
+<h2 id="contest">4. VKV závod a ON4KST chat</h2>
 <p>Log s profilem <b>VKV závod</b> počítá body (1 bod za km mezi středy lokátorů podle IARU R1; VKV PA a FM pohár po prstencích velkých čtverců), hlídá duplicity po pásmech a čísluje tvoje spojení. Další odesílané číslo je v hlavičce v rámečku; číslování je společné pro všechna pásma.</p>
 <p>V kategorii <b>6 hodin</b> (na 2 m, 70 cm, 6 m a 4 m) hlídá kQSO šestihodinové okno pro každé pásmo zvlášť:</p>
 <ul>
@@ -193,6 +196,42 @@
 <figure class="phone"><img src="img/cs/edi-band.webp" alt="EDI, pásmo" width="390" height="478" loading="lazy"><figcaption>Pásmo 435 MHz: výkon, anténa, vysílač, export.</figcaption></figure>
 </div>
 <p>ADIF z tlačítka <b>export</b> obsahuje všechna pásma najednou, třeba pro Wavelog.</p>
+
+<h3 id="chat">ON4KST chat</h3>
+<p>Na chatu <a href="https://www.on4kst.org/">ON4KST</a> se ve VKV závodech domlouvají skedy. kQSO ho má přímo v logu VKV závodu na pásmech od 6 m výš; místnost 50/70 MHz, 144/432 MHz nebo Mikrovlny vybere podle pásma logu. Potřebuješ vlastní účet ON4KST (jen pro radioamatéry s licencí); bez něj si chat vyzkoušíš se značkou <code>DEMO</code> (viz níže).</p>
+<ol>
+<li><b>Nastavení → ON4KST chat</b>: značka ON4KST (prázdná = značka logu), heslo a <b>Uložit a připojit</b>.</li>
+<li>Při prvním připojení ukáže kQSO pravidla chatu: chat provozuje ON4KST, urážlivý obsah se netoleruje, stanici jde ztlumit a zprávu nahlásit. <b>Souhlasím</b> připojí; podruhé se už neptá.</li>
+<li>V logu VKV závodu chat otevře bublina v hlavičce, <code>O</code> ⏎ nebo <kbd>Alt+O</kbd>. Po návratu do seznamu logů se chat odpojí.</li>
+</ol>
+<div class="figs">
+<figure class="crop"><img src="img/cs/settings-kst.webp" alt="Nastavení ON4KST chat" width="374" height="745" loading="lazy"><figcaption>Nastavení → ON4KST chat.</figcaption></figure>
+<figure class="crop"><img src="img/cs/chat-consent.webp" alt="Pravidla chatu" width="374" height="424" loading="lazy"><figcaption>Pravidla před prvním připojením.</figcaption></figure>
+</div>
+<p><b>Zprávy:</b> nejnovější dole; zprávy pro tebe jsou tučně s čárou vlevo a <b>Jen pro mě</b> ukáže jen je. Zprávy stanic, které už máš na pásmu logu, jsou šedé. Klepnutí na zprávu napíše do řádku dole <code>@ZNAČKA</code> odesílatele, stačí dopsat text a Enter. <code>@OK1ABC text</code> jde stanici, text bez <code>@</code> všem v místnosti. Řádek přijme i příkazy ON4KST tak, jak jsou: <code>/SETNAME Ondra 2/70/23</code> (jméno, často s pásmy), <code>/SETLOC JN79US</code>.</p>
+<p><b>Stanice:</b> lokátor, vzdálenost a azimut od lokátoru logu. Řadí se podle značky, km nebo azimutu; druhé klepnutí na stejné řazení ho obrátí (▲ / ▼). <b>Skrýt hotové</b> schová stanice, které už máš na pásmu logu, <b>Skrýt away</b> ty, které jsou pryč. Nově příchozí stanice je podtržená. Za azimutem jsou <b>pásma, na kterých je stanice QRV</b> (kromě pásma logu, přeškrtnutá už máš): kQSO je čte ze jména (<code>Bert 2/70/23</code>, <code>6&amp;2m</code>), ze zpráv stanice (<code>qrv 1296.150</code>, <code>no 23</code>) a ze skedů, které jí přišly, a přidá ta z databáze značek. Stejně je ukáže i seznam pod závodním panelem a štítek QRV při zápisu spojení. <b>Sked</b> napíše do řádku žádost o sked, <b>Log</b> se vrátí do logu se značkou a lokátorem na řádku. Na úzkém displeji se jména nezobrazují.</p>
+<div class="figs">
+<figure class="phone"><img src="img/cs/chat-messages.webp" alt="Zprávy" width="390" height="844" loading="lazy"><figcaption>Zprávy; poslední je pro mě.</figcaption></figure>
+<figure class="phone"><img src="img/cs/chat-stations.webp" alt="Stanice" width="390" height="844" loading="lazy"><figcaption>Stanice podle vzdálenosti.</figcaption></figure>
+</div>
+<p><b>Detail stanice:</b> <b>⋯</b> u stanice nebo dlouhý stisk stanice či zprávy. Ukáže údaje stanice, jestli ji máš na pásmu, její zprávy a rozhovor s tebou a tlačítka Napsat, Sked a Log. Dole, stranou od tlačítek pro závod, jsou:</p>
+<ul>
+<li><b>Ztlumit</b>: skryje stanici na tomto zařízení (v chatu, pod závodním panelem i v návrzích) a její zprávy pro tebe se nepočítají. Ztlumené stanice a zrušení ztlumení najdeš v Nastavení → ON4KST chat.</li>
+<li><b>Nahlásit</b>: otevře e-mail autorovi kQSO se stanicí a jejími zprávami (dlouze stisknutá zpráva první); zneužití předá ON4KST.</li>
+</ul>
+<figure class="phone"><img src="img/cs/chat-detail.webp" alt="Detail stanice" width="390" height="1100" loading="lazy"><figcaption>Detail stanice OL0M; Ztlumit a Nahlásit dole.</figcaption></figure>
+<p><b>Žádost o sked</b> se skládá ze šablony v Nastavení (výchozí <code>pse sked {QRG} {MODE}?</code>, k dispozici je i <code>{LOC}</code>). <code>{QRG}</code> je kmitočet z rádia, nebo <b>QRG pro sked</b>, které si nastavíš pro pásmo: v logu <code>G 144.290</code> ⏎. Může to být libovolný text, třeba <code>G 432.210 cw</code>; číslice bez tečky jsou kHz jako u <code>F</code>, takže na klávesnici kQSO stačí <code>G 144290</code>. <code>G</code> ⏎ nastavené QRG ukáže, <code>G -</code> ⏎ ho smaže a <kbd>Alt+G</kbd> dá na řádek <code>G</code> s aktuálním QRG k úpravě. kQSO si ho pamatuje pro každé pásmo.</p>
+<p><b>Chat v logu:</b> poslední zpráva pro tebe je pod hlavičkou, klepnutím na ni odpovíš. Psát jde přímo ze vstupního řádku logu: <code>@OL0M pse sked 144.290</code> ⏎. Náhled ukáže, komu zpráva jde (<b>→ OL0M</b>), a spojení se tím nezapisuje. Po <code>@OK1</code> nabídne lišta stanice z chatu.</p>
+<div class="figs">
+<figure class="crop"><img src="img/cs/chat-logging.webp" alt="Zpráva pod hlavičkou" width="390" height="110" loading="lazy"><figcaption>Zpráva pro mě pod hlavičkou.</figcaption></figure>
+<figure class="crop"><img src="img/cs/chat-line.webp" alt="Zpráva z řádku logu" width="390" height="170" loading="lazy"><figcaption><code>@OL0M …</code> jde do chatu.</figcaption></figure>
+<figure class="crop"><img src="img/cs/chat-g.webp" alt="QRG pro sked" width="390" height="170" loading="lazy"><figcaption><code>G 144.290 cw</code>: QRG pro sked na 2 m.</figcaption></figure>
+</div>
+<p><b>Aktivní stanice pod závodním panelem:</b> na tabletu nebo počítači na šířku ukáže kQSO pod závodním panelem stanice, které v chatu psaly posledních 30 minut, se stejným řazením a filtry jako seznam stanic v chatu. Klepnutí napíše <code>@ZNAČKA</code>, <b>S</b> žádost o sked.</p>
+<figure class="wide"><img src="img/cs/chat-tablet.webp" alt="Chat na tabletu" width="1280" height="800" loading="lazy"><figcaption>Tablet: zpráva pro mě pod hlavičkou, aktivní stanice pod závodním panelem.</figcaption></figure>
+<p><b>Lokátor:</b> QRB a azimut, které vidí ostatní, počítá ON4KST z lokátoru tvého účtu. Když se liší od lokátoru logu (portable), nabídne chat i seznam pod panelem <b>Nastavit JN89AB</b>, které pošle <code>/SETLOC</code>. Samo se nic neposílá.</p>
+<p><b>Aplikace a web:</b> aplikace pro Android a iOS se k ON4KST připojují přímo. Prohlížeč to neumí, proto webová verze jde přes relé kQSO, které data jen předává a nic neukládá. Protokol ON4KST posílá heslo nešifrovaně; uložené je jen v tvém zařízení.</p>
+<p><b>DEMO:</b> se značkou <code>DEMO</code> bez hesla se kQSO k on4kst.org nepřipojí, ale spustí simulovaný chat se stanicemi, zprávami, odpověďmi na <code>@ZNAČKA</code> i <code>/SETLOC</code>. Obrázky v této části jsou z něj. Potom v Nastavení zvol <b>Zapomenout účet</b> a zadej svůj.</p>
 
 <h2 id="activation">5. Aktivace a satelity</h2>
 <h3>Aktivace</h3>
@@ -280,6 +319,7 @@
 <tr><td><kbd>PgUp</kbd> / <kbd>PgDn</kbd></td><td>rychlost CW ±2 WPM</td></tr>
 <tr><td><kbd>Alt+R</kbd> <kbd>Alt+S</kbd> <kbd>Alt+C</kbd> <kbd>Alt+K</kbd></td><td>RUN / S&amp;P / připojit klíčovač / CW klávesnice</td></tr>
 <tr><td><kbd>Ctrl+M</kbd></td><td>ESM zapnout / vypnout</td></tr>
+<tr><td><kbd>Alt+O</kbd> / <kbd>Alt+G</kbd></td><td>ON4KST chat / QRG pro sked</td></tr>
 </table>
 
 <h2 id="settings">10. Nastavení</h2>
@@ -291,6 +331,7 @@
 <dt>Wavelog</dt><dd>Adresa, token, station profil; viz <a href="#export">Export a Wavelog</a>.</dd>
 <dt>Databáze značek, Reference offline</dt><dd>Viz <a href="#databases">Databáze značek</a>.</dd>
 <dt>Rádio – CI-V, Klíčovač M5</dt><dd>Viz <a href="#radio">Rádio a klíčovač</a>.</dd>
+<dt>ON4KST chat</dt><dd>Účet, žádost o sked, ztlumené stanice; viz <a href="#chat">ON4KST chat</a>.</dd>
 <dt>Úložiště</dt><dd>Kde jsou data a jestli jsou trvalá. Ve webové verzi zapne trvalé úložiště přidání na plochu a první QSO.</dd>
 <dt>Kontrolovat aktualizace / Anonymní statistiky</dt><dd>Android z GitHubu: jednou denně dotaz na novou verzi. Web: anonymní počty obrazovek a funkcí (nikdy obsah logu); obojí jde vypnout.</dd>
 <dt>O aplikaci</dt><dd>Verze, licence, odkazy, <b>Jak zadávat spojení</b>, <b>Návod</b> a <b>Co je nového</b>.</dd>
@@ -321,6 +362,10 @@
 <dd>kQSO je česky nebo anglicky podle jazyka systému (na webu prohlížeče). Samostatný přepínač v aplikaci není.</dd>
 <dt>Aplikace nevzala značku nebo lokátor.</dt>
 <dd>Podívej se na štítky pod řádkem: ukazují, co kQSO z textu poznalo. Lokátor se bere až po značce (ve VKV závodě celý lokátor kdykoli). Když něco nesedí, napiš prosím na <a href="https://github.com/ok1cdj/kQSO/issues">GitHub Issues</a>.</dd>
+<dt>Nemám účet ON4KST.</dt>
+<dd>Účty ON4KST jsou jen pro radioamatéry s licencí (registrace na <a href="https://www.on4kst.org/">on4kst.org</a>). Bez účtu si chat vyzkoušíš se značkou <code>DEMO</code>, viz <a href="#chat">ON4KST chat</a>.</dd>
+<dt>Chat se nepřipojí nebo ho v logu nevidím.</dt>
+<dd>Chat je jen v logu VKV závodu na pásmech od 6 m výš. Důvod, proč se nepřipojí (špatné heslo, chybí účet), ukáže stav v chatu i v Nastavení → ON4KST chat. Když spojení spadne, kQSO se připojí znovu samo.</dd>
 </dl>
 <footer class="manual-foot"><p>kQSO — autor <b>OK1CDJ</b> · licence <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0</a> · <a href="https://github.com/ok1cdj/kQSO">github.com/ok1cdj/kQSO</a></p></footer>
 </main>

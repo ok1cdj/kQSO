@@ -28,6 +28,7 @@ import {
   combineSources,
   dbDate,
   qrvLabels,
+  unionQrv,
   emptySuggestions,
   userHeader,
   isDupe,
@@ -43,11 +44,22 @@ import {
   sixHourStatus,
   scoringFor,
   ringPoints,
+  roomForBand,
+  baseCall,
+  chatTarget,
+  chatText,
+  expandSked,
+  kstStations,
+  locatorToSet,
+  matchSkedQrg,
+  isActive,
+  viewStations,
+  SKED_DEFAULT,
 } from '../../core/index'
 import type { CoreState, SuggestionSource, LogMeta, PartialQso, Qso, StickyState, KeyerCommand, MacroSlot, SixHourPhase } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
-import { el, button } from '../dom'
+import { el, button, strokeIcon } from '../dom'
 import { BUNDLED_DB_SETTING, bundledSource } from '../bundled-db'
 import { t } from '../i18n'
 import { alignColumns, allFit } from '../columns'
@@ -60,12 +72,16 @@ import { matchShortcut, nextMode } from '../shortcuts'
 import type { Shortcut } from '../shortcuts'
 import { ContestBoard } from '../contest-board'
 import type { RigController } from '../rig'
+import { KST_SETTINGS, notSentWhy } from '../kst'
+import type { KstController } from '../kst'
+import type { ChatContext } from './chat'
 
 export interface LoggingNav {
   toLogList(): void
   toQsoList(): void
   editQso(index: number): void
   toHelp(): void
+  toChat(ctx: ChatContext): void
 }
 
 const pad2 = (n: number): string => (n < 10 ? '0' + n : String(n))
@@ -95,6 +111,9 @@ const MACRO_BUTTONS: ReadonlyArray<readonly [MacroSlot, string | undefined]> = [
 ]
 // Hardware keyboard F5 F6 F7 F8 F11 F12 (shortcuts.ts F_KEYS) → these macros, as in Tučňák.
 const F_SLOTS: readonly MacroSlot[] = ['CQ', 'EXCH', 'TU', '?', 'MYCALL', 'INFO']
+// ON4KST chat: a line bubble for the header button; rows of the station list under the board.
+const CHAT_ICON = 'M4 5h16v11H10l-4 4v-4H4z'
+const CHAT_ROWS = 30 // rendered; CSS clips whatever doesn't fit under the board
 
 export class LoggingScreen implements Screen {
   private meta!: LogMeta
@@ -111,6 +130,14 @@ export class LoggingScreen implements Screen {
   private notice = '' // one-shot result of a line command (W/D), shown in the strip until the next key
 
   private readonly hdr = el('header', 'hdr')
+  // ON4KST: the last message to me, under the header until the next one (tap = answer).
+  private readonly chatEl = el('button', 'chatline')
+  private readonly topEl = el('div', 'logtop')
+  // Right column in the wide contest layout: the board, under it the chat's active stations.
+  private readonly sideEl = el('div', 'side')
+  private readonly stationsEl = el('div', 'kst-side')
+  private stationsKey = '' // what the station list shows (re-render on change only: e-ink)
+  private skedTemplate = SKED_DEFAULT
   private readonly inputEl = el('div', 'inputline')
   private readonly previewEl = el('div', 'preview')
   private readonly stripEl = el('div', 'strip')
@@ -138,6 +165,7 @@ export class LoggingScreen implements Screen {
     this.applyBoard()
   }
   private unsubscribeKeyer: (() => void) | undefined
+  private unsubscribeKst: (() => void) | undefined
   private unsubscribeRig: (() => void) | undefined
   private rigShown = '' // what the header last showed from the radio (re-render on change only: e-ink)
   private rigUp = false // the radio was driving this log at the last sync
@@ -151,8 +179,10 @@ export class LoggingScreen implements Screen {
     private readonly platform: KQSOPlatform,
     private readonly keyer: KeyerController,
     private readonly rig: RigController,
+    private readonly kst: KstController,
     private readonly logId: string,
     private readonly nav: LoggingNav,
+    private readonly initialLine = '', // typed in on open (the chat's "Log": call + locator)
   ) {}
 
   mount(root: HTMLElement): void {
@@ -160,7 +190,13 @@ export class LoggingScreen implements Screen {
     this.meta = DEFAULT_META
     this.state = initialState(DEFAULT_META)
     // Portrait band order: header · input · preview · strip · keyboard.
-    this.screenEl.replaceChildren(this.hdr, this.banner, this.inputEl, this.previewEl, this.stripEl, this.recentEl, this.board.el, this.kbEl, this.sysInput)
+    this.chatEl.type = 'button'
+    this.chatEl.hidden = true
+    this.chatEl.addEventListener('click', () => this.answerChat())
+    this.topEl.replaceChildren(this.hdr, this.chatEl)
+    this.sideEl.replaceChildren(this.board.el, this.stationsEl)
+    this.sideEl.hidden = true
+    this.screenEl.replaceChildren(this.topEl, this.banner, this.inputEl, this.previewEl, this.stripEl, this.recentEl, this.sideEl, this.kbEl, this.sysInput)
     this.applyKeyboard()
     root.replaceChildren(this.screenEl)
     window.addEventListener('keydown', this.onKeydown)
@@ -168,6 +204,7 @@ export class LoggingScreen implements Screen {
     WIDE.addEventListener('change', this.onWideChange)
     this.unsubscribeKeyer = this.keyer.subscribe(() => this.onKeyerChange())
     this.unsubscribeRig = this.rig.subscribe(() => this.onRigChange())
+    this.unsubscribeKst = this.kst.subscribe(() => this.onKstChange())
     void this.init()
   }
 
@@ -177,6 +214,7 @@ export class LoggingScreen implements Screen {
     WIDE.removeEventListener('change', this.onWideChange)
     this.unsubscribeKeyer?.()
     this.unsubscribeRig?.()
+    this.unsubscribeKst?.()
     this.exitTx()
     this.recentResize?.disconnect()
     clearInterval(this.sixHTimer)
@@ -205,6 +243,11 @@ export class LoggingScreen implements Screen {
       this.satLabel = sat.label
       // Linear birds keep the last QSO's mode (SSB / CW); SSB for a new log.
       this.state = { ...this.state, sticky: applySatellite(this.state.sticky, sat, qsos.length > 0 ? this.state.sticky.mode : 'SSB') }
+    }
+    this.skedTemplate = (await this.platform.getSetting(KST_SETTINGS.sked)) || SKED_DEFAULT
+    if (this.initialLine) {
+      this.stampFirstKeystroke()
+      this.line = this.initialLine
     }
     this.loaded = true
     this.applyBoard()
@@ -253,20 +296,26 @@ export class LoggingScreen implements Screen {
     this.screenEl.classList.toggle('screen--board', shown)
     if (shown === !this.board.el.hidden) return
     this.board.el.hidden = !shown
+    this.sideEl.hidden = !shown
     clearInterval(this.boardTimer)
     this.boardTimer = undefined
     if (!shown) return
     this.updateBoard()
     // First tick on the next whole period (e-ink: the minute), so the clock doesn't lag up to a minute.
     const ms = this.board.tickMs
-    this.boardTimer = setTimeout(() => {
+    const tick = (): void => {
       this.board.tick(new Date())
-      this.boardTimer = setInterval(() => this.board.tick(new Date()), ms)
+      this.renderStations() // "active" ages out with time
+    }
+    this.boardTimer = setTimeout(() => {
+      tick()
+      this.boardTimer = setInterval(tick, ms)
     }, ms - (Date.now() % ms))
   }
 
   private updateBoard(): void {
     if (!this.board.el.hidden) this.board.update(this.qsos, this.state.sticky.band, this.meta.myGrid, scoringFor(this.meta.category), pad3(this.qsos.length + 1))
+    this.renderStations()
   }
 
   /** The hidden <input> that brings up the system keyboard; a tap on the input line focuses it. */
@@ -300,9 +349,15 @@ export class LoggingScreen implements Screen {
     while (p < now.length && p < was.length && now[p] === was[p]) p++
     const actions: KeyAction[] = []
     for (let n = was.length - p; n > 0; n--) actions.push({ type: 'backspace' })
+    // A chat line (@CALL text) and G + QRG take any text as typed; '@' starts one on an empty line.
+    let chat = this.isFreeLine(this.line.slice(0, Math.max(0, this.line.length - (was.length - p))))
+    let empty = this.line.length - (was.length - p) <= 0
     for (const ch of now.slice(p)) {
       if (ch === SENTINEL) continue
-      if (ch === ' ') actions.push({ type: 'space' })
+      if (ch === '@' && empty && this.chatOn()) chat = true
+      empty = false
+      if (chat && ch !== ' ' && ch !== '\n' && ch >= ' ') actions.push({ type: 'char', value: ch })
+      else if (ch === ' ') actions.push({ type: 'space' })
       else if (ch === '\n') actions.push({ type: 'enter' })
       else if (/^[A-Za-z0-9/]$/.test(ch)) actions.push({ type: 'char', value: ch.toUpperCase() })
       else if (this.txMode && /^[?.,=+-]$/.test(ch)) actions.push({ type: 'char', value: ch })
@@ -325,7 +380,12 @@ export class LoggingScreen implements Screen {
     const k = e.key
     // Shortcuts first (also in the system keyboard's input); one that doesn't apply now
     // lets the key through (F5 without the keyer still reloads).
-    const sc = matchShortcut(e)
+    // A chat line takes what macOS Option types ('@' is Option+L on a German Mac) — that is
+    // another character than the key's letter; Alt+letter elsewhere stays a shortcut.
+    const optionChar =
+      e.altKey && !e.ctrlKey && !e.metaKey && k.length === 1 && e.code.startsWith('Key') && k.toLowerCase() !== e.code.slice(3).toLowerCase()
+    const chatTyping = optionChar && (this.isChatLine() || (k === '@' && this.line === '' && this.chatOn()))
+    const sc = chatTyping ? undefined : matchShortcut(e)
     if (sc && this.runShortcut(sc)) {
       e.preventDefault()
       return
@@ -352,6 +412,10 @@ export class LoggingScreen implements Screen {
       this.clearLine()
       return
     }
+    // A chat line (@CALL text) takes any character as typed; '@' starts one on an empty line.
+    // AltGr (Ctrl+Alt on Windows: '@' on a Czech keyboard) and macOS Option still type.
+    const chatChar = k.length === 1 && (this.isFreeLine() || (k === '@' && this.line === '' && this.chatOn()))
+    if (chatChar && ((!e.ctrlKey && !e.metaKey) || e.getModifierState('AltGraph'))) return this.handled(e, { type: 'char', value: k })
     // Alt / Ctrl / Cmd + a key that is no shortcut here: not typing, leave it to the browser.
     if (e.altKey || e.ctrlKey || e.metaKey) return
     // Keyboard mode also takes the keyer's punctuation from a hardware keyboard.
@@ -428,6 +492,17 @@ export class LoggingScreen implements Screen {
         if (!this.keyerOn()) return false
         void this.runKeyerCommand({ type: 'esm' }, true).then(() => this.renderAll())
         return true
+      case 'chat':
+        if (!this.chatOn()) return false
+        this.openChat()
+        return true
+      case 'skedQrg':
+        if (!this.chatOn()) return false
+        // An empty line: G with the current QRG, ready to change; else just say what it is.
+        if (this.line.trim() === '') this.line = `G ${this.kst.skedQrg(this.state.sticky.band)}`.trimEnd() + ' '
+        else this.notice = this.skedQrgNow()
+        this.renderAll()
+        return true
     }
   }
 
@@ -479,11 +554,12 @@ export class LoggingScreen implements Screen {
     if (a.type !== 'enter') this.notice = ''
     switch (a.type) {
       case 'char':
-        this.stampFirstKeystroke()
+        // A chat line is no QSO: no QSO time.
+        if (!this.isChatLine() && !(a.value === '@' && this.line === '')) this.stampFirstKeystroke()
         this.line += a.value
         break
       case 'space':
-        this.stampFirstKeystroke()
+        if (!this.isChatLine()) this.stampFirstKeystroke()
         this.line += ' '
         break
       case 'backspace':
@@ -504,6 +580,28 @@ export class LoggingScreen implements Screen {
 
   /** Enter. `esm` false: no ESM macro for it (Ctrl+Enter's first step). */
   private async commit(esm = true): Promise<void> {
+    // @CALL text: goes to the ON4KST chat, nothing into the QSO.
+    if (this.isChatLine()) {
+      this.sendChat()
+      return
+    }
+    // O ⏎: the chat (only where there is one — else O stays input).
+    if (this.chatOn() && this.line.trim().toUpperCase() === 'O') {
+      this.line = ''
+      if (!hasContent(this.state.partial)) this.state = { ...this.state, partial: {}, hasStarted: false }
+      this.openChat()
+      return
+    }
+    // G 144.300 ⏎: the band's sked QRG for {QRG}; G ⏎ shows it, G - ⏎ clears it.
+    const qrg = this.chatOn() ? matchSkedQrg(this.line) : undefined
+    if (qrg !== undefined) {
+      if (qrg) this.kst.setSkedQrg(this.state.sticky.band, qrg === '-' ? '' : qrg)
+      this.line = ''
+      if (!hasContent(this.state.partial)) this.state = { ...this.state, partial: {}, hasStarted: false }
+      this.notice = this.skedQrgNow()
+      this.renderAll()
+      return
+    }
     // F28300: tune the radio (only with the radio switched on — else F… is just input).
     const hz = this.rig.enabled ? matchTuneCommand(this.line) : undefined
     if (hz !== undefined) {
@@ -901,6 +999,10 @@ export class LoggingScreen implements Screen {
     // and the preview both show what will actually be saved.
     const dry = parseLine(this.line, this.state.sticky, this.lineState().partial, PROFILES[this.meta.profile])
     if (PROFILES[this.meta.profile].contest && this.state.sticky.band !== this.recentBand) this.renderRecent()
+    // The chat follows the log's band (another room reconnects).
+    const room = this.chatOn() ? roomForBand(this.state.sticky.band) : undefined
+    if (room && this.kst.wanted) this.kst.setRoom(room)
+    this.renderChatLine()
     this.renderHeader(dry.partial)
     this.renderLine(dry.sticky)
     this.renderPreview(dry)
@@ -962,6 +1064,7 @@ export class LoggingScreen implements Screen {
     this.hdr.replaceChildren(
       this.navLogsButton(),
       mid,
+      ...(this.chatOn() ? [this.chatButton()] : []),
       button('?', () => this.nav.toHelp(), 'hdr-nav'),
       button(`QSO ${this.qsos.length} ›`, () => this.nav.toQsoList(), 'hdr-nav'),
     )
@@ -990,6 +1093,11 @@ export class LoggingScreen implements Screen {
       return
     }
     this.inputEl.replaceChildren(document.createTextNode(this.line), el('span', 'cursor'))
+    this.inputEl.classList.toggle('inputline--chat', this.isChatLine())
+    if (this.isChatLine()) {
+      this.inputEl.classList.remove('inputline--dupe')
+      return
+    }
     // DUPE: invert the input line. Satellite dupe keys on call + SAT_NAME
     // (a station can be re-worked on another bird); VHF contest call + band; otherwise call + band + mode.
     const call = this.effectiveCall()
@@ -1022,6 +1130,28 @@ export class LoggingScreen implements Screen {
     if (kc) {
       const { what, bad } = this.keyerCommandPreview(kc)
       this.previewEl.replaceChildren(fieldChip(kc.type === 'text' ? 'K' : this.line.trim(), what, bad))
+      return
+    }
+    // @CALL text: where the chat message goes, and whether it can go now.
+    if (this.isChatLine()) {
+      const to = chatTarget(this.line)
+      const on = this.kst.link === 'on'
+      const text = chatText(this.line) !== undefined
+      const where = to ? `→ ${to}` : t('kst.public')
+      this.previewEl.replaceChildren(
+        fieldChip('KST', !on ? t('kst.notSent') : text ? where : `${where} · ${t('kst.noText')}`, !on || !text),
+      )
+      return
+    }
+    if (this.chatOn() && this.line.trim().toUpperCase() === 'O') {
+      this.previewEl.replaceChildren(fieldChip('O', t('kst.cmdOpen')))
+      return
+    }
+    const qrg = this.chatOn() ? matchSkedQrg(this.line) : undefined
+    if (qrg !== undefined) {
+      const band = this.state.sticky.band
+      const what = !qrg ? this.skedQrgNow() : qrg === '-' ? t('kst.skedQrgClear', { band }) : t('kst.skedQrgSet', { band, qrg })
+      this.previewEl.replaceChildren(fieldChip('G', what))
       return
     }
     // A lone W/D: show what Enter will do instead of parsing it (W would be a name).
@@ -1089,18 +1219,28 @@ export class LoggingScreen implements Screen {
     return chips
   }
 
-  /** VHF contest: the other bands the database knows the call on (as Tučňák shows them);
-   *  `band` is the QSO's, a band typed on this line included. Bands already worked are struck out. */
+  /** VHF contest: the other bands the database and the ON4KST chat know the call on (as
+   *  Tučňák shows them); `band` is the QSO's, a band typed on this line included. Bands
+   *  already worked are struck out. */
   private qrvChip(call: string, band: string): HTMLElement[] {
-    const bands = qrvLabels(this.db.lookup(call)?.qrv, band)
-    if (bands.length === 0) return []
+    const labels = this.qrvLabelsEl(call, band)
+    if (!labels) return []
     const chip = el('span', 'tok')
-    bands.forEach(({ band: b, label }, i) => {
-      if (i > 0) chip.append(' ')
-      chip.append(isDupe(this.qsos, call, b, this.dupeMode()) ? el('s', undefined, label) : label)
-    })
-    chip.append(el('small', undefined, 'QRV'))
+    chip.append(...labels.childNodes, el('small', undefined, 'QRV'))
     return [chip]
+  }
+
+  /** The call's QRV bands except `band` ("2 70 ~~23~~", worked ones struck out), or undefined. */
+  private qrvLabelsEl(call: string, band: string): HTMLElement | undefined {
+    const qrv = unionQrv(this.db.lookup(call)?.qrv, this.chatOn() ? this.kst.qrvOf(call) : undefined)
+    const bands = qrvLabels(qrv, band)
+    if (bands.length === 0) return undefined
+    const span = el('span', 'qrv')
+    bands.forEach(({ band: b, label }, i) => {
+      if (i > 0) span.append(' ')
+      span.append(isDupe(this.qsos, call, b, this.dupeMode()) ? el('s', undefined, label) : label)
+    })
+    return span
   }
 
   /** The call's locator in this log (the latest QSO with one), if worked already. */
@@ -1187,6 +1327,13 @@ export class LoggingScreen implements Screen {
       return
     }
     const frag = this.line.trim()
+    // @OK1… → the chat's stations with that start; a tap addresses one.
+    if (this.isChatLine()) {
+      const start = chatTarget(this.line) ?? ''
+      const hits = !frag.includes(' ') && start.length >= 1 ? [...this.kst.chat.users.keys()].filter((c) => c.startsWith(start) && !this.kst.isMuted(c)).slice(0, 3) : []
+      this.stripEl.replaceChildren(...stop, ...hits.map((c) => this.suggestButton(c, () => this.addressChat(c))))
+      return
+    }
     // ≥2 chars → callsign suggestions from history.
     if (frag.length >= 2) {
       const hits = this.db.search(frag, 3)
@@ -1291,6 +1438,138 @@ export class LoggingScreen implements Screen {
     this.stampFirstKeystroke()
     this.line = call
     this.renderAll()
+  }
+
+  // --- ON4KST chat ------------------------------------------------------------
+
+  /** The chat is offered: a VHF contest on a band with a chat room, and a way to connect. */
+  private chatOn(): boolean {
+    return this.kst.available && this.loaded && PROFILES[this.meta.profile].contest && roomForBand(this.state.sticky.band) !== undefined
+  }
+
+  private isChatLine(): boolean {
+    return this.line.startsWith('@')
+  }
+
+  /** Text typed as is (a dot, lower case): a chat line, or G + the sked QRG. */
+  private isFreeLine(line = this.line): boolean {
+    return line.startsWith('@') || (this.chatOn() && /^g\s/i.test(line))
+  }
+
+  private openChat(): void {
+    const s = this.state.sticky
+    this.nav.toChat({ band: s.band, mode: s.mode, freqMHz: s.freq })
+  }
+
+  /** The header's bubble: the number of messages to me not read yet; dashed while not connected. */
+  private chatButton(): HTMLButtonElement {
+    const k = this.kst
+    const b = button('', () => this.openChat(), k.link === 'on' ? 'hdr-nav hdr-chat' : 'hdr-nav hdr-chat hdr-chat--off')
+    b.title = t('kst.title')
+    b.append(strokeIcon(CHAT_ICON, 'icon'))
+    if (k.unread > 0) b.append(el('b', undefined, String(k.unread)))
+    return b
+  }
+
+  private onKstChange(): void {
+    if (!this.loaded) return
+    this.renderHeader(parseLine(this.line, this.state.sticky, this.lineState().partial, PROFILES[this.meta.profile]).partial)
+    this.renderChatLine()
+    this.renderStations()
+    if (this.isChatLine()) {
+      this.renderPreview(parseLine(this.line, this.state.sticky, this.lineState().partial, PROFILES[this.meta.profile]))
+    }
+  }
+
+  /** The last message to me under the header, while the chat is connected. */
+  private renderChatLine(): void {
+    const m = this.chatOn() && this.kst.link === 'on' ? this.kst.lastForMe : undefined
+    this.chatEl.hidden = m === undefined
+    if (!m) return
+    const d = new Date(m.ts * 1000)
+    const text = `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())} ${m.call}: ${m.text}`
+    if (this.chatEl.textContent !== text) this.chatEl.textContent = text
+  }
+
+  /** A tap on the chat line: "@CALL " to answer. */
+  private answerChat(): void {
+    const m = this.kst.lastForMe
+    if (m) this.addressChat(m.call)
+  }
+
+  private addressChat(call: string, text = ''): void {
+    this.notice = ''
+    this.line = `@${call} ${text}`
+    this.renderAll()
+  }
+
+  private setKstLocator(loc: string): void {
+    if (!this.kst.setLocator(loc)) {
+      this.notice = notSentWhy(this.kst)
+      this.renderAll()
+    }
+  }
+
+  private sendChat(): void {
+    if (this.kst.send(this.line)) {
+      this.line = ''
+      this.notice = ''
+    } else this.notice = notSentWhy(this.kst, this.line)
+    this.renderAll()
+  }
+
+  /** Under the board: the chat's active stations, filtered and sorted as in the chat
+   *  (KstController.view); a tap addresses one, S fills in the sked request. Rewritten only on change. */
+  private renderStations(): void {
+    if (this.sideEl.hidden || !this.chatOn() || (!this.kst.wanted && this.kst.link !== 'on')) {
+      if (this.stationsKey !== '') this.stationsEl.replaceChildren()
+      this.stationsKey = ''
+      return
+    }
+    const band = this.state.sticky.band
+    const now = Date.now() / 1000
+    const rows = viewStations(
+      kstStations(this.kst.chat, this.meta.myGrid, (c) => isDupe(this.qsos, c, band)).filter((s) => isActive(s, now) && !this.kst.isMuted(s.call)),
+      this.kst.view,
+    ).slice(0, CHAT_ROWS)
+    const head = this.kst.link === 'on' ? t('kst.active', { n: rows.length }) : this.kst.link === 'off' || this.kst.link === 'failed' ? t('kst.off') : t('kst.connecting')
+    const loc = this.kst.link === 'on' ? locatorToSet(this.kst.locator, this.meta.myGrid) : undefined
+    const key = [this.kst.room, head, loc, ...rows.map((s) => `${s.call}|${s.loc}|${s.km}|${s.az}|${s.isNew}|${s.worked}|${s.away}|${this.kst.qrvOf(s.call) ?? ''}`)].join(';')
+    if (key === this.stationsKey) return
+    this.stationsKey = key
+    const title = el('div', 'kst-side-head', `KST · ${head}`)
+    const list = el('ol', 'kst-side-list')
+    if (loc) {
+      // ON4KST has me elsewhere: the others' QRB is wrong — a tap sends /SETLOC.
+      const li = el('li')
+      const set = this.suggestButton(`${t('kst.setLoc', { loc })} (ON4KST ${this.kst.locator ?? ''})`, () => this.setKstLocator(loc), 'kst-side-row kst-side-row--new')
+      set.title = t('kst.locDiffers', { kst: this.kst.locator ?? '', log: loc })
+      li.append(set)
+      list.append(li)
+    }
+    for (const s of rows) {
+      const li = el('li')
+      const row = this.suggestButton(`${s.call.padEnd(10)} ${s.loc.padEnd(6)} ${String(s.km ?? '').padStart(4)} ${String(s.az ?? '').padStart(3)}°`, () => this.addressChat(s.call), ['kst-side-row', s.isNew ? 'kst-side-row--new' : '', s.worked ? 'kst-side-row--worked' : '', s.away ? 'kst-side-row--away' : ''].filter(Boolean).join(' '))
+      const sked = this.suggestButton('S', () => this.addressChat(s.call, this.skedText()), 'kst-side-sked')
+      sked.title = t('kst.sked')
+      const qrv = this.qrvLabelsEl(baseCall(s.call), band)
+      if (qrv) row.append(' ', qrv)
+      li.append(row, sked)
+      list.append(li)
+    }
+    if (rows.length === 0 && this.kst.link === 'on') list.append(el('li', 'about', t('kst.noActive')))
+    this.stationsEl.replaceChildren(title, list)
+  }
+
+  private skedText(): string {
+    const s = this.state.sticky
+    return expandSked(this.skedTemplate, { qrgMHz: s.freq, skedQrg: this.kst.skedQrg(s.band), mode: s.mode, loc: this.meta.myGrid })
+  }
+
+  /** "Sked QRG 2m: 144.300" (or not set). */
+  private skedQrgNow(): string {
+    const band = this.state.sticky.band
+    return t('kst.skedQrgIs', { band, qrg: this.kst.skedQrg(band) || t('kst.skedQrgNone') })
   }
 
   /** The state the current line applies to: a locator filled in for another call is dropped

@@ -81,6 +81,8 @@ export {
   parseBandStack,
 } from './civ'
 export type { RigEvent, Timers } from './civ'
+export { KST_ACTIVE_S, KST_HOST, KST_PORT, KST_VIEW_DEFAULT, KstSession, KstState, SKED_DEFAULT, baseCall, chatTarget, chatText, expandSked, isActive, kstStations, locatorToSet, matchSkedQrg, roomForBand, sortStations, viewStations } from './kst'
+export type { KstEntry, KstEvent, KstLogin, KstRoom, KstSessionState, KstSort, KstStation, KstUser, KstView } from './kst'
 export { parseMHz, parseXverts, toIf, toRf, ifBand } from './xvert'
 export { RIG_MODELS, IC705, genericModel, modelById, modelForAddr, knowsBands, modelBands, rigHasBand, rigTunes, xvertBands } from './rigmodel'
 export type { RigModel } from './rigmodel'
@@ -149,6 +151,7 @@ export {
   parseDb,
   qrvBands,
   qrvLabels,
+  unionQrv,
   serializeDb,
   userHeader,
 } from './calldb'
@@ -164,3 +167,4 @@ export {
   readPushStatus,
 } from './wavelog'
 export type { PushStatus, WavelogErrorKind, WavelogStation } from './wavelog'
+export { bandsInMessage, bandsInText, chatQrv } from './kst-bands'

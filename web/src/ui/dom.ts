@@ -38,6 +38,52 @@ export function button(label: string, onClick: () => void, cls = 'btn'): HTMLBut
   return b
 }
 
+const LONG_PRESS_MS = 550
+
+/** A long press (touch, pen, mouse held) or the context menu (right click, Android's long
+ *  press) runs `fn`; the click that ends a long press is swallowed, so a plain tap keeps
+ *  doing what it does. A move of more than a few px (scrolling) cancels it. */
+export function onLongPress(target: HTMLElement, fn: () => void): void {
+  let timer = 0
+  let x = 0
+  let y = 0
+  let fired = false
+  const cancel = (): void => {
+    clearTimeout(timer)
+    timer = 0
+  }
+  const fire = (): void => {
+    cancel()
+    fired = true
+    fn()
+  }
+  target.addEventListener('pointerdown', (e) => {
+    fired = false
+    x = e.clientX
+    y = e.clientY
+    cancel()
+    timer = window.setTimeout(fire, LONG_PRESS_MS)
+  })
+  target.addEventListener('pointermove', (e) => {
+    if (timer && Math.hypot(e.clientX - x, e.clientY - y) > 10) cancel()
+  })
+  for (const ev of ['pointerup', 'pointercancel', 'pointerleave'] as const) target.addEventListener(ev, cancel)
+  target.addEventListener('contextmenu', (e) => {
+    e.preventDefault()
+    if (!fired) fire()
+  })
+  target.addEventListener(
+    'click',
+    (e) => {
+      if (!fired) return
+      fired = false
+      e.stopImmediatePropagation()
+      e.preventDefault()
+    },
+    true,
+  )
+}
+
 /** A labelled text input row for the classic forms. System keyboard is fine here. */
 export function fieldRow(
   label: string,

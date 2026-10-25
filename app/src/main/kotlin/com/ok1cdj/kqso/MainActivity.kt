@@ -41,6 +41,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var root: FrameLayout
     private lateinit var keyer: BleLink
     private lateinit var rig: BleLink
+    private lateinit var tcp: TcpLink
     private val pendingPermission = mutableListOf<(Boolean) -> Unit>()
     private val pendingLocation = mutableListOf<(Boolean) -> Unit>()
     private var pendingExport: String? = null
@@ -115,7 +116,8 @@ class MainActivity : ComponentActivity() {
             settings.setGeolocationEnabled(true) // navigator.geolocation for the locate button in New Log
             keyer = BleLink(this@MainActivity, BleLink.KEYER)
             rig = BleLink(this@MainActivity, BleLink.IC705)
-            addJavascriptInterface(KQSOBridge(this@MainActivity, keyer, rig), "KQSONative")
+            tcp = TcpLink(this@MainActivity)
+            addJavascriptInterface(KQSOBridge(this@MainActivity, keyer, rig, tcp), "KQSONative")
             webViewClient = object : WebViewClient() {
                 override fun shouldInterceptRequest(
                     view: WebView,
@@ -227,6 +229,7 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         keyer.close()
         rig.close()
+        tcp.close()
         super.onDestroy()
     }
 
