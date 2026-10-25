@@ -637,7 +637,7 @@ const cs: Record<keyof typeof en, string> = {
   'kst.notSent': 'Neodesláno — chat není připojený.',
   'kst.wait': 'Server žádá počkat {s} s.',
   'kst.sked': 'Sked',
-  'kst.toLog': 'Do logu',
+  'kst.toLog': 'Log',
   'kst.public': 'všem',
   'kst.active': '{n} aktivních',
   'kst.noActive': 'Žádné aktivní stanice.',

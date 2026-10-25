@@ -6,7 +6,7 @@
 
 import type { LogMeta } from '../core/model'
 import { readLogFile, writeLogHeader } from '../core/index'
-import type { GeoPosition, KQSOPlatform, KeyerLinkState, KeyerTransport, LogSummary, RefTileStore, RigTransport } from './types'
+import type { GeoPosition, KQSOPlatform, KeyerLinkState, KeyerTransport, LogSummary, RefTileStore, RigTransport, TcpLinkState, TcpTransport } from './types'
 import { iosBridge, iosShell } from './ios'
 import { browserPosition, geolocationAvailable } from './web/geo'
 
@@ -55,6 +55,11 @@ export interface NativeBridge {
   rigForget?(): void
   rigWrite?(hex: string): void
   rigMtu?(): number
+  // ON4KST chat over a native socket (Android TcpLink.kt); answers come back through
+  // window.__kqsoTcp. Absent before the chat APK.
+  tcpConnect?(host: string, port: number): void
+  tcpClose?(): void
+  tcpWrite?(text: string): void
   // iOS only (CoreLocation; the kqso:// page has no Geolocation API). Rejects with a
   // GeoFailure. Android lets the WebView's own navigator.geolocation ask instead.
   position?(): Ret<GeoPosition>
@@ -69,11 +74,18 @@ interface NativeLinkCallbacks {
   done(tried: boolean, error: string | null): void
 }
 
+/** What the native TCP link calls back (TcpLink js()). */
+interface NativeTcpCallbacks {
+  state(s: TcpLinkState, reason?: string): void
+  data(text: string): void
+}
+
 declare global {
   interface Window {
     KQSONative?: NativeBridge
     __kqsoKeyer?: NativeLinkCallbacks
     __kqsoRig?: NativeLinkCallbacks
+    __kqsoTcp?: NativeTcpCallbacks
   }
 }
 
@@ -207,6 +219,40 @@ class NativeRig implements RigTransport {
   }
 }
 
+/** The ON4KST socket on the native side: text both ways, state and data back through
+ *  window.__kqsoTcp. */
+class NativeTcp implements TcpTransport {
+  private dataCb: (text: string) => void = () => {}
+  private stateCb: (s: TcpLinkState, reason?: string) => void = () => {}
+
+  constructor(private readonly raw: NativeBridge) {
+    window.__kqsoTcp = {
+      state: (s, reason) => this.stateCb(s, reason || undefined),
+      data: (text) => this.dataCb(text),
+    }
+  }
+
+  connect(host: string, port: number): void {
+    this.raw.tcpConnect!(host, port)
+  }
+
+  close(): void {
+    this.raw.tcpClose?.()
+  }
+
+  write(text: string): void {
+    this.raw.tcpWrite?.(text)
+  }
+
+  onData(cb: (text: string) => void): void {
+    this.dataCb = cb
+  }
+
+  onState(cb: (s: TcpLinkState, reason?: string) => void): void {
+    this.stateCb = cb
+  }
+}
+
 function refTileStore(raw: NativeBridge): RefTileStore {
   return {
     read: async (field) => await raw.refRead!(field),
@@ -226,6 +272,7 @@ class NativePlatform implements KQSOPlatform {
   readonly installSource: string | undefined
   readonly keyer: KeyerTransport | undefined
   readonly rig: RigTransport | undefined
+  readonly tcp: TcpTransport | undefined
   readonly getPosition: (() => Promise<GeoPosition>) | undefined
   readonly refTiles: RefTileStore | undefined
 
@@ -236,6 +283,7 @@ class NativePlatform implements KQSOPlatform {
     this.installSource = raw.installSource?.() || undefined
     this.keyer = raw.keyerConnect ? keyerLink(raw) : undefined
     this.rig = raw.rigConnect ? new NativeRig(raw) : undefined
+    this.tcp = raw.tcpConnect ? new NativeTcp(raw) : undefined
     const position = raw.position?.bind(raw)
     this.getPosition = position
       ? async () => await position()

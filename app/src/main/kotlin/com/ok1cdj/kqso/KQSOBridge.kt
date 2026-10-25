@@ -11,7 +11,12 @@ import java.io.File
  * synchronous methods into the async KQSOPlatform. Logs are real .adi files in
  * app storage (reachable via ADB), so there is no WebKit-style eviction.
  */
-class KQSOBridge(private val activity: MainActivity, private val keyer: BleLink, private val rig: BleLink) {
+class KQSOBridge(
+    private val activity: MainActivity,
+    private val keyer: BleLink,
+    private val rig: BleLink,
+    private val tcp: TcpLink,
+) {
 
     private val ctx: Context = activity.applicationContext
     private val logsDir: File = File(ctx.filesDir, "logs").apply { mkdirs() }
@@ -171,4 +176,14 @@ class KQSOBridge(private val activity: MainActivity, private val keyer: BleLink,
 
     @JavascriptInterface
     fun rigMtu(): Int = rig.mtu()
+
+    // ON4KST chat (TcpLink): its own threads, so straight from the binder thread.
+    @JavascriptInterface
+    fun tcpConnect(host: String, port: Int) = tcp.connect(host, port)
+
+    @JavascriptInterface
+    fun tcpClose() = tcp.close()
+
+    @JavascriptInterface
+    fun tcpWrite(text: String) = tcp.write(text)
 }
