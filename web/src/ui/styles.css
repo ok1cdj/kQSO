@@ -1280,6 +1280,13 @@ a.help-text,
 .kst-side-row--new {
   font-weight: 700;
 }
+.kst-side-row--worked {
+  color: var(--ghost);
+  text-decoration: line-through;
+}
+.kst-side-row--away {
+  color: var(--ghost);
+}
 .kst-side-sked {
   flex: none;
   border: var(--border-w) solid var(--line);
@@ -1356,6 +1363,12 @@ a.help-text,
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--muted);
+}
+/* Phone upright: the call, locator, km, az and the buttons need the width more. */
+@media (max-width: 600px) {
+  .chat-st-name {
+    display: none;
+  }
 }
 .chat-st-acts {
   display: flex;

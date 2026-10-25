@@ -5,10 +5,11 @@
 
 import type { TcpLinkState, TcpTransport } from '../types'
 
-/** The relay's address: VITE_KST_RELAY_URL in the build; the local relay in dev
- *  (relay/kst: DEV=1 node server.mjs); '' = no chat on the web. */
+/** The relay's address: VITE_KST_RELAY_URL in the build; the local relay in dev on the
+ *  dev server's host, so a phone on the LAN reaches it too (relay/kst: DEV=1 node
+ *  server.mjs); '' = no chat on the web. */
 export function kstRelayUrl(): string {
-  return import.meta.env.VITE_KST_RELAY_URL || (import.meta.env.DEV ? 'ws://localhost:8787/kst' : '')
+  return import.meta.env.VITE_KST_RELAY_URL || (import.meta.env.DEV ? `ws://${location.hostname}:8787/kst` : '')
 }
 
 export class WsTcpTransport implements TcpTransport {

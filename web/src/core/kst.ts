@@ -168,16 +168,26 @@ export function chatTarget(input: string): string | undefined {
 
 export const SKED_DEFAULT = 'pse sked {QRG} {MODE}?'
 
-/** The sked request: {QRG} = the frequency in MHz (144.300; dropped when unknown), {MODE}, {LOC}. */
-export function expandSked(template: string, v: { qrgMHz?: string | undefined; mode: string; loc: string }): string {
+/** The sked request: {QRG} = the band's sked QRG (G command, any text) or else the frequency
+ *  in MHz (144.300; dropped when unknown), {MODE}, {LOC}. */
+export function expandSked(
+  template: string,
+  v: { qrgMHz?: string | undefined; skedQrg?: string | undefined; mode: string; loc: string },
+): string {
   const mhz = v.qrgMHz !== undefined && Number.isFinite(Number(v.qrgMHz)) ? Number(v.qrgMHz).toFixed(3) : ''
   return template
-    .replace(/\{QRG\}/gi, mhz)
+    .replace(/\{QRG\}/gi, v.skedQrg || mhz)
     .replace(/\{MODE\}/gi, v.mode)
     .replace(/\{LOC\}/gi, v.loc)
     .replace(/\s+/g, ' ')
     .replace(/\s+([?!.,])/g, '$1')
     .trim()
+}
+
+/** G text ⏎: the band's sked QRG (text = '' shows it, '-' clears it); undefined = not the command. */
+export function matchSkedQrg(line: string): string | undefined {
+  const m = /^g(?:\s+(.*))?$/i.exec(line.trim())
+  return m ? (m[1] ?? '').trim() : undefined
 }
 
 /** "Please wait 42 second(s)…" from the server (one command a minute) → 42. */
@@ -415,6 +425,17 @@ export interface KstStation extends KstUser {
 
 export type KstSort = 'call' | 'km' | 'az'
 
+/** How the station lists are shown; shared by the chat screen and the logging screen. */
+export interface KstView {
+  readonly sort: KstSort
+  /** Descending: Z–A, farthest, 360° first. */
+  readonly desc: boolean
+  readonly hideWorked: boolean
+  readonly hideAway: boolean
+}
+
+export const KST_VIEW_DEFAULT: KstView = { sort: 'km', desc: false, hideWorked: true, hideAway: true }
+
 /** Active = wrote something in the last 30 minutes. */
 export const KST_ACTIVE_S = 30 * 60
 
@@ -431,15 +452,28 @@ export function kstStations(chat: KstState, myGrid: string, worked: (call: strin
   }))
 }
 
-/** Not away, wrote within `windowS` before `nowS`. */
+/** Wrote within `windowS` before `nowS` (away or not: the view's filter decides). */
 export function isActive(s: KstStation, nowS: number, windowS = KST_ACTIVE_S): boolean {
-  return !s.away && s.lastTs !== undefined && nowS - s.lastTs <= windowS
+  return s.lastTs !== undefined && nowS - s.lastTs <= windowS
 }
 
-/** Sorted copy; unknown km / az last. */
-export function sortStations(list: readonly KstStation[], by: KstSort): KstStation[] {
-  const num = (v: number | undefined): number => v ?? Number.POSITIVE_INFINITY
-  return [...list].sort((a, b) =>
-    by === 'call' ? a.call.localeCompare(b.call) : num(a[by]) - num(b[by]) || a.call.localeCompare(b.call),
+/** Sorted copy; unknown km / az last in both directions. */
+export function sortStations(list: readonly KstStation[], by: KstSort, desc = false): KstStation[] {
+  const dir = desc ? -1 : 1
+  return [...list].sort((a, b) => {
+    if (by === 'call') return dir * a.call.localeCompare(b.call)
+    const x = a[by]
+    const y = b[by]
+    if (x === undefined || y === undefined) return (x === undefined ? 1 : 0) - (y === undefined ? 1 : 0) || a.call.localeCompare(b.call)
+    return dir * (x - y) || a.call.localeCompare(b.call)
+  })
+}
+
+/** The view's filters, then its order. */
+export function viewStations(list: readonly KstStation[], view: KstView): KstStation[] {
+  return sortStations(
+    list.filter((s) => (!view.hideWorked || !s.worked) && (!view.hideAway || !s.away)),
+    view.sort,
+    view.desc,
   )
 }

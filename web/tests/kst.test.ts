@@ -12,6 +12,7 @@ import {
   chatText,
   chatTarget,
   expandSked,
+  matchSkedQrg,
   waitSeconds,
   KstState,
   KstSession,
@@ -19,6 +20,7 @@ import {
   kstStations,
   isActive,
   sortStations,
+  viewStations,
 } from '../src/core/kst'
 import type { KstEvent } from '../src/core/kst'
 
@@ -76,6 +78,19 @@ describe('text helpers', () => {
     expect(expandSked('pse sked {QRG} {MODE}?', { qrgMHz: '432.2', mode: 'CW', loc: 'JN79US' })).toBe('pse sked 432.200 CW?')
     expect(expandSked('pse sked {QRG} {MODE}?', { mode: 'SSB', loc: 'JN79US' })).toBe('pse sked SSB?')
     expect(expandSked('sked? {loc}', { mode: 'SSB', loc: 'JN79US' })).toBe('sked? JN79US')
+    // the band's sked QRG (G command) wins over the radio, any text
+    expect(expandSked('pse sked {QRG} {MODE}?', { qrgMHz: '144.05', skedQrg: '144.290 ±5', mode: 'CW', loc: '' })).toBe('pse sked 144.290 ±5 CW?')
+    expect(expandSked('pse sked {QRG} {MODE}?', { skedQrg: '432.210', mode: 'SSB', loc: '' })).toBe('pse sked 432.210 SSB?')
+    expect(expandSked('pse sked {QRG} {MODE}?', { qrgMHz: '144.05', skedQrg: '', mode: 'CW', loc: '' })).toBe('pse sked 144.050 CW?')
+  })
+  it('matchSkedQrg: G text, G alone shows, else not the command', () => {
+    expect(matchSkedQrg('g 144.300')).toBe('144.300')
+    expect(matchSkedQrg('G  432.210 cw ')).toBe('432.210 cw')
+    expect(matchSkedQrg('G')).toBe('')
+    expect(matchSkedQrg(' g ')).toBe('')
+    expect(matchSkedQrg('G -')).toBe('-')
+    expect(matchSkedQrg('G4ABC')).toBeUndefined()
+    expect(matchSkedQrg('OK1ABC G')).toBeUndefined()
   })
   it('waitSeconds', () => {
     expect(waitSeconds('Please wait 42 second(s) before sending')).toBe(42)
@@ -293,14 +308,28 @@ describe('station list', () => {
     expect(dl.km).toBeGreaterThan(200)
     expect(list.find((s) => s.call === 'XX1XX')).toMatchObject({ km: undefined, az: undefined, lastTs: undefined })
   })
-  it('active = not away and wrote in the window', () => {
-    expect(list.filter((s) => isActive(s, 3500)).map((s) => s.call)).toEqual(['DL1ABC-432'])
-    expect(list.filter((s) => isActive(s, 2000, 1000)).map((s) => s.call)).toEqual(['OK1KPA', 'DL1ABC-432'])
+  it('active = wrote in the window, away or not', () => {
+    expect(list.filter((s) => isActive(s, 3500)).map((s) => s.call)).toEqual(['DL1ABC-432', 'SP3TYF'])
+    expect(list.filter((s) => isActive(s, 2000, 1000)).map((s) => s.call)).toEqual(['OK1KPA', 'DL1ABC-432', 'SP3TYF'])
   })
   it('sorts by call, km, az; unknown last', () => {
     expect(sortStations(list, 'call').map((s) => s.call)).toEqual(['DL1ABC-432', 'OK1KPA', 'SP3TYF', 'XX1XX'])
     const km = sortStations(list, 'km')
     expect(km.at(-1)!.call).toBe('XX1XX')
     expect(km.map((s) => s.km).slice(0, 3)).toEqual([...km.map((s) => s.km).slice(0, 3)].sort((a, b) => a! - b!))
+  })
+  it('sorts descending too; unknown still last', () => {
+    expect(sortStations(list, 'call', true).map((s) => s.call)).toEqual(['XX1XX', 'SP3TYF', 'OK1KPA', 'DL1ABC-432'])
+    const km = sortStations(list, 'km', true)
+    expect(km.at(-1)!.call).toBe('XX1XX')
+    expect(km.map((s) => s.km).slice(0, 3)).toEqual([...km.map((s) => s.km).slice(0, 3)].sort((a, b) => b! - a!))
+    const az = sortStations(list, 'az', true)
+    expect(az.at(-1)!.call).toBe('XX1XX')
+  })
+  it('the view filters worked and away, then sorts', () => {
+    const v = { sort: 'call', desc: false, hideWorked: true, hideAway: true } as const
+    expect(viewStations(list, v).map((s) => s.call)).toEqual(['OK1KPA', 'XX1XX'])
+    expect(viewStations(list, { ...v, hideAway: false }).map((s) => s.call)).toEqual(['OK1KPA', 'SP3TYF', 'XX1XX'])
+    expect(viewStations(list, { ...v, hideWorked: false, hideAway: false, desc: true }).map((s) => s.call)).toEqual(['XX1XX', 'SP3TYF', 'OK1KPA', 'DL1ABC-432'])
   })
 })

@@ -4,8 +4,8 @@
 // room, so switching rooms and reconnecting keep the messages. Screens subscribe and
 // re-render on change. Nothing connects until a screen asks (connect / setRoom).
 
-import { KST_HOST, KST_PORT, KstSession, KstState } from '../core/index'
-import type { KstEntry, KstEvent, KstRoom, Timers } from '../core/index'
+import { KST_HOST, KST_PORT, KST_VIEW_DEFAULT, KstSession, KstState } from '../core/index'
+import type { KstEntry, KstEvent, KstRoom, KstView, Timers } from '../core/index'
 import type { KQSOPlatform, TcpLinkState, TcpTransport } from '../platform/index'
 import { t } from './i18n'
 import { browserTimers } from './rig'
@@ -14,6 +14,8 @@ export const KST_SETTINGS = {
   call: 'kstCall', // ON4KST account, '' = the log's own call
   pass: 'kstPass', // sent in clear by the ON4KST protocol
   sked: 'kstSked', // sked request template
+  view: 'kstView', // station lists: sort, direction, filters (JSON)
+  skedQrg: 'kstSkedQrg', // sked QRG per band, {"2m": "144.300"} (JSON)
 } as const
 
 /** off → connecting (socket) → login (LOGINC sent) → on; failed = login refused. */
@@ -35,6 +37,16 @@ export function kstStatus(k: KstController): string {
   }
 }
 
+/** A saved JSON setting; undefined when missing or broken. */
+function parseJson<T>(v: string | null): T | undefined {
+  if (!v) return undefined
+  try {
+    return JSON.parse(v) as T
+  } catch {
+    return undefined
+  }
+}
+
 const SILENCE_PING_MS = 90_000 // nothing heard: poke the server
 const SILENCE_DROP_MS = 210_000 // still nothing: the link is dead, reconnect
 const RETRY_MS = [2_000, 5_000, 15_000, 30_000, 60_000] // after an unexpected drop
@@ -53,6 +65,10 @@ export class KstController {
   lastForMe: KstEntry | undefined
   /** Server's "Please wait N s" (one command a minute): no sending before this (ms). */
   waitUntil = 0
+  /** Sort and filters of the station lists, the same in the chat and under the contest panel. */
+  view: KstView = KST_VIEW_DEFAULT
+  /** The sked QRG per band (G command): any text, put into {QRG} instead of the radio's frequency. */
+  private skedQrgs: Record<string, string> = {}
 
   private readonly transport: TcpTransport | undefined
   private readonly states = new Map<KstRoom, KstState>()
@@ -88,6 +104,15 @@ export class KstController {
   /** Back from sleep / another app (iOS closes sockets in the background): reconnect. Call once at start. */
   init(): void {
     if (!this.available) return
+    void this.platform.getSetting(KST_SETTINGS.view).then((v) => {
+      const view = parseJson<Partial<KstView>>(v)
+      if (!view) return
+      this.view = { ...KST_VIEW_DEFAULT, ...view }
+      this.emit()
+    })
+    void this.platform.getSetting(KST_SETTINGS.skedQrg).then((v) => {
+      this.skedQrgs = parseJson<Record<string, string>>(v) ?? {}
+    })
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && this.wantLink && this.link === 'off') void this.connect()
     })
@@ -147,6 +172,27 @@ export class KstController {
     const ok = this.session.send(input)
     if (ok) this.heard()
     return ok
+  }
+
+  /** Changes the station lists' sort / filters everywhere and saves them. */
+  setView(change: Partial<KstView>): void {
+    this.view = { ...this.view, ...change }
+    void this.platform.setSetting(KST_SETTINGS.view, JSON.stringify(this.view))
+    this.emit()
+  }
+
+  /** The band's sked QRG, '' = none (the radio's frequency then). */
+  skedQrg(band: string): string {
+    return this.skedQrgs[band] ?? ''
+  }
+
+  /** Sets the band's sked QRG; '' clears it. */
+  setSkedQrg(band: string, text: string): void {
+    const next = { ...this.skedQrgs }
+    if (text) next[band] = text
+    else delete next[band]
+    this.skedQrgs = next
+    void this.platform.setSetting(KST_SETTINGS.skedQrg, JSON.stringify(next))
   }
 
   /** The chat screen showed the messages. */

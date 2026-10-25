@@ -81,8 +81,8 @@ export {
   parseBandStack,
 } from './civ'
 export type { RigEvent, Timers } from './civ'
-export { KST_ACTIVE_S, KST_HOST, KST_PORT, KstSession, KstState, SKED_DEFAULT, baseCall, chatTarget, expandSked, isActive, kstStations, roomForBand, sortStations } from './kst'
-export type { KstEntry, KstEvent, KstLogin, KstRoom, KstSessionState, KstSort, KstStation, KstUser } from './kst'
+export { KST_ACTIVE_S, KST_HOST, KST_PORT, KST_VIEW_DEFAULT, KstSession, KstState, SKED_DEFAULT, baseCall, chatTarget, expandSked, isActive, kstStations, matchSkedQrg, roomForBand, sortStations, viewStations } from './kst'
+export type { KstEntry, KstEvent, KstLogin, KstRoom, KstSessionState, KstSort, KstStation, KstUser, KstView } from './kst'
 export { parseMHz, parseXverts, toIf, toRf, ifBand } from './xvert'
 export { RIG_MODELS, IC705, genericModel, modelById, modelForAddr, knowsBands, modelBands, rigHasBand, rigTunes, xvertBands } from './rigmodel'
 export type { RigModel } from './rigmodel'

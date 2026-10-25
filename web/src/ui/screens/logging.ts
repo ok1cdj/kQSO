@@ -47,8 +47,9 @@ import {
   chatTarget,
   expandSked,
   kstStations,
+  matchSkedQrg,
   isActive,
-  sortStations,
+  viewStations,
   SKED_DEFAULT,
 } from '../../core/index'
 import type { CoreState, SuggestionSource, LogMeta, PartialQso, Qso, StickyState, KeyerCommand, MacroSlot, SixHourPhase } from '../../core/index'
@@ -486,6 +487,13 @@ export class LoggingScreen implements Screen {
         if (!this.chatOn()) return false
         this.openChat()
         return true
+      case 'skedQrg':
+        if (!this.chatOn()) return false
+        // An empty line: G with the current QRG, ready to change; else just say what it is.
+        if (this.line.trim() === '') this.line = `G ${this.kst.skedQrg(this.state.sticky.band)}`.trimEnd() + ' '
+        else this.notice = this.skedQrgNow()
+        this.renderAll()
+        return true
     }
   }
 
@@ -573,6 +581,16 @@ export class LoggingScreen implements Screen {
       this.line = ''
       if (!hasContent(this.state.partial)) this.state = { ...this.state, partial: {}, hasStarted: false }
       this.openChat()
+      return
+    }
+    // G 144.300 ⏎: the band's sked QRG for {QRG}; G ⏎ shows it, G - ⏎ clears it.
+    const qrg = this.chatOn() ? matchSkedQrg(this.line) : undefined
+    if (qrg !== undefined) {
+      if (qrg) this.kst.setSkedQrg(this.state.sticky.band, qrg === '-' ? '' : qrg)
+      this.line = ''
+      if (!hasContent(this.state.partial)) this.state = { ...this.state, partial: {}, hasStarted: false }
+      this.notice = this.skedQrgNow()
+      this.renderAll()
       return
     }
     // F28300: tune the radio (only with the radio switched on — else F… is just input).
@@ -1116,6 +1134,13 @@ export class LoggingScreen implements Screen {
       this.previewEl.replaceChildren(fieldChip('O', t('kst.cmdOpen')))
       return
     }
+    const qrg = this.chatOn() ? matchSkedQrg(this.line) : undefined
+    if (qrg !== undefined) {
+      const band = this.state.sticky.band
+      const what = !qrg ? this.skedQrgNow() : qrg === '-' ? t('kst.skedQrgClear', { band }) : t('kst.skedQrgSet', { band, qrg })
+      this.previewEl.replaceChildren(fieldChip('G', what))
+      return
+    }
     // A lone W/D: show what Enter will do instead of parsing it (W would be a name).
     const cmd = matchCommand(this.line)
     if (cmd) {
@@ -1461,8 +1486,8 @@ export class LoggingScreen implements Screen {
     this.renderAll()
   }
 
-  /** Under the board: the chat's active stations not worked on this band yet, nearest
-   *  first; a tap addresses one, S fills in the sked request. Rewritten only on change. */
+  /** Under the board: the chat's active stations, filtered and sorted as in the chat
+   *  (KstController.view); a tap addresses one, S fills in the sked request. Rewritten only on change. */
   private renderStations(): void {
     if (this.sideEl.hidden || !this.chatOn() || (!this.kst.wanted && this.kst.link !== 'on')) {
       if (this.stationsKey !== '') this.stationsEl.replaceChildren()
@@ -1471,19 +1496,19 @@ export class LoggingScreen implements Screen {
     }
     const band = this.state.sticky.band
     const now = Date.now() / 1000
-    const rows = sortStations(
-      kstStations(this.kst.chat, this.meta.myGrid, (c) => isDupe(this.qsos, c, band)).filter((s) => !s.worked && isActive(s, now)),
-      'km',
+    const rows = viewStations(
+      kstStations(this.kst.chat, this.meta.myGrid, (c) => isDupe(this.qsos, c, band)).filter((s) => isActive(s, now)),
+      this.kst.view,
     ).slice(0, CHAT_ROWS)
     const head = this.kst.link === 'on' ? t('kst.active', { n: rows.length }) : this.kst.link === 'off' || this.kst.link === 'failed' ? t('kst.off') : t('kst.connecting')
-    const key = [this.kst.room, head, ...rows.map((s) => `${s.call}|${s.loc}|${s.km}|${s.az}|${s.isNew}`)].join(';')
+    const key = [this.kst.room, head, ...rows.map((s) => `${s.call}|${s.loc}|${s.km}|${s.az}|${s.isNew}|${s.worked}|${s.away}`)].join(';')
     if (key === this.stationsKey) return
     this.stationsKey = key
     const title = el('div', 'kst-side-head', `KST · ${head}`)
     const list = el('ol', 'kst-side-list')
     for (const s of rows) {
       const li = el('li')
-      const row = this.suggestButton(`${s.call.padEnd(10)} ${s.loc.padEnd(6)} ${String(s.km ?? '').padStart(4)} ${String(s.az ?? '').padStart(3)}°`, () => this.addressChat(s.call), s.isNew ? 'kst-side-row kst-side-row--new' : 'kst-side-row')
+      const row = this.suggestButton(`${s.call.padEnd(10)} ${s.loc.padEnd(6)} ${String(s.km ?? '').padStart(4)} ${String(s.az ?? '').padStart(3)}°`, () => this.addressChat(s.call), ['kst-side-row', s.isNew ? 'kst-side-row--new' : '', s.worked ? 'kst-side-row--worked' : '', s.away ? 'kst-side-row--away' : ''].filter(Boolean).join(' '))
       const sked = this.suggestButton('S', () => this.addressChat(s.call, this.skedText()), 'kst-side-sked')
       sked.title = t('kst.sked')
       li.append(row, sked)
@@ -1495,7 +1520,13 @@ export class LoggingScreen implements Screen {
 
   private skedText(): string {
     const s = this.state.sticky
-    return expandSked(this.skedTemplate, { qrgMHz: s.freq, mode: s.mode, loc: this.meta.myGrid })
+    return expandSked(this.skedTemplate, { qrgMHz: s.freq, skedQrg: this.kst.skedQrg(s.band), mode: s.mode, loc: this.meta.myGrid })
+  }
+
+  /** "Sked QRG 2m: 144.300" (or not set). */
+  private skedQrgNow(): string {
+    const band = this.state.sticky.band
+    return t('kst.skedQrgIs', { band, qrg: this.kst.skedQrg(band) || t('kst.skedQrgNone') })
   }
 
   /** The state the current line applies to: a locator filled in for another call is dropped

@@ -142,6 +142,15 @@ const EN: readonly Section[] = [
     ],
   },
   {
+    title: 'ON4KST chat',
+    rows: [
+      { text: 'VHF-contest log on 6m and up, account in Settings → ON4KST. Under the contest panel: who wrote in the last 30 min, sorted and filtered as in the chat\'s station list; a tap = @CALL, S = the sked request.' },
+      { code: 'O ⏎ / Alt+O', text: 'Open the chat.' },
+      { code: '@OK1ABC text ⏎', text: 'Send to OK1ABC from the log line (@ text with a space after @ = to everyone).' },
+      { code: 'G 144.300 ⏎', text: 'Sked QRG for this band ({QRG} in the sked request instead of the radio\'s frequency; any text). G ⏎ shows it, G - ⏎ clears it. Alt+G = G with the current QRG to change.' },
+    ],
+  },
+  {
     title: 'Keyboard',
     rows: [
       { text: 'On-screen keyboard is alphabetical, 6×7. Space is single width; Backspace and Enter are double. A hardware keyboard works too.' },
@@ -276,6 +285,15 @@ const CS: readonly Section[] = [
       { code: '23cm ⏎', text: 'Pásmo, které rádio neumí: kQSO se ho nepokusí naladit — přepne se jen deník a spojení se na něm logují; rádio zůstane připojené, jak je, a neklíčuje (hlavička 705 –), dokud nenapíšeš pásmo rádia nebo nepřepneš pásmo na rádiu. Stejně, když rádio pásmo odmítne. S transvertorem (Nastavení → Rádio → XVERT) jde rádio na mezifrekvenci a do deníku kmitočet RF (hlavička 705 XV).' },
       { text: 'V CW posílají makra vnitřní klíčovač rádia, pokud ho přes CI-V má (IC-705, 7300, 9700, 7610, 7100; CW klíčování zapínat netřeba; bez break-inu zní jen příposlech), jinak klíčuje rádio klíčovač M5 po drátu (CW klíčování zapnout). V SSB / FM lišta nabízí T1–T4, hlasové paměti rádia (IC-705, 7300, 9700, 7610); STOP nebo Esc je zastaví.' },
       { text: 'Postav si klíčovač (i s CI-V pro jakýkoli Icom) →', guide: true },
+    ],
+  },
+  {
+    title: 'ON4KST chat',
+    rows: [
+      { text: 'Log VKV závodu od 6m výš, účet v Nastavení → ON4KST. Pod závodním panelem: kdo psal posledních 30 min, seřazení a filtry jako v seznamu stanic v chatu; klepnutí = @ZNAČKA, S = žádost o sked.' },
+      { code: 'O ⏎ / Alt+O', text: 'Otevřít chat.' },
+      { code: '@OK1ABC text ⏎', text: 'Poslat OK1ABC přímo ze vstupního řádku (@ text s mezerou za @ = všem).' },
+      { code: 'G 144.300 ⏎', text: 'QRG pro sked na tomto pásmu ({QRG} v žádosti o sked místo kmitočtu z rádia; libovolný text). G ⏎ ho ukáže, G - ⏎ smaže. Alt+G = G s aktuálním QRG k úpravě.' },
     ],
   },
   {

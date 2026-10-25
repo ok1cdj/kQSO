@@ -5,7 +5,7 @@
 // the log with the call and locator typed in. Text from the chat is only ever set as
 // text, never as HTML.
 
-import { PROFILES, baseCall, expandSked, isDupe, kstStations, readLogFile, roomForBand, sortStations, SKED_DEFAULT } from '../../core/index'
+import { PROFILES, baseCall, expandSked, isDupe, kstStations, readLogFile, roomForBand, viewStations, SKED_DEFAULT } from '../../core/index'
 import type { KstEntry, KstRoom, KstSort, KstStation, LogMeta, Qso } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
@@ -27,12 +27,9 @@ export interface ChatContext {
   readonly freqMHz: string | undefined
 }
 
-// Kept while the app runs: coming back shows the same tab, sort and filters.
+// Kept while the app runs: coming back shows the same tab (sort and filters are in the controller).
 let tab: 'messages' | 'stations' = 'messages'
-let sortBy: KstSort = 'km'
 let onlyMe = false
-let hideWorked = true
-let hideAway = true
 
 const ROOMS: readonly KstRoom[] = [1, 2, 3]
 const ROOM_LABEL = { 1: 'kst.room1', 2: 'kst.room2', 3: 'kst.room3' } as const
@@ -169,16 +166,22 @@ export class ChatScreen implements Screen {
   }
 
   private renderStations(): void {
-    const sortBtn = (by: KstSort, label: string): HTMLButtonElement => this.toggle(label, sortBy === by, () => (sortBy = by))
+    const k = this.kst
+    const v = k.view
+    // The active sort again = the other direction.
+    const sortBtn = (by: KstSort, label: string): HTMLButtonElement =>
+      this.toggle(v.sort === by ? `${label} ${v.desc ? '▼' : '▲'}` : label, v.sort === by, () =>
+        k.setView(v.sort === by ? { desc: !v.desc } : { sort: by, desc: false }),
+      )
     this.toolsEl.replaceChildren(
       sortBtn('call', 'CALL'),
       sortBtn('km', 'km'),
       sortBtn('az', 'az°'),
-      this.toggle(t('kst.hideWorked'), hideWorked, () => (hideWorked = !hideWorked)),
-      this.toggle(t('kst.hideAway'), hideAway, () => (hideAway = !hideAway)),
+      this.toggle(t('kst.hideWorked'), v.hideWorked, () => k.setView({ hideWorked: !v.hideWorked })),
+      this.toggle(t('kst.hideAway'), v.hideAway, () => k.setView({ hideAway: !v.hideAway })),
     )
-    const all = kstStations(this.kst.chat, this.meta?.myGrid ?? '', (c) => this.worked(c))
-    const shown = sortStations(all.filter((s) => (!hideWorked || !s.worked) && (!hideAway || !s.away)), sortBy)
+    const all = kstStations(k.chat, this.meta?.myGrid ?? '', (c) => this.worked(c))
+    const shown = viewStations(all, v)
     const table = el('table', 'chat-stations')
     for (const s of shown) table.append(this.stationRow(s))
     this.bodyEl.replaceChildren(table)
@@ -210,7 +213,8 @@ export class ChatScreen implements Screen {
   }
 
   private skedText(): string {
-    return expandSked(this.sked, { qrgMHz: this.ctx.freqMHz, mode: this.ctx.mode, loc: this.meta?.myGrid ?? '' })
+    const c = this.ctx
+    return expandSked(this.sked, { qrgMHz: c.freqMHz, skedQrg: this.kst.skedQrg(c.band), mode: c.mode, loc: this.meta?.myGrid ?? '' })
   }
 
   /** "@CALL " (+ text) into the line, ready to finish and send. */
