@@ -8,6 +8,7 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
     private let storage = Storage()
     private lazy var keyer = BleLink(spec: .keyer, owner: self)
     private lazy var rig = BleLink(spec: .ic705, owner: self)
+    private lazy var tcp = TcpLink(owner: self)
     private lazy var location = Location()
 
     func userContentController(
@@ -61,12 +62,15 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
         case "rigDisconnect": rig.disconnect(); ok()
         case "rigForget": rig.forget(); ok()
         case "rigWrite": rig.write(str(0)); ok()
+        case "tcpConnect": tcp.connect(host: str(0), port: Int(str(1)) ?? 0); ok()
+        case "tcpClose": tcp.close(); ok()
+        case "tcpWrite": tcp.write(str(0)); ok()
         case "position": location.request(replyHandler)
         default: replyHandler(nil, "unknown op \(op)")
         }
     }
 
-    // MARK: for BleLink
+    // MARK: for BleLink / TcpLink
 
     func evalJs(_ script: String) { vc?.evalJs(script) }
     var presenter: UIViewController? { vc }

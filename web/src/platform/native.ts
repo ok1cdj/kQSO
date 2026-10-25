@@ -55,8 +55,8 @@ export interface NativeBridge {
   rigForget?(): void
   rigWrite?(hex: string): void
   rigMtu?(): number
-  // ON4KST chat over a native socket (Android TcpLink.kt); answers come back through
-  // window.__kqsoTcp. Absent before the chat APK.
+  // ON4KST chat over a native socket (Android TcpLink.kt, iOS TcpLink.swift); answers
+  // come back through window.__kqsoTcp. Absent before the chat APK.
   tcpConnect?(host: string, port: number): void
   tcpClose?(): void
   tcpWrite?(text: string): void
