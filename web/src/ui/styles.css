@@ -1364,6 +1364,38 @@ a.help-text,
   text-overflow: ellipsis;
   color: var(--muted);
 }
+.chat-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+}
+.chat-detail-head {
+  font-size: 1.1rem;
+}
+/* Mute / Report: below the messages, set apart from the contest buttons. */
+.chat-detail-mod {
+  margin-top: 1rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--line);
+}
+.chat-detail-mod a.btn {
+  text-decoration: none;
+  color: inherit;
+}
+/* Long press opens the detail: no text selection or system menu instead. */
+.chat-msg,
+.chat-st {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.chat-msg--picked {
+  outline: var(--border-w) solid var(--fg);
+}
+.chat-st-more {
+  min-width: 2rem;
+}
 .chat-loc {
   display: flex;
   flex-wrap: wrap;

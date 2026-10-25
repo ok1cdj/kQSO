@@ -1318,7 +1318,7 @@ export class LoggingScreen implements Screen {
     // @OK1… → the chat's stations with that start; a tap addresses one.
     if (this.isChatLine()) {
       const start = chatTarget(this.line) ?? ''
-      const hits = !frag.includes(' ') && start.length >= 1 ? [...this.kst.chat.users.keys()].filter((c) => c.startsWith(start)).slice(0, 3) : []
+      const hits = !frag.includes(' ') && start.length >= 1 ? [...this.kst.chat.users.keys()].filter((c) => c.startsWith(start) && !this.kst.isMuted(c)).slice(0, 3) : []
       this.stripEl.replaceChildren(...stop, ...hits.map((c) => this.suggestButton(c, () => this.addressChat(c))))
       return
     }
@@ -1512,7 +1512,7 @@ export class LoggingScreen implements Screen {
     const band = this.state.sticky.band
     const now = Date.now() / 1000
     const rows = viewStations(
-      kstStations(this.kst.chat, this.meta.myGrid, (c) => isDupe(this.qsos, c, band)).filter((s) => isActive(s, now)),
+      kstStations(this.kst.chat, this.meta.myGrid, (c) => isDupe(this.qsos, c, band)).filter((s) => isActive(s, now) && !this.kst.isMuted(s.call)),
       this.kst.view,
     ).slice(0, CHAT_ROWS)
     const head = this.kst.link === 'on' ? t('kst.active', { n: rows.length }) : this.kst.link === 'off' || this.kst.link === 'failed' ? t('kst.off') : t('kst.connecting')

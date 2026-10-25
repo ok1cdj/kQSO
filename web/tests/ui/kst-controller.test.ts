@@ -2,7 +2,7 @@
 // login, messages to me, rooms, the "Please wait" lock, the silence watch and the
 // reconnect after a drop.
 import { describe, it, expect } from 'vitest'
-import { KstController } from '../../src/ui/kst'
+import { KstController, kstReportMailto } from '../../src/ui/kst'
 import type { KQSOPlatform, TcpLinkState, TcpTransport } from '../../src/platform/index'
 import type { Timers } from '../../src/core/index'
 
@@ -68,7 +68,13 @@ class FakeTimers implements Timers {
 function setup(settings: Record<string, string> = { kstCall: 'ok1cdj', kstPass: 'pw' }) {
   const tcp = new FakeTcp()
   const timers = new FakeTimers()
-  const platform = { tcp, getSetting: async (k: string) => settings[k] ?? null } as unknown as KQSOPlatform
+  const platform = {
+    tcp,
+    getSetting: async (k: string) => settings[k] ?? null,
+    setSetting: async (k: string, v: string) => {
+      settings[k] = v
+    },
+  } as unknown as KQSOPlatform
   const kst = new KstController(platform, 'kQSO test', timers, () => timers.t)
   let changes = 0
   kst.subscribe(() => changes++)
@@ -126,6 +132,22 @@ describe('KstController', () => {
     tcp.recv('login\r\n' + LOGIN_OK)
     expect(tcp.written.filter((w) => w.startsWith('LOGINC')).length).toBe(2)
     expect(kst.link).toBe('on')
+  })
+
+  it('a muted station: its messages to me are not counted, by its base call', async () => {
+    const { kst, tcp } = await online()
+    tcp.recv('CH|2|11|SV0SYH-2|Ondrej|0|hi|OK1CDJ|\r\n')
+    expect(kst.lastForMe?.call).toBe('SV0SYH-2')
+    kst.setMuted('SV0SYH-2', true)
+    expect(kst.isMuted('SV0SYH')).toBe(true)
+    expect(kst.muted).toEqual(['SV0SYH'])
+    expect(kst.lastForMe).toBeUndefined()
+    const before = kst.unread
+    tcp.recv('CH|2|12|SV0SYH|Ondrej|0|again|OK1CDJ|\r\n')
+    expect(kst.unread).toBe(before)
+    expect(kst.lastForMe).toBeUndefined()
+    kst.setMuted('SV0SYH', false)
+    expect(kst.muted).toEqual([])
   })
 
   it('falls back to the log call; no password = failed without connecting', async () => {
@@ -245,5 +267,20 @@ describe('KstController', () => {
     expect(kst.available).toBe(false)
     await kst.connect('OK1CDJ')
     expect(kst.link).toBe('off')
+  })
+})
+
+describe('kstReportMailto', () => {
+  it('the station, room, reporter and messages, the picked one first', () => {
+    const m = (ts: number, text: string) => ({ room: 2, ts, call: 'XX1XX', name: 'X', text, to: undefined, forMe: false, mentionsMe: false })
+    const picked = m(1_700_000_060, 'bad words')
+    const url = kstReportMailto({ call: 'XX1XX', name: 'X', room: 2, me: 'OK1CDJ', picked, messages: [m(1_700_000_000, 'hi'), picked] })
+    expect(url.startsWith('mailto:ondra@ok1cdj.com?subject=')).toBe(true)
+    const body = decodeURIComponent(url.split('&body=')[1]!)
+    expect(decodeURIComponent(url.split('subject=')[1]!.split('&')[0]!)).toBe('kQSO: ON4KST report XX1XX')
+    expect(body).toContain('Station: XX1XX (X)')
+    expect(body).toContain('Reported by: OK1CDJ')
+    expect(body.indexOf('bad words')).toBeLessThan(body.indexOf(': hi'))
+    expect(body.match(/bad words/g)!.length).toBe(1)
   })
 })

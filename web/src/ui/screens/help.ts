@@ -146,6 +146,8 @@ const EN: readonly Section[] = [
     rows: [
       { text: 'VHF-contest log on 6m and up, account in Settings → ON4KST. Under the contest panel: who wrote in the last 30 min, sorted and filtered as in the chat\'s station list; a tap = @CALL, S = the sked request.' },
       { code: 'O ⏎ / Alt+O', text: 'Open the chat.' },
+      { code: 'DEMO', text: 'Without an ON4KST account: Settings → ON4KST, call DEMO, no password — a simulated chat to try everything (nothing goes to on4kst.org).' },
+      { text: 'In the chat a tap on a message or a station = @CALL; a long press or ⋯ opens the station: its data, its messages, Sked / Log, and at the bottom Mute (hides it on this device; Settings → ON4KST lists muted stations) and Report (an e-mail to the kQSO author).' },
       { text: 'When ON4KST has you in another locator than the log (portable), the chat and the list under the contest panel offer "Set JN89AB": it sends /SETLOC, so the others see the right QRB.' },
       { code: '/SETNAME text', text: 'Commands go from the chat line as typed: /SETNAME Ondra 2/70/23 (name, often with the bands), /SETLOC JN79US.' },
       { code: '@OK1ABC text ⏎', text: 'Send to OK1ABC from the log line (@ text with a space after @ = to everyone).' },
@@ -294,6 +296,8 @@ const CS: readonly Section[] = [
     rows: [
       { text: 'Log VKV závodu od 6m výš, účet v Nastavení → ON4KST. Pod závodním panelem: kdo psal posledních 30 min, seřazení a filtry jako v seznamu stanic v chatu; klepnutí = @ZNAČKA, S = žádost o sked.' },
       { code: 'O ⏎ / Alt+O', text: 'Otevřít chat.' },
+      { code: 'DEMO', text: 'Bez účtu ON4KST: Nastavení → ON4KST, značka DEMO bez hesla — simulovaný chat, ve kterém jde vyzkoušet všechno (nic nejde na on4kst.org).' },
+      { text: 'V chatu klepnutí na zprávu nebo stanici = @ZNAČKA; dlouhý stisk nebo ⋯ otevře stanici: její údaje, zprávy, Sked / Log a dole Ztlumit (skryje ji na tomto zařízení; Nastavení → ON4KST ukazuje ztlumené) a Nahlásit (e-mail autorovi kQSO).' },
       { text: 'Když tě ON4KST má v jiném lokátoru než log (portejbl), chat i seznam pod závodním panelem nabídnou „Nastavit JN89AB“: pošle /SETLOC, aby ostatní viděli správné QRB.' },
       { code: '/SETNAME text', text: 'Příkazy jdou z řádku chatu, jak jsou napsané: /SETNAME Ondra 2/70/23 (jméno, často s pásmy), /SETLOC JN79US.' },
       { code: '@OK1ABC text ⏎', text: 'Poslat OK1ABC přímo ze vstupního řádku (@ text s mezerou za @ = všem).' },

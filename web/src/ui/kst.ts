@@ -4,10 +4,11 @@
 // room, so switching rooms and reconnecting keep the messages. Screens subscribe and
 // re-render on change. Nothing connects until a screen asks (connect / setRoom).
 
-import { KST_HOST, KST_PORT, KST_VIEW_DEFAULT, KstSession, KstState, chatText } from '../core/index'
+import { KST_HOST, KST_PORT, KST_VIEW_DEFAULT, KstSession, KstState, baseCall, chatText } from '../core/index'
 import type { KstEntry, KstEvent, KstRoom, KstView, Timers } from '../core/index'
 import type { KQSOPlatform, TcpLinkState, TcpTransport } from '../platform/index'
 import { t } from './i18n'
+import { KST_DEMO_CALL, KstDemo } from './kst-demo'
 import { browserTimers } from './rig'
 
 export const KST_SETTINGS = {
@@ -16,6 +17,7 @@ export const KST_SETTINGS = {
   sked: 'kstSked', // sked request template
   view: 'kstView', // station lists: sort, direction, filters (JSON)
   skedQrg: 'kstSkedQrg', // sked QRG per band, {"2m": "144.300"} (JSON)
+  muted: 'kstMuted', // muted stations, ["OK1ABC"] (JSON, base calls)
 } as const
 
 /** off → connecting (socket) → login (LOGINC sent) → on; failed = login refused. */
@@ -42,6 +44,34 @@ export function notSentWhy(k: KstController, input = ' '): string {
   if (chatText(input) === undefined) return t('kst.noText')
   const wait = Math.ceil((k.waitUntil - Date.now()) / 1000)
   return wait > 0 ? t('kst.wait', { s: wait }) : t('kst.notSent')
+}
+
+/** Where reports go: the kQSO author, who passes abuse on to ON4KST (privacy.html). */
+export const KST_REPORT_TO = 'ondra@ok1cdj.com'
+
+/** mailto: for reporting a station — its call, the room, who reports, and the messages
+ *  (`picked` first, then its latest), kept short enough for a mailto link. English: it
+ *  goes to the author. */
+export function kstReportMailto(
+  r: { call: string; name: string; room: number; me: string; picked?: KstEntry | undefined; messages: readonly KstEntry[] },
+): string {
+  const line = (m: KstEntry): string => {
+    const d = new Date(m.ts * 1000).toISOString().slice(0, 16).replace('T', ' ')
+    return `${d} ${m.call}${m.to ? ' > ' + m.to : ''}: ${m.text}`
+  }
+  const rest = r.messages.filter((m) => m !== r.picked).slice(-5)
+  const body = [
+    `Station: ${r.call}${r.name ? ` (${r.name})` : ''}`,
+    `ON4KST room: ${r.room}`,
+    `Reported by: ${r.me}`,
+    '',
+    ...(r.picked ? ['Reported message (UTC):', line(r.picked), ''] : []),
+    ...(rest.length ? ['Latest messages (UTC):', ...rest.map(line), ''] : []),
+    'What is wrong:',
+    '',
+  ].join('\n')
+  const subject = `kQSO: ON4KST report ${r.call}`
+  return `mailto:${KST_REPORT_TO}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body.slice(0, 1500))}`
 }
 
 /** A saved JSON setting; undefined when missing or broken. */
@@ -75,8 +105,13 @@ export class KstController {
   view: KstView = KST_VIEW_DEFAULT
   /** The sked QRG per band (G command): any text, put into {QRG} instead of the radio's frequency. */
   private skedQrgs: Record<string, string> = {}
+  /** Stations muted on this device (base calls): hidden everywhere, their messages to me not counted. */
+  private mutedCalls = new Set<string>()
 
-  private readonly transport: TcpTransport | undefined
+  /** The link in use: the platform's socket, or the demo (call DEMO). */
+  private transport: TcpTransport | undefined
+  private readonly real: TcpTransport | undefined
+  private demo: KstDemo | undefined
   private readonly states = new Map<KstRoom, KstState>()
   private readonly listeners = new Set<() => void>()
   private session: KstSession | undefined
@@ -99,14 +134,36 @@ export class KstController {
     private readonly now: () => number = Date.now,
   ) {
     const tr = platform.tcp
+    this.real = tr
     this.transport = tr
     this.available = tr !== undefined
-    if (!tr) return
+    if (tr) this.listen(tr)
+  }
+
+  /** Events of a link that isn't the one in use (after a switch to / from the demo) are ignored. */
+  private listen(tr: TcpTransport): void {
     tr.onData((text) => {
+      if (tr !== this.transport) return
       this.heard()
       this.session?.receive(text)
     })
-    tr.onState((s, reason) => this.onLink(s, reason))
+    tr.onState((s, reason) => {
+      if (tr === this.transport) this.onLink(s, reason)
+    })
+  }
+
+  /** The call DEMO: the simulated chat (kst-demo.ts) instead of on4kst.org. */
+  private pick(call: string): void {
+    const want = call === KST_DEMO_CALL ? (this.demo ??= this.newDemo()) : this.real
+    if (want === this.transport) return
+    this.transport?.close()
+    this.transport = want
+  }
+
+  private newDemo(): KstDemo {
+    const d = new KstDemo(this.timers, this.now)
+    this.listen(d)
+    return d
   }
 
   /** Back from sleep / another app (iOS closes sockets in the background): reconnect. Call once at start. */
@@ -120,6 +177,10 @@ export class KstController {
     })
     void this.platform.getSetting(KST_SETTINGS.skedQrg).then((v) => {
       this.skedQrgs = parseJson<Record<string, string>>(v) ?? {}
+    })
+    void this.platform.getSetting(KST_SETTINGS.muted).then((v) => {
+      this.mutedCalls = new Set(parseJson<string[]>(v) ?? [])
+      this.emit()
     })
     document.addEventListener('visibilitychange', () => {
       // The call of the last login: with none saved it was the log's, which only screens know.
@@ -161,12 +222,13 @@ export class KstController {
 
   /** Connects with the saved account (`fallbackCall` = the log's call when none is saved). */
   async connect(fallbackCall = ''): Promise<void> {
-    if (!this.transport) return
+    if (!this.available) return
     if (this.wantLink && this.link !== 'off') return // already (being) connected
     const p = this.platform
     this.call = ((await p.getSetting(KST_SETTINGS.call)) || fallbackCall).trim().toUpperCase()
     this.pass = (await p.getSetting(KST_SETTINGS.pass)) ?? ''
-    if (!this.call || !this.pass) {
+    this.pick(this.call)
+    if (!this.call || (!this.pass && this.call !== KST_DEMO_CALL)) {
       this.setLink('failed', 'account')
       return
     }
@@ -204,6 +266,25 @@ export class KstController {
   setView(change: Partial<KstView>): void {
     this.view = { ...this.view, ...change }
     void this.platform.setSetting(KST_SETTINGS.view, JSON.stringify(this.view))
+    this.emit()
+  }
+
+  isMuted(call: string): boolean {
+    return this.mutedCalls.has(baseCall(call))
+  }
+
+  /** The muted stations, A–Z. */
+  get muted(): string[] {
+    return [...this.mutedCalls].sort()
+  }
+
+  /** Mutes / unmutes a station (by its base call, so all its band suffixes) and saves it. */
+  setMuted(call: string, on: boolean): void {
+    const c = baseCall(call)
+    if (on) this.mutedCalls.add(c)
+    else this.mutedCalls.delete(c)
+    if (on && this.lastForMe && baseCall(this.lastForMe.call) === c) this.lastForMe = undefined
+    void this.platform.setSetting(KST_SETTINGS.muted, JSON.stringify(this.muted))
     this.emit()
   }
 
@@ -293,7 +374,7 @@ export class KstController {
         break
       case 'message':
         // The history at the first login is old; after a drop it holds what was missed.
-        if (e.entry.forMe && (!e.history || (this.sinceTs > 0 && e.entry.ts > this.sinceTs))) {
+        if (e.entry.forMe && !this.isMuted(e.entry.call) && (!e.history || (this.sinceTs > 0 && e.entry.ts > this.sinceTs))) {
           this.unread++
           this.lastForMe = e.entry
         }

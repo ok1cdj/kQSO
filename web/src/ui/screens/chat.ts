@@ -2,16 +2,18 @@
 // tabs: the messages (all, or only to me) and the stations (distance / bearing from the
 // log's locator, worked on the log's band). A tap on a message or a station puts
 // "@CALL " into the line at the bottom; Sked fills in the sked request, Log goes back to
-// the log with the call and locator typed in. Text from the chat is only ever set as
-// text, never as HTML.
+// the log with the call and locator typed in. A long press (or ⋯ on a station) opens
+// the station's detail: its data, its messages, and — out of the way of contest work —
+// Mute and Report. Muted stations are hidden here and everywhere else. Text from the
+// chat is only ever set as text, never as HTML.
 
 import { PROFILES, baseCall, expandSked, isDupe, kstStations, locatorToSet, readLogFile, roomForBand, viewStations, SKED_DEFAULT } from '../../core/index'
 import type { KstEntry, KstRoom, KstSort, KstStation, LogMeta, Qso } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
-import { el, button } from '../dom'
+import { el, button, onLongPress } from '../dom'
 import { t } from '../i18n'
-import { KST_SETTINGS, kstStatus, notSentWhy } from '../kst'
+import { KST_SETTINGS, kstReportMailto, kstStatus, notSentWhy } from '../kst'
 import type { KstController } from '../kst'
 
 export interface ChatNav {
@@ -54,6 +56,8 @@ export class ChatScreen implements Screen {
   private sked = SKED_DEFAULT
   private unsubscribe: (() => void) | undefined
   private frame = 0
+  /** The station whose detail is open; `picked` = the message it was opened from (for Report). */
+  private detail: { call: string; picked?: KstEntry | undefined } | undefined
 
   constructor(
     private readonly platform: KQSOPlatform,
@@ -75,7 +79,10 @@ export class ChatScreen implements Screen {
       if (e.key === 'Enter') {
         e.preventDefault()
         this.send()
-      } else if (e.key === 'Escape' && this.input.value === '') this.nav.back()
+      } else if (e.key === 'Escape' && this.input.value === '') {
+        if (this.detail) this.closeDetail()
+        else this.nav.back()
+      }
     })
     const compose = el('div', 'chat-compose')
     compose.append(this.input, button(t('kst.send'), () => this.send(), 'btn'))
@@ -122,6 +129,8 @@ export class ChatScreen implements Screen {
       }),
     )
     this.renderLoc()
+    this.tabsEl.hidden = this.detail !== undefined
+    if (this.detail) return this.renderDetail(this.detail.call, this.detail.picked)
     const unread = k.unread > 0 ? ` (${k.unread})` : ''
     this.tabsEl.replaceChildren(
       this.toggle(t('kst.messages') + unread, tab === 'messages', () => (tab = 'messages')),
@@ -158,7 +167,8 @@ export class ChatScreen implements Screen {
     this.kst.markRead()
     this.toolsEl.replaceChildren(this.toggle(t('kst.onlyMe'), onlyMe, () => (onlyMe = !onlyMe)))
     const stick = this.bodyEl.scrollHeight - this.bodyEl.scrollTop - this.bodyEl.clientHeight < 40
-    const msgs = this.kst.chat.messages.filter((m) => !onlyMe || m.forMe || this.kst.chat.isMe(m.call))
+    const k = this.kst
+    const msgs = k.chat.messages.filter((m) => !k.isMuted(m.call) && (!onlyMe || m.forMe || k.chat.isMe(m.call)))
     if (msgs.length === 0) {
       this.bodyEl.replaceChildren(el('div', 'about', t('kst.empty')))
       return
@@ -169,11 +179,14 @@ export class ChatScreen implements Screen {
     if (stick) this.bodyEl.scrollTop = this.bodyEl.scrollHeight
   }
 
-  private messageRow(m: KstEntry): HTMLElement {
+  /** A tap addresses the other station; a long press opens its detail (`picked` = this message). */
+  private messageRow(m: KstEntry, picked = false): HTMLElement {
     const mine = this.kst.chat.isMe(m.call)
+    const other = mine ? m.to : m.call
     const li = el('li')
-    const cls = ['chat-msg', m.forMe ? 'chat-msg--me' : '', m.mentionsMe ? 'chat-msg--mention' : '', mine ? 'chat-msg--mine' : '']
-    const b = button('', () => this.address(mine ? m.to : m.call), cls.filter(Boolean).join(' '))
+    const cls = ['chat-msg', m.forMe ? 'chat-msg--me' : '', m.mentionsMe ? 'chat-msg--mention' : '', mine ? 'chat-msg--mine' : '', picked ? 'chat-msg--picked' : '']
+    const b = button('', () => this.address(other), cls.filter(Boolean).join(' '))
+    if (other) onLongPress(b, () => this.openDetail(other, mine ? undefined : m))
     b.append(el('span', 'chat-time', hhmm(m.ts)), ' ', el('b', undefined, m.call))
     if (m.to) b.append(` → ${m.to}`)
     b.append(`: ${m.text}`)
@@ -197,7 +210,7 @@ export class ChatScreen implements Screen {
       this.toggle(t('kst.hideAway'), v.hideAway, () => k.setView({ hideAway: !v.hideAway })),
     )
     const all = kstStations(k.chat, this.meta?.myGrid ?? '', (c) => this.worked(c))
-    const shown = viewStations(all, v)
+    const shown = viewStations(all.filter((s) => !k.isMuted(s.call)), v)
     const table = el('table', 'chat-stations')
     for (const s of shown) table.append(this.stationRow(s))
     this.bodyEl.replaceChildren(table)
@@ -216,11 +229,83 @@ export class ChatScreen implements Screen {
     const acts = el('td', 'chat-st-acts')
     acts.append(
       button(t('kst.sked'), () => this.address(s.call, this.skedText()), 'btn btn--small'),
-      button(t('kst.toLog'), () => this.nav.toLog(`${baseCall(s.call)} ${s.loc}`.trim()), 'btn btn--small'),
+      button(t('kst.toLog'), () => this.toLog(s), 'btn btn--small'),
     )
+    const more = button('⋯', () => this.openDetail(s.call), 'btn btn--small chat-st-more')
+    more.title = t('kst.details')
+    more.setAttribute('aria-label', t('kst.details'))
+    acts.append(more)
     tr.append(acts)
     for (const td of Array.from(tr.children).slice(0, 5)) td.addEventListener('click', () => this.address(s.call))
+    onLongPress(tr, () => this.openDetail(s.call))
     return tr
+  }
+
+  private toLog(s: { call: string; loc: string }): void {
+    this.nav.toLog(`${baseCall(s.call)} ${s.loc}`.trim())
+  }
+
+  private openDetail(call: string, picked?: KstEntry): void {
+    this.detail = { call, picked }
+    this.render()
+    this.bodyEl.scrollTop = 0
+  }
+
+  private closeDetail(): void {
+    this.detail = undefined
+    this.render()
+  }
+
+  /** One station: its data and actions, its messages (also while muted, to report them),
+   *  and Mute / Report at the bottom, away from Sked / Log. */
+  private renderDetail(call: string, picked: KstEntry | undefined): void {
+    const k = this.kst
+    const bc = baseCall(call)
+    const all = kstStations(k.chat, this.meta?.myGrid ?? '', (c) => this.worked(c))
+    const s = all.find((x) => x.call === call) ?? all.find((x) => baseCall(x.call) === bc)
+    const msgs = k.chat.messages.filter((m) => baseCall(m.call) === bc || (m.to !== undefined && baseCall(m.to) === bc)).slice(-30)
+    const name = s?.name ?? picked?.name ?? msgs.find((m) => baseCall(m.call) === bc)?.name ?? ''
+    const muted = k.isMuted(call)
+    this.toolsEl.replaceChildren(button(`‹ ${t('kst.stations')}`, () => this.closeDetail(), 'btn btn--small'))
+
+    const head = el('div', 'chat-detail-head')
+    head.append(el('b', 'chat-st-call', s?.call ?? call))
+    if (name) head.append(' ', el('span', 'chat-st-name', name))
+    const facts: string[] = []
+    if (s) {
+      if (s.loc) facts.push(s.loc)
+      if (s.km !== undefined) facts.push(`${s.km} km`)
+      if (s.az !== undefined) facts.push(`${s.az}°`)
+      facts.push(t(s.worked ? 'kst.worked' : 'kst.notWorked', { band: this.ctx.band }))
+      if (s.away) facts.push(t('kst.away'))
+    } else facts.push(t('kst.left'))
+    if (muted) facts.push(t('kst.mutedNote'))
+    const acts = el('div', 'segmented')
+    acts.append(
+      button(t('kst.write'), () => this.address(s?.call ?? call), 'btn btn--small'),
+      button(t('kst.sked'), () => this.address(s?.call ?? call, this.skedText()), 'btn btn--small'),
+    )
+    if (s) acts.append(button(t('kst.toLog'), () => this.toLog(s), 'btn btn--small'))
+
+    const list = el('ol', 'chat-msgs')
+    list.append(...msgs.map((m) => this.messageRow(m, m === picked)))
+
+    const report = el('a', 'btn btn--small', t('kst.report'))
+    report.href = kstReportMailto({ call: s?.call ?? call, name, room: k.room, me: k.call, picked, messages: msgs.filter((m) => baseCall(m.call) === bc) })
+    const mod = el('div', 'chat-detail-mod')
+    const modActs = el('div', 'segmented')
+    modActs.append(
+      button(t(muted ? 'kst.unmute' : 'kst.mute'), () => {
+        k.setMuted(call, !muted)
+        this.render()
+      }, 'btn btn--small'),
+      report,
+    )
+    mod.append(modActs, el('div', 'about', t('kst.modHint')))
+
+    const box = el('div', 'chat-detail')
+    box.append(head, el('div', 'about', facts.join(' · ')), acts, msgs.length ? list : el('div', 'about', t('kst.noMsgs')), mod)
+    this.bodyEl.replaceChildren(box)
   }
 
   private worked(call: string): boolean {

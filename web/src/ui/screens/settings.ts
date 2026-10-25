@@ -468,7 +468,18 @@ export class SettingsScreen implements Screen {
     sked.input.autocapitalize = 'off'
     const state = el('span')
     const status = el('div', 'about')
+    const muted = el('div', 'setting')
+    let mutedKey = ''
+    const paintMuted = (): void => {
+      const list = this.kst.muted
+      if (list.join() === mutedKey && muted.firstChild) return
+      mutedKey = list.join()
+      const rows = el('div', 'segmented segmented--wrap')
+      rows.append(...list.map((c) => button(`${c} ✕`, () => this.kst.setMuted(c, false), 'btn btn--small')))
+      muted.replaceChildren(el('span', 'field-label', t('settings.kstMuted')), list.length ? rows : el('div', 'about', t('settings.kstMutedNone')))
+    }
     const paint = (): void => {
+      paintMuted()
       status.textContent = kstStatus(this.kst)
       state.textContent = this.kst.link === 'on' || this.kst.wanted ? status.textContent : savedPass ? t('kst.off') : t('settings.kstSummaryOff')
     }
@@ -507,7 +518,7 @@ export class SettingsScreen implements Screen {
     reg.append(a)
     const hints = [el('div', 'about', t('settings.kstPassHint'))]
     if (!this.platform.nativeVersion) hints.push(el('div', 'about', t('settings.kstWeb')))
-    return this.fold('kst', t('settings.kst'), state, el('div', undefined, t('settings.kstAbout')), call.row, pass.row, ...hints, sked.row, actions, status, reg)
+    return this.fold('kst', t('settings.kst'), state, el('div', undefined, t('settings.kstAbout')), call.row, pass.row, ...hints, sked.row, actions, status, muted, reg)
   }
 
   /** Web only: anonymous usage statistics (stats.ts) on/off, default on. */

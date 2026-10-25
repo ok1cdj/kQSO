@@ -122,6 +122,8 @@ export class App {
   }
 
   showLogList(): void {
+    // No log open: the chat goes offline (in ON4KST too); the chat screen connects it again.
+    if (this.kst.wanted || this.kst.link !== 'off') this.kst.disconnect()
     this.show(
       new LogListScreen(this.platform, {
         openLog: (id) => this.showLogging(id),
