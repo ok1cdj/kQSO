@@ -28,6 +28,7 @@ import {
   combineSources,
   dbDate,
   qrvLabels,
+  unionQrv,
   emptySuggestions,
   userHeader,
   isDupe,
@@ -44,6 +45,7 @@ import {
   scoringFor,
   ringPoints,
   roomForBand,
+  baseCall,
   chatTarget,
   chatText,
   expandSked,
@@ -1217,18 +1219,28 @@ export class LoggingScreen implements Screen {
     return chips
   }
 
-  /** VHF contest: the other bands the database knows the call on (as Tučňák shows them);
-   *  `band` is the QSO's, a band typed on this line included. Bands already worked are struck out. */
+  /** VHF contest: the other bands the database and the ON4KST chat know the call on (as
+   *  Tučňák shows them); `band` is the QSO's, a band typed on this line included. Bands
+   *  already worked are struck out. */
   private qrvChip(call: string, band: string): HTMLElement[] {
-    const bands = qrvLabels(this.db.lookup(call)?.qrv, band)
-    if (bands.length === 0) return []
+    const labels = this.qrvLabelsEl(call, band)
+    if (!labels) return []
     const chip = el('span', 'tok')
-    bands.forEach(({ band: b, label }, i) => {
-      if (i > 0) chip.append(' ')
-      chip.append(isDupe(this.qsos, call, b, this.dupeMode()) ? el('s', undefined, label) : label)
-    })
-    chip.append(el('small', undefined, 'QRV'))
+    chip.append(...labels.childNodes, el('small', undefined, 'QRV'))
     return [chip]
+  }
+
+  /** The call's QRV bands except `band` ("2 70 ~~23~~", worked ones struck out), or undefined. */
+  private qrvLabelsEl(call: string, band: string): HTMLElement | undefined {
+    const qrv = unionQrv(this.db.lookup(call)?.qrv, this.chatOn() ? this.kst.qrvOf(call) : undefined)
+    const bands = qrvLabels(qrv, band)
+    if (bands.length === 0) return undefined
+    const span = el('span', 'qrv')
+    bands.forEach(({ band: b, label }, i) => {
+      if (i > 0) span.append(' ')
+      span.append(isDupe(this.qsos, call, b, this.dupeMode()) ? el('s', undefined, label) : label)
+    })
+    return span
   }
 
   /** The call's locator in this log (the latest QSO with one), if worked already. */
@@ -1522,7 +1534,7 @@ export class LoggingScreen implements Screen {
     ).slice(0, CHAT_ROWS)
     const head = this.kst.link === 'on' ? t('kst.active', { n: rows.length }) : this.kst.link === 'off' || this.kst.link === 'failed' ? t('kst.off') : t('kst.connecting')
     const loc = this.kst.link === 'on' ? locatorToSet(this.kst.locator, this.meta.myGrid) : undefined
-    const key = [this.kst.room, head, loc, ...rows.map((s) => `${s.call}|${s.loc}|${s.km}|${s.az}|${s.isNew}|${s.worked}|${s.away}`)].join(';')
+    const key = [this.kst.room, head, loc, ...rows.map((s) => `${s.call}|${s.loc}|${s.km}|${s.az}|${s.isNew}|${s.worked}|${s.away}|${this.kst.qrvOf(s.call) ?? ''}`)].join(';')
     if (key === this.stationsKey) return
     this.stationsKey = key
     const title = el('div', 'kst-side-head', `KST · ${head}`)
@@ -1540,6 +1552,8 @@ export class LoggingScreen implements Screen {
       const row = this.suggestButton(`${s.call.padEnd(10)} ${s.loc.padEnd(6)} ${String(s.km ?? '').padStart(4)} ${String(s.az ?? '').padStart(3)}°`, () => this.addressChat(s.call), ['kst-side-row', s.isNew ? 'kst-side-row--new' : '', s.worked ? 'kst-side-row--worked' : '', s.away ? 'kst-side-row--away' : ''].filter(Boolean).join(' '))
       const sked = this.suggestButton('S', () => this.addressChat(s.call, this.skedText()), 'kst-side-sked')
       sked.title = t('kst.sked')
+      const qrv = this.qrvLabelsEl(baseCall(s.call), band)
+      if (qrv) row.append(' ', qrv)
       li.append(row, sked)
       list.append(li)
     }

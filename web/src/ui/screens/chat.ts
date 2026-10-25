@@ -7,10 +7,11 @@
 // Mute and Report. Muted stations are hidden here and everywhere else. Text from the
 // chat is only ever set as text, never as HTML.
 
-import { PROFILES, baseCall, expandSked, isDupe, kstStations, locatorToSet, readLogFile, roomForBand, viewStations, SKED_DEFAULT } from '../../core/index'
-import type { KstEntry, KstRoom, KstSort, KstStation, LogMeta, Qso } from '../../core/index'
+import { LiveDb, PROFILES, SKED_DEFAULT, baseCall, combineSources, emptySuggestions, expandSked, isDupe, kstStations, locatorToSet, qrvLabels, readLogFile, roomForBand, unionQrv, viewStations } from '../../core/index'
+import type { KstEntry, KstRoom, KstSort, KstStation, LogMeta, Qso, SuggestionSource } from '../../core/index'
 import type { KQSOPlatform } from '../../platform/index'
 import type { Screen } from '../app'
+import { BUNDLED_DB_SETTING, bundledSource } from '../bundled-db'
 import { el, button, onLongPress } from '../dom'
 import { t } from '../i18n'
 import { KST_SETTINGS, kstConsentPanel, kstReportMailto, kstStatus, notSentWhy } from '../kst'
@@ -53,6 +54,8 @@ export class ChatScreen implements Screen {
   private readonly noticeEl = el('div', 'about')
   private meta: LogMeta | undefined
   private qsos: Qso[] = []
+  /** The callsign database (QRV bands), as on the logging screen. */
+  private db: SuggestionSource = emptySuggestions
   private sked = SKED_DEFAULT
   private unsubscribe: (() => void) | undefined
   private frame = 0
@@ -102,6 +105,9 @@ export class ChatScreen implements Screen {
     this.meta = meta
     this.qsos = qsos
     this.sked = (await this.platform.getSetting(KST_SETTINGS.sked)) || SKED_DEFAULT
+    const setId = PROFILES[meta.profile].bundledDb
+    const useBundled = (await this.platform.getSetting(BUNDLED_DB_SETTING)) !== '0'
+    this.db = combineSources(setId && useBundled ? bundledSource(setId) : null, LiveDb.fromText(await this.platform.readCallDb()))
     const room = roomForBand(this.ctx.band)
     if (room) this.kst.setRoom(room)
     if (!this.kst.wanted && this.kst.link !== 'on') await this.kst.connect(meta.myCall)
@@ -231,6 +237,7 @@ export class ChatScreen implements Screen {
       el('td', undefined, s.loc),
       el('td', 'num', s.km !== undefined ? String(s.km) : ''),
       el('td', 'num', s.az !== undefined ? `${s.az}°` : ''),
+      this.qrvEl(s.call, 'td'),
       el('td', 'chat-st-name', s.name),
     )
     const acts = el('td', 'chat-st-acts')
@@ -243,9 +250,22 @@ export class ChatScreen implements Screen {
     more.setAttribute('aria-label', t('kst.details'))
     acts.append(more)
     tr.append(acts)
-    for (const td of Array.from(tr.children).slice(0, 5)) td.addEventListener('click', () => this.address(s.call))
+    for (const td of Array.from(tr.children).slice(0, 6)) td.addEventListener('click', () => this.address(s.call))
     onLongPress(tr, () => this.openDetail(s.call))
     return tr
+  }
+
+  /** The other bands the chat and the callsign database know the station on ("2 70 23";
+   *  worked ones struck out), as on the logging screen. */
+  private qrvEl(call: string, tag: 'td' | 'div'): HTMLElement {
+    const bc = baseCall(call)
+    const box = el(tag, tag === 'td' ? 'chat-st-qrv' : 'qrv')
+    const bands = qrvLabels(unionQrv(this.db.lookup(bc)?.qrv, this.kst.qrvOf(call)), this.ctx.band)
+    bands.forEach(({ band, label }, i) => {
+      if (i > 0) box.append(' ')
+      box.append(this.workedOn(bc, band) ? el('s', undefined, label) : label)
+    })
+    return box
   }
 
   private toLog(s: { call: string; loc: string }): void {
@@ -311,13 +331,19 @@ export class ChatScreen implements Screen {
     mod.append(modActs, el('div', 'about', t('kst.modHint')))
 
     const box = el('div', 'chat-detail')
-    box.append(head, el('div', 'about', facts.join(' · ')), acts, msgs.length ? list : el('div', 'about', t('kst.noMsgs')), mod)
+    const qrv = this.qrvEl(call, 'div')
+    if (qrv.childNodes.length) qrv.prepend('QRV ')
+    box.append(head, el('div', 'about', facts.join(' · ')), ...(qrv.childNodes.length ? [qrv] : []), acts, msgs.length ? list : el('div', 'about', t('kst.noMsgs')), mod)
     this.bodyEl.replaceChildren(box)
   }
 
   private worked(call: string): boolean {
+    return this.workedOn(call, this.ctx.band)
+  }
+
+  private workedOn(call: string, band: string): boolean {
     const contest = this.meta ? PROFILES[this.meta.profile].contest : true
-    return isDupe(this.qsos, call, this.ctx.band, contest ? undefined : this.ctx.mode)
+    return isDupe(this.qsos, call, band, contest ? undefined : this.ctx.mode)
   }
 
   private skedText(): string {

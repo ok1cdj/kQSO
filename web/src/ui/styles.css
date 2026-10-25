@@ -1277,6 +1277,10 @@ a.help-text,
   white-space: pre;
   overflow: hidden;
 }
+/* The QRV bands after the bearing, set apart from the km. */
+.kst-side-row .qrv {
+  margin-left: 0.6em;
+}
 .kst-side-row--new {
   font-weight: 700;
 }
@@ -1357,6 +1361,11 @@ a.help-text,
 .chat-st-call {
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.chat-stations td.chat-st-qrv {
+  font-size: 0.8rem;
+  white-space: normal;
+  min-width: 2.5rem;
 }
 .chat-st-name {
   max-width: 12rem;

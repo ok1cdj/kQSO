@@ -4,7 +4,7 @@
 // room, so switching rooms and reconnecting keep the messages. Screens subscribe and
 // re-render on change. Nothing connects until a screen asks (connect / setRoom).
 
-import { KST_HOST, KST_PORT, KST_VIEW_DEFAULT, KstSession, KstState, baseCall, chatText } from '../core/index'
+import { KST_HOST, KST_PORT, KST_VIEW_DEFAULT, KstSession, KstState, baseCall, chatQrv, chatText } from '../core/index'
 import type { KstEntry, KstEvent, KstRoom, KstView, Timers } from '../core/index'
 import type { KQSOPlatform, TcpLinkState, TcpTransport } from '../platform/index'
 import { button, el } from './dom'
@@ -126,6 +126,8 @@ export class KstController {
   private skedQrgs: Record<string, string> = {}
   /** Stations muted on this device (base calls): hidden everywhere, their messages to me not counted. */
   private mutedCalls = new Set<string>()
+  /** chatQrv of the current room, until the next change. */
+  private qrvCache: Map<string, string> | undefined
 
   /** The link in use: the platform's socket, or the demo (call DEMO). */
   private transport: TcpTransport | undefined
@@ -273,6 +275,7 @@ export class KstController {
   setRoom(room: KstRoom): void {
     if (room === this.room) return
     this.room = room
+    this.qrvCache = undefined
     this.lastForMe = undefined
     if (this.wantLink) this.open()
     else this.emit()
@@ -296,6 +299,12 @@ export class KstController {
     this.view = { ...this.view, ...change }
     void this.platform.setSetting(KST_SETTINGS.view, JSON.stringify(this.view))
     this.emit()
+  }
+
+  /** The bands the chat says a station is QRV on (its name and messages), as QRV letters. */
+  qrvOf(call: string): string | undefined {
+    this.qrvCache ??= chatQrv(this.chat)
+    return this.qrvCache.get(baseCall(call))
   }
 
   isMuted(call: string): boolean {
@@ -448,6 +457,7 @@ export class KstController {
   }
 
   private emit(): void {
+    this.qrvCache = undefined
     for (const cb of this.listeners) cb()
   }
 }

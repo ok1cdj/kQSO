@@ -58,7 +58,7 @@ export function qrvLabels(qrv: string | undefined, except?: string): { band: str
 }
 
 /** Both QRV strings' letters, sorted, once each; undefined when none. */
-function unionQrv(a: string | undefined, b: string | undefined): string | undefined {
+export function unionQrv(a: string | undefined, b: string | undefined): string | undefined {
   const u = [...new Set((a ?? '') + (b ?? ''))].sort().join('')
   return u || undefined
 }
