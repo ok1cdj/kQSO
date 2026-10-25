@@ -277,7 +277,7 @@ export class ChatScreen implements Screen {
 
     const head = el('div', 'chat-detail-head')
     head.append(el('b', 'chat-st-call', s?.call ?? call))
-    if (name) head.append(' ', el('span', 'chat-st-name', name))
+    if (name) head.append(' ', el('span', 'chat-detail-name', name))
     const facts: string[] = []
     if (s) {
       if (s.loc) facts.push(s.loc)

@@ -185,10 +185,13 @@ export function expandSked(
     .trim()
 }
 
-/** G text ⏎: the band's sked QRG (text = '' shows it, '-' clears it); undefined = not the command. */
+/** G text ⏎: the band's sked QRG (text = '' shows it, '-' clears it); undefined = not the
+ *  command. Leading digits without a dot are kHz, as in F28300 (the kQSO keyboard has no
+ *  dot): G 144290 cw → "144.290 cw". */
 export function matchSkedQrg(line: string): string | undefined {
   const m = /^g(?:\s+(.*))?$/i.exec(line.trim())
-  return m ? (m[1] ?? '').trim() : undefined
+  if (!m) return undefined
+  return (m[1] ?? '').trim().replace(/^(\d{4,})(?=\s|$)/, (khz) => (Number(khz) / 1000).toFixed(3))
 }
 
 /** The log's locator when ON4KST has another one for me (QRB / az for the others come from

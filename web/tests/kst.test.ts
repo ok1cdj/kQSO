@@ -99,6 +99,10 @@ describe('text helpers', () => {
     expect(matchSkedQrg('G')).toBe('')
     expect(matchSkedQrg(' g ')).toBe('')
     expect(matchSkedQrg('G -')).toBe('-')
+    expect(matchSkedQrg('G 144290 CW')).toBe('144.290 CW') // kHz without a dot, as F28300
+    expect(matchSkedQrg('G 1296200')).toBe('1296.200')
+    expect(matchSkedQrg('G 144.290')).toBe('144.290')
+    expect(matchSkedQrg('G 144')).toBe('144')
     expect(matchSkedQrg('G4ABC')).toBeUndefined()
     expect(matchSkedQrg('OK1ABC G')).toBeUndefined()
   })

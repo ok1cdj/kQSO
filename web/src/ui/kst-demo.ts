@@ -19,7 +19,7 @@ interface DemoStation {
 }
 
 const CHATTERS: readonly DemoStation[] = [
-  { call: 'OK1CDJ', name: 'Ondra 2/70/23', loc: 'JN79US' },
+  { call: 'OK1CDJ', name: 'Ondra 2/70/23', loc: 'JO60VA' },
   { call: 'OK1RS', name: 'Contest 2/70', loc: 'JO70FD' },
   { call: 'OL0M', name: 'OL0M team 2-70-23-13', loc: 'JN89AE' },
 ]

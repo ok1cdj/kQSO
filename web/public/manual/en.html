@@ -18,7 +18,7 @@
 <li><a href="#start">Getting started</a></li>
 <li><a href="#logs">Logs and profiles</a></li>
 <li><a href="#logging">Logging a QSO</a></li>
-<li><a href="#contest">VHF contest</a></li>
+<li><a href="#contest">VHF contest and ON4KST chat</a></li>
 <li><a href="#activation">Activations and satellites</a></li>
 <li><a href="#export">Export and Wavelog</a></li>
 <li><a href="#databases">Callsign database and offline references</a></li>
@@ -126,6 +126,9 @@
 <tr><td><code>D</code></td><td>delete the last saved QSO (asks first)</td></tr>
 <tr><td><code>E</code></td><td>edit the last saved QSO</td></tr>
 <tr><td><code>H</code></td><td>help</td></tr>
+<tr><td><code>O</code></td><td>open the <a href="#chat">ON4KST chat</a> (VHF contest log)</td></tr>
+<tr><td><code>G 144.290</code></td><td>the band's sked QRG; <code>G</code> shows it, <code>G -</code> clears it</td></tr>
+<tr><td><code>@OK1ABC text</code></td><td>a chat message (no QSO is logged)</td></tr>
 </table>
 <p><b>Esc</b> clears the line being typed (e.g. a call you only looked up).</p>
 
@@ -145,7 +148,7 @@
 </ul>
 <figure class="phone"><img src="img/en/logging-system-kbd.webp" alt="System keyboard" width="390" height="844" loading="lazy"><figcaption>System keyboard: the line on top, the recent QSOs below.</figcaption></figure>
 
-<h2 id="contest">4. VHF contest</h2>
+<h2 id="contest">4. VHF contest and ON4KST chat</h2>
 <p>A <b>VHF contest</b> log scores the QSOs (1 point per km between locator centres, IARU R1; VKV PA and FM pohár by large-square rings), checks dupes per band and numbers your QSOs. The next serial to give is boxed in the header; the numbering is shared by all bands.</p>
 <p>In the <b>6 hours</b> entry (on 2 m, 70 cm, 6 m and 4 m) kQSO keeps the six-hour window for each band separately:</p>
 <ul>
@@ -193,6 +196,42 @@
 <figure class="phone"><img src="img/en/edi-band.webp" alt="EDI, one band" width="390" height="496" loading="lazy"><figcaption>The 435 MHz band: power, antenna, transmitter, export.</figcaption></figure>
 </div>
 <p>The ADIF from the <b>export</b> button has all bands in one file, e.g. for Wavelog.</p>
+
+<h3 id="chat">ON4KST chat</h3>
+<p>The <a href="https://www.on4kst.org/">ON4KST</a> chat is where skeds are arranged in VHF contests. kQSO has it right in a VHF contest log on 6 m and up; it picks the room (50/70 MHz, 144/432 MHz or Microwaves) from the log's band. You need your own ON4KST account (licensed radio amateurs only); without one, try the chat with the call <code>DEMO</code> (see below).</p>
+<ol>
+<li><b>Settings → ON4KST chat</b>: the ON4KST call (empty = the log's call), the password and <b>Save and connect</b>.</li>
+<li>Before the first connection kQSO shows the chat rules: ON4KST runs the chat, abusive content isn't tolerated, a station can be muted and a message reported. <b>I agree</b> connects; it doesn't ask again.</li>
+<li>In a VHF contest log the chat opens from the bubble in the header, <code>O</code> ⏎ or <kbd>Alt+O</kbd>. Back in the list of logs the chat disconnects.</li>
+</ol>
+<div class="figs">
+<figure class="crop"><img src="img/en/settings-kst.webp" alt="Settings, ON4KST chat" width="374" height="744" loading="lazy"><figcaption>Settings → ON4KST chat.</figcaption></figure>
+<figure class="crop"><img src="img/en/chat-consent.webp" alt="Chat rules" width="374" height="446" loading="lazy"><figcaption>The rules before the first connection.</figcaption></figure>
+</div>
+<p><b>Messages:</b> newest at the bottom; messages to you are bold with a bar on the left, and <b>Only to me</b> shows just those. A tap on a message puts the sender's <code>@CALL</code> into the line at the bottom: add the text and press Enter. <code>@OK1ABC text</code> goes to that station, text without <code>@</code> to everyone in the room. The line also takes ON4KST commands as typed: <code>/SETNAME Ondra 2/70/23</code> (the name, often with the bands), <code>/SETLOC JN79US</code>.</p>
+<p><b>Stations:</b> locator, distance and bearing from the log's locator. Sort by call, km or bearing; tapping the same sort again reverses it (▲ / ▼). <b>Hide worked</b> hides the stations you already have on the log's band, <b>Hide away</b> those who are away. A station that just joined is underlined. <b>Sked</b> puts the sked request into the line, <b>Log</b> goes back to the log with the call and locator typed in. On a narrow screen the names are left out.</p>
+<div class="figs">
+<figure class="phone"><img src="img/en/chat-messages.webp" alt="Messages" width="390" height="844" loading="lazy"><figcaption>Messages; the last one is to me.</figcaption></figure>
+<figure class="phone"><img src="img/en/chat-stations.webp" alt="Stations" width="390" height="844" loading="lazy"><figcaption>Stations by distance.</figcaption></figure>
+</div>
+<p><b>Station details:</b> <b>⋯</b> on a station, or a long press on a station or a message. It shows the station, whether you have it on the band, its messages and your conversation, and Write, Sked and Log. At the bottom, away from the contest buttons:</p>
+<ul>
+<li><b>Mute</b>: hides the station on this device (in the chat, under the contest panel and in the suggestions), and its messages to you are not counted. Muted stations, and unmuting, are in Settings → ON4KST chat.</li>
+<li><b>Report</b>: opens an e-mail to the kQSO author with the station and its messages (the long-pressed message first); abuse is passed on to ON4KST.</li>
+</ul>
+<figure class="phone"><img src="img/en/chat-detail.webp" alt="Station details" width="390" height="1100" loading="lazy"><figcaption>Details of OL0M; Mute and Report at the bottom.</figcaption></figure>
+<p><b>The sked request</b> comes from the template in Settings (default <code>pse sked {QRG} {MODE}?</code>; <code>{LOC}</code> works too). <code>{QRG}</code> is the radio's frequency, or the <b>sked QRG</b> you set for the band: <code>G 144.290</code> ⏎ in the log. It can be any text, e.g. <code>G 432.210 cw</code>; digits without a dot are kHz as with <code>F</code>, so on the kQSO keyboard <code>G 144290</code> is enough. <code>G</code> ⏎ shows it, <code>G -</code> ⏎ clears it, and <kbd>Alt+G</kbd> puts <code>G</code> with the current QRG into the line to change it. kQSO keeps it per band.</p>
+<p><b>The chat in the log:</b> the last message to you is under the header; tap it to answer. You can write straight from the log's input line: <code>@OL0M pse sked 144.290</code> ⏎. The preview shows where it goes (<b>→ OL0M</b>), and no QSO is logged. After <code>@OK1</code> the strip offers the chat's stations.</p>
+<div class="figs">
+<figure class="crop"><img src="img/en/chat-logging.webp" alt="Message under the header" width="390" height="110" loading="lazy"><figcaption>A message to me under the header.</figcaption></figure>
+<figure class="crop"><img src="img/en/chat-line.webp" alt="Message from the log line" width="390" height="170" loading="lazy"><figcaption><code>@OL0M …</code> goes to the chat.</figcaption></figure>
+<figure class="crop"><img src="img/en/chat-g.webp" alt="Sked QRG" width="390" height="170" loading="lazy"><figcaption><code>G 144.290 cw</code>: the 2 m sked QRG.</figcaption></figure>
+</div>
+<p><b>Active stations under the contest panel:</b> on a tablet or computer in landscape, kQSO lists the stations that wrote in the chat in the last 30 minutes under the contest panel, sorted and filtered as the chat's station list. A tap writes <code>@CALL</code>, <b>S</b> the sked request.</p>
+<figure class="wide"><img src="img/en/chat-tablet.webp" alt="The chat on a tablet" width="1280" height="800" loading="lazy"><figcaption>Tablet: a message to me under the header, the active stations under the contest panel.</figcaption></figure>
+<p><b>Locator:</b> the QRB and bearing the others see come from your ON4KST account's locator. When it differs from the log's (portable), the chat and the list under the panel offer <b>Set JN89AB</b>, which sends <code>/SETLOC</code>. Nothing is sent by itself.</p>
+<p><b>Apps and web:</b> the Android and iOS apps connect to ON4KST directly. A browser can't, so the web version goes through the kQSO relay, which only passes the data on and stores nothing. The ON4KST protocol sends the password unencrypted; it is stored only on your device.</p>
+<p><b>DEMO:</b> with the call <code>DEMO</code> and no password kQSO doesn't connect to on4kst.org but runs a simulated chat with stations, messages, answers to <code>@CALL</code> and <code>/SETLOC</code>. The pictures in this part come from it. Afterwards choose <b>Forget account</b> in Settings and enter your own.</p>
 
 <h2 id="activation">5. Activations and satellites</h2>
 <h3>Activations</h3>
@@ -280,6 +319,7 @@
 <tr><td><kbd>PgUp</kbd> / <kbd>PgDn</kbd></td><td>CW speed ±2 WPM</td></tr>
 <tr><td><kbd>Alt+R</kbd> <kbd>Alt+S</kbd> <kbd>Alt+C</kbd> <kbd>Alt+K</kbd></td><td>RUN / S&amp;P / connect the keyer / CW keyboard</td></tr>
 <tr><td><kbd>Ctrl+M</kbd></td><td>ESM on / off</td></tr>
+<tr><td><kbd>Alt+O</kbd> / <kbd>Alt+G</kbd></td><td>ON4KST chat / sked QRG</td></tr>
 </table>
 
 <h2 id="settings">10. Settings</h2>
@@ -291,6 +331,7 @@
 <dt>Wavelog</dt><dd>URL, token, station profile; see <a href="#export">Export and Wavelog</a>.</dd>
 <dt>Callsign database, Offline references</dt><dd>See <a href="#databases">Callsign database</a>.</dd>
 <dt>Radio – CI-V, M5 keyer</dt><dd>See <a href="#radio">Radio and keyer</a>.</dd>
+<dt>ON4KST chat</dt><dd>Account, sked request, muted stations; see <a href="#chat">ON4KST chat</a>.</dd>
 <dt>Storage</dt><dd>Where the data is and whether it is persistent. In the web app, adding it to the home screen and the first QSO make the storage persistent.</dd>
 <dt>Check for updates / Anonymous usage statistics</dt><dd>Android from GitHub: once a day asks for a new version. Web: anonymous counts of screens and features (never log content); both can be switched off.</dd>
 <dt>About</dt><dd>Version, licence, links, <b>How to log</b>, <b>Manual</b> and <b>What's new</b>.</dd>
@@ -321,6 +362,10 @@
 <dd>kQSO is in Czech or English by the system language (the browser's on the web). There is no separate switch in the app.</dd>
 <dt>The app didn't take a call or a locator.</dt>
 <dd>Look at the chips under the line: they show what kQSO recognized. A locator counts only after the call (in a VHF contest a full locator any time). If something looks wrong, please write to <a href="https://github.com/ok1cdj/kQSO/issues">GitHub Issues</a>.</dd>
+<dt>I have no ON4KST account.</dt>
+<dd>ON4KST accounts are for licensed radio amateurs only (sign up at <a href="https://www.on4kst.org/">on4kst.org</a>). Without one, try the chat with the call <code>DEMO</code>, see <a href="#chat">ON4KST chat</a>.</dd>
+<dt>The chat doesn't connect, or I don't see it in the log.</dt>
+<dd>The chat is only in a VHF contest log on 6 m and up. Why it doesn't connect (wrong password, no account) shows in the chat's status and in Settings → ON4KST chat. When the link drops, kQSO connects again by itself.</dd>
 </dl>
 <footer class="manual-foot"><p>kQSO — by <b>OK1CDJ</b> · licence <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0</a> · <a href="https://github.com/ok1cdj/kQSO">github.com/ok1cdj/kQSO</a></p></footer>
 </main>

@@ -1364,6 +1364,12 @@ a.help-text,
   text-overflow: ellipsis;
   color: var(--muted);
 }
+.kst-muted {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.6rem;
+}
 /* The chat rules before the first connection (chat and Settings). */
 .kst-consent {
   display: flex;
@@ -1399,6 +1405,10 @@ a.help-text,
 .chat-detail-mod a.btn {
   text-decoration: none;
   color: inherit;
+  text-align: center;
+}
+.chat-detail-name {
+  color: var(--muted);
 }
 /* Long press opens the detail: no text selection or system menu instead. */
 .chat-msg,

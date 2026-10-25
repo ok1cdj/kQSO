@@ -347,8 +347,8 @@ export class LoggingScreen implements Screen {
     while (p < now.length && p < was.length && now[p] === was[p]) p++
     const actions: KeyAction[] = []
     for (let n = was.length - p; n > 0; n--) actions.push({ type: 'backspace' })
-    // A chat line (@CALL text) takes any text as typed; '@' starts one on an empty line.
-    let chat = this.line.slice(0, Math.max(0, this.line.length - (was.length - p))).startsWith('@')
+    // A chat line (@CALL text) and G + QRG take any text as typed; '@' starts one on an empty line.
+    let chat = this.isFreeLine(this.line.slice(0, Math.max(0, this.line.length - (was.length - p))))
     let empty = this.line.length - (was.length - p) <= 0
     for (const ch of now.slice(p)) {
       if (ch === SENTINEL) continue
@@ -412,7 +412,7 @@ export class LoggingScreen implements Screen {
     }
     // A chat line (@CALL text) takes any character as typed; '@' starts one on an empty line.
     // AltGr (Ctrl+Alt on Windows: '@' on a Czech keyboard) and macOS Option still type.
-    const chatChar = k.length === 1 && (this.isChatLine() || (k === '@' && this.line === '' && this.chatOn()))
+    const chatChar = k.length === 1 && (this.isFreeLine() || (k === '@' && this.line === '' && this.chatOn()))
     if (chatChar && ((!e.ctrlKey && !e.metaKey) || e.getModifierState('AltGraph'))) return this.handled(e, { type: 'char', value: k })
     // Alt / Ctrl / Cmd + a key that is no shortcut here: not typing, leave it to the browser.
     if (e.altKey || e.ctrlKey || e.metaKey) return
@@ -1437,6 +1437,11 @@ export class LoggingScreen implements Screen {
 
   private isChatLine(): boolean {
     return this.line.startsWith('@')
+  }
+
+  /** Text typed as is (a dot, lower case): a chat line, or G + the sked QRG. */
+  private isFreeLine(line = this.line): boolean {
+    return line.startsWith('@') || (this.chatOn() && /^g\s/i.test(line))
   }
 
   private openChat(): void {

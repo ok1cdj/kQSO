@@ -468,7 +468,7 @@ export class SettingsScreen implements Screen {
     sked.input.autocapitalize = 'off'
     const state = el('span')
     const status = el('div', 'about')
-    const muted = el('div', 'setting')
+    const muted = el('div', 'kst-muted')
     let mutedKey = ''
     const paintMuted = (): void => {
       const list = this.kst.muted
