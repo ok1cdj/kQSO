@@ -24,6 +24,7 @@ import { trackScreen } from './stats'
 import { KeyerController } from './keyer'
 import { KstController } from './kst'
 import { RigController } from './rig'
+import { CwDecoderController } from './cw/decoder'
 
 export interface Screen {
   mount(root: HTMLElement): void | Promise<void>
@@ -38,6 +39,8 @@ export class App {
   private readonly keyer = new KeyerController(this.platform, this.rig)
   // ON4KST chat: one link too, it stays up while moving between screens.
   private readonly kst = new KstController(this.platform)
+  // CW decoder: keeps listening while moving between screens.
+  private readonly cw = new CwDecoderController(this.platform)
   private root!: HTMLElement
   private current: Screen | null = null
   // System Back (Android button / gesture, the browser's Back, the iOS edge swipe) does
@@ -64,6 +67,7 @@ export class App {
     // The keyer's settings first: a radio via the keyer may bring its link up.
     void this.keyer.init().then(() => this.rig.init())
     this.kst.init()
+    void this.cw.init()
     void this.start()
   }
 
@@ -128,7 +132,7 @@ export class App {
 
   showSettings(): void {
     this.show(
-      new SettingsScreen(this.platform, this.keyer, this.rig, this.kst, {
+      new SettingsScreen(this.platform, this.keyer, this.rig, this.kst, this.cw, {
         back: () => this.showLogList(),
         openHelp: () => this.showHelp(() => this.showSettings()),
         openWhatsNew: () => this.showWhatsNew(WHATS_NEW, () => this.showSettings()),
@@ -153,7 +157,7 @@ export class App {
   /** `line`: typed in on open (the chat's "Log": call + locator). */
   showLogging(logId: string, line = ''): void {
     this.show(
-      new LoggingScreen(this.platform, this.keyer, this.rig, this.kst, logId, {
+      new LoggingScreen(this.platform, this.keyer, this.rig, this.kst, this.cw, logId, {
         toLogList: () => this.showLogList(),
         toQsoList: () => this.showQsoList(logId),
         editQso: (index) => this.showQsoEdit(logId, index, () => this.showLogging(logId)),

@@ -1,0 +1,8 @@
+{
+  "//": "The DeepCW models the app downloads on demand from <site>/cw/, published there by scripts/cwdata.py. The file name carries the hash, so a new model is a new URL. The ONNX runtime's wasm goes next to them as ort-wasm-simd-threaded-<version>.wasm (version, size and hash taken from node_modules at build time).",
+  "source": "https://raw.githubusercontent.com/e04/deepcw-engine/79104fbe1ea0abd09eb27c6ebf9c6bab364d0d7f/",
+  "models": {
+    "narrow": { "source": "model_narrow.onnx", "file": "model_narrow-fc80c4ba.onnx", "bytes": 1185741, "sha256": "fc80c4baec72d756af1dbce9b70357a731b0b1a6b8306815bcfc61b6403c46e5" },
+    "wide": { "source": "model.onnx", "file": "model-cd5ee381.onnx", "bytes": 15054698, "sha256": "cd5ee38106348ad86a8f2d40ef1ce7dccea0d7f7fbfd0f2dee0fd1a8a28773ae" }
+  }
+}

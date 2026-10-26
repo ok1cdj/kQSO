@@ -51,6 +51,8 @@ self.addEventListener('fetch', (event) => {
   // Offline references: refsync.ts keeps them in OPFS and checks index.json itself;
   // cached here, a rebuilt refs/ would never show (and the cache goes with each deploy).
   if (url.pathname.startsWith(new URL('refs/', self.registration.scope).pathname)) return
+  // CW decoder models and runtime: the CW worker keeps them in OPFS (~29 MB, not per deploy).
+  if (url.pathname.startsWith(new URL('cw/', self.registration.scope).pathname)) return
 
   // The page: network first, past the HTTP cache too (a stale index.html would point
   // at the old assets). The cached copy when offline — or when a weak signal (a summit)

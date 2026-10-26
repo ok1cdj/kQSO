@@ -50,6 +50,9 @@ jobs:
             rm -rf ../_site/refs
             python3 scripts/refdata.py --mirror https://kqso.ok1cdj.com/refs/ --out ../_site/refs
           fi
+          # The CW decoder's models and the ONNX runtime's wasm (~29 MB), downloaded by the
+          # app only when the decoder is turned on.
+          python3 scripts/cwdata.py --out ../_site/cw --mirror https://kqso.ok1cdj.com/cw/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -10,7 +10,7 @@ import type { KQSOPlatform } from '../../platform/index'
 import { currentDisplayMode, currentThemeMode, setDisplayMode, setThemeMode } from '../../theme/mode'
 import type { DisplayMode, ThemeMode } from '../../theme/mode'
 import type { Screen } from '../app'
-import { el, button, fieldRow, strokeIcon, switchOn, tilePicker } from '../dom'
+import { el, button, fieldRow, selectRow, strokeIcon, switchOn, tilePicker } from '../dom'
 import { connect } from '../wavelog'
 import { wavelogErrorText } from '../wavelog-text'
 import { lang, t } from '../i18n'
@@ -32,6 +32,7 @@ import { UPDATE_SETTINGS, checksUpdates } from '../update'
 import { fieldsAround, parseField } from '../../core/refdb'
 import { REFS_URL, downloadTile, programsOn, removeTile, setProgramsOn, storedTiles } from '../refsync'
 import { REF_PROGRAMS } from '../../core/refdb'
+import type { CwDecoderController } from '../cw/decoder'
 
 export interface SettingsNav {
   back(): void
@@ -70,12 +71,14 @@ export class SettingsScreen implements Screen {
   private unsubscribeRig: (() => void) | undefined
   private unsubscribeRigCw: (() => void) | undefined
   private unsubscribeKst: (() => void) | undefined
+  private unsubscribeCw: (() => void) | undefined
 
   constructor(
     private readonly platform: KQSOPlatform,
     private readonly keyer: KeyerController,
     private readonly rig: RigController,
     private readonly kst: KstController,
+    private readonly cw: CwDecoderController,
     private readonly nav: SettingsNav,
   ) {}
 
@@ -89,6 +92,7 @@ export class SettingsScreen implements Screen {
     this.unsubscribeRig?.()
     this.unsubscribeRigCw?.()
     this.unsubscribeKst?.()
+    this.unsubscribeCw?.()
   }
 
   private async render(): Promise<void> {
@@ -107,6 +111,7 @@ export class SettingsScreen implements Screen {
       ...(this.rig.available ? [await this.rigSetting()] : []),
       ...(this.keyer.available ? [await this.keyerSetting()] : []),
       ...(this.kst.available ? [await this.kstSetting()] : []),
+      ...(this.cw.available ? [await this.cwSetting()] : []),
       this.storageSetting(persisted),
       ...(this.platform.nativeVersion
         ? checksUpdates(this.platform)
@@ -683,6 +688,143 @@ export class SettingsScreen implements Screen {
   /** Radio over CI-V: on / off; the IC-705's own Bluetooth (APK) or any Icom through the
    *  keyer; the model (auto by address) and its optional units; Connect / Disconnect /
    *  Forget; what the radio is on; transverters. */
+  /** CW decoder (DeepCW): start / stop, the model and its download, the pitch, the input. */
+  private async cwSetting(): Promise<HTMLElement> {
+    const cw = this.cw
+    const state = el('span')
+    const status = el('div', 'about')
+    const mb = (bytes: number): string => (bytes / 1e6).toLocaleString(lang, { maximumFractionDigits: 1 })
+    const modelLabel = (): string => t(cw.model === 'wide' ? 'settings.cwWide' : 'settings.cwNarrow')
+
+    const toggle = button('', () => void cw.toggle(), 'btn')
+    const download = button('', () => void fetchFiles(), 'btn')
+    const remove = button(t('settings.cwRemove'), () => void cw.remove().then(paintFiles), 'btn')
+    let downloading = false
+    let missingBytes = 0
+
+    const paintFiles = async (): Promise<void> => {
+      const s = await cw.status().catch(() => undefined)
+      if (!s) return
+      missingBytes = (s.ort.stored ? 0 : s.ort.bytes) + (s[cw.model].stored ? 0 : s[cw.model].bytes)
+      download.hidden = missingBytes === 0
+      download.textContent = t('settings.cwDownload', { mb: mb(missingBytes) })
+      remove.hidden = !s.ort.stored && !s.narrow.stored && !s.wide.stored
+      paint()
+    }
+    const fetchFiles = async (): Promise<void> => {
+      downloading = true
+      download.disabled = true
+      try {
+        await cw.download((loaded, total) => {
+          status.textContent = t('settings.cwDownloading', { pct: total ? Math.floor((loaded / total) * 100) : 0 })
+        })
+        status.textContent = ''
+      } catch (err) {
+        status.textContent = t('settings.cwDownloadFailed', { msg: err instanceof Error ? err.message : String(err) })
+      } finally {
+        downloading = false
+        download.disabled = false
+        await paintFiles()
+      }
+    }
+
+    const paint = (): void => {
+      toggle.textContent = t(cw.enabled ? 'settings.cwStop' : 'settings.cwStart')
+      toggle.disabled = !cw.enabled && missingBytes > 0
+      state.textContent = !cw.enabled
+        ? t('settings.cwSummaryOff')
+        : cw.state === 'error'
+          ? cw.error
+          : t(cw.state === 'on' ? 'settings.cwSummaryOn' : 'settings.cwSummaryWaiting', { model: modelLabel(), hz: cw.pitchHz })
+      if (downloading) return
+      status.textContent = cw.state === 'error' ? cw.error : missingBytes > 0 ? t('settings.cwNeedDownload', { mb: mb(missingBytes) }) : t('settings.cwStored')
+    }
+
+    const models = el('div', 'segmented')
+    const width = fieldRow(t('settings.cwWidth'), cw.widthHz ? String(cw.widthHz) : '', { placeholder: '400–1200' })
+    const widthHint = el('div', 'about', t('settings.cwWidthHint'))
+    const paintModels = (): void => {
+      for (const b of models.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.model === cw.model))
+      width.row.hidden = widthHint.hidden = cw.model !== 'wide'
+    }
+    for (const m of ['narrow', 'wide'] as const) {
+      const b = button(t(m === 'wide' ? 'settings.cwWide' : 'settings.cwNarrow'), () => {
+        void cw.setModel(m).then(paintFiles)
+        paintModels()
+      }, 'btn')
+      b.dataset.model = m
+      models.append(b)
+    }
+    paintModels()
+
+    const numeric = (input: HTMLInputElement): void => {
+      input.inputMode = 'numeric'
+      input.autocapitalize = 'off'
+    }
+    const pitch = fieldRow(t('settings.cwPitch'), String(cw.pitchHz))
+    numeric(pitch.input)
+    pitch.input.addEventListener('change', () => {
+      void cw.setPitch(Number(pitch.input.value) || cw.pitchHz).then(() => (pitch.input.value = String(cw.pitchHz)))
+    })
+    numeric(width.input)
+    width.input.addEventListener('change', () => {
+      void cw.setWidth(Number(width.input.value) || undefined).then(() => (width.input.value = cw.widthHz ? String(cw.widthHz) : ''))
+    })
+
+    // Inputs: the labels only show once the browser has given the permission (after Start).
+    const input = selectRow(t('settings.cwInput'), [['', t('settings.cwInputDefault')]], cw.deviceId)
+    const fillInputs = async (): Promise<void> => {
+      const list = await cw.inputs().catch(() => [])
+      input.select.replaceChildren(
+        ...[{ deviceId: '', label: t('settings.cwInputDefault') }, ...list.filter((d) => d.deviceId && d.deviceId !== 'default')].map((d) => {
+          const o = el('option', undefined, d.label)
+          o.value = d.deviceId
+          o.selected = d.deviceId === cw.deviceId
+          return o
+        }),
+      )
+    }
+    input.select.addEventListener('change', () => void cw.setDevice(input.select.value))
+    void fillInputs()
+    let labelled = false
+    this.unsubscribeCw?.()
+    this.unsubscribeCw = cw.subscribe(() => {
+      paint()
+      if (cw.state === 'on' && !labelled) {
+        labelled = true
+        void fillInputs()
+      }
+    })
+
+    const credit = el('div', 'about')
+    const a = el('a', undefined, t('settings.cwCredit'))
+    a.href = 'https://github.com/e04/web-deep-cw-decoder'
+    a.target = '_blank'
+    a.rel = 'noopener'
+    credit.append(a)
+
+    const actions = el('div', 'segmented')
+    actions.append(toggle, download, remove)
+    await paintFiles()
+    return this.fold(
+      'cw',
+      t('settings.cw'),
+      state,
+      el('div', undefined, t('settings.cwAbout')),
+      actions,
+      status,
+      el('span', 'field-label', t('settings.cwModel')),
+      models,
+      el('div', 'about', t('settings.cwModelHint')),
+      pitch.row,
+      el('div', 'about', t('settings.cwPitchHint')),
+      width.row,
+      widthHint,
+      input.row,
+      credit,
+    )
+  }
+
   private async rigSetting(): Promise<HTMLElement> {
     const r = this.rig
     const state = el('span')

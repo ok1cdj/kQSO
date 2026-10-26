@@ -75,6 +75,8 @@ import { ContestBoard } from '../contest-board'
 import type { RigController } from '../rig'
 import { KST_SETTINGS, notSentWhy } from '../kst'
 import type { KstController } from '../kst'
+import type { CwDecoderController } from '../cw/decoder'
+import { cwWords } from '../../core/cw/words'
 import type { ChatContext } from './chat'
 
 export interface LoggingNav {
@@ -92,6 +94,8 @@ const RECENT_MAX = 30 // wide layout: rows rendered; CSS clips whatever doesn't 
 const WIDE = window.matchMedia('(min-aspect-ratio: 1/1)')
 // The contest board needs the log column + its own 22rem beside it.
 const BOARD_MIN_WIDTH = 720
+// CW decoder line: the latest decoded words it shows (the rest scrolls off to the left).
+const CW_WORDS_SHOWN = 24
 // Last read keyboard setting: the next mount lays out right away, init() re-reads it.
 let keyboardMode: KeyboardMode = 'kqso'
 // System keyboard: the hidden <input> holds SENTINEL + the line, so Backspace on an
@@ -133,6 +137,9 @@ export class LoggingScreen implements Screen {
   private readonly hdr = el('header', 'hdr')
   // ON4KST: the last message to me, under the header until the next one (tap = answer).
   private readonly chatEl = el('button', 'chatline')
+  // CW decoder: the decoded text under the header while it listens (tap a word = into the line).
+  private readonly cwEl = el('div', 'cwline')
+  private cwKey = '' // what the CW line shows (re-render on change only: e-ink)
   private readonly topEl = el('div', 'logtop')
   // Right column in the wide contest layout: the board, under it the chat's active stations.
   private readonly sideEl = el('div', 'side')
@@ -167,6 +174,7 @@ export class LoggingScreen implements Screen {
   }
   private unsubscribeKeyer: (() => void) | undefined
   private unsubscribeKst: (() => void) | undefined
+  private unsubscribeCw: (() => void) | undefined
   private unsubscribeRig: (() => void) | undefined
   private rigShown = '' // what the header last showed from the radio (re-render on change only: e-ink)
   private rigUp = false // the radio was driving this log at the last sync
@@ -181,6 +189,7 @@ export class LoggingScreen implements Screen {
     private readonly keyer: KeyerController,
     private readonly rig: RigController,
     private readonly kst: KstController,
+    private readonly cw: CwDecoderController,
     private readonly logId: string,
     private readonly nav: LoggingNav,
     private readonly initialLine = '', // typed in on open (the chat's "Log": call + locator)
@@ -194,7 +203,9 @@ export class LoggingScreen implements Screen {
     this.chatEl.type = 'button'
     this.chatEl.hidden = true
     this.chatEl.addEventListener('click', () => this.answerChat())
-    this.topEl.replaceChildren(this.hdr, this.chatEl)
+    this.cwEl.hidden = true
+    this.cwKey = ''
+    this.topEl.replaceChildren(this.hdr, this.chatEl, this.cwEl)
     this.sideEl.replaceChildren(this.board.el, this.stationsEl)
     this.sideEl.hidden = true
     this.screenEl.replaceChildren(this.topEl, this.banner, this.inputEl, this.previewEl, this.stripEl, this.recentEl, this.sideEl, this.kbEl, this.sysInput)
@@ -206,6 +217,7 @@ export class LoggingScreen implements Screen {
     this.unsubscribeKeyer = this.keyer.subscribe(() => this.onKeyerChange())
     this.unsubscribeRig = this.rig.subscribe(() => this.onRigChange())
     this.unsubscribeKst = this.kst.subscribe(() => this.onKstChange())
+    this.unsubscribeCw = this.cw.subscribe(() => this.renderCw())
     void this.init()
   }
 
@@ -216,6 +228,8 @@ export class LoggingScreen implements Screen {
     this.unsubscribeKeyer?.()
     this.unsubscribeRig?.()
     this.unsubscribeKst?.()
+    this.unsubscribeCw?.()
+    this.cw.setActive(false)
     this.exitTx()
     this.recentResize?.disconnect()
     clearInterval(this.sixHTimer)
@@ -500,6 +514,10 @@ export class LoggingScreen implements Screen {
       case 'chat':
         if (!this.chatOn()) return false
         this.openChat()
+        return true
+      case 'cw':
+        if (!this.cw.available || !this.cwMode()) return false
+        void this.cw.toggle()
         return true
       case 'skedQrg':
         if (!this.chatOn()) return false
@@ -1016,6 +1034,9 @@ export class LoggingScreen implements Screen {
     const room = this.chatOn() ? roomForBand(this.state.sticky.band) : undefined
     if (room && this.kst.wanted) this.kst.setRoom(room)
     this.renderChatLine()
+    // The decoder listens only while this log is in CW.
+    this.cw.setActive(this.cwMode())
+    this.renderCw()
     this.renderHeader(dry.partial)
     this.renderLine(dry.sticky)
     this.renderPreview(dry)
@@ -1502,6 +1523,58 @@ export class LoggingScreen implements Screen {
     const d = new Date(m.ts * 1000)
     const text = `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())} ${m.call}: ${m.text}`
     if (this.chatEl.textContent !== text) this.chatEl.textContent = text
+  }
+
+  // --- CW decoder ------------------------------------------------------------
+
+  private cwMode(): boolean {
+    return this.loaded && this.state.sticky.mode === 'CW'
+  }
+
+  /** The decoded text: the pitch and level, the latest words (calls, numbers and locators
+   *  as buttons), the pending tail greyed. Shown while the decoder is on and the log in CW. */
+  private renderCw(): void {
+    const cw = this.cw
+    const shown = cw.enabled && this.cwMode()
+    this.cwEl.hidden = !shown
+    if (!shown) {
+      this.cwKey = ''
+      return
+    }
+    // The level in 6 dB steps, so it doesn't repaint for every flicker (e-ink).
+    const bars = Number.isFinite(cw.level) ? Math.max(0, Math.min(5, Math.round((cw.level + 48) / 9))) : 0
+    const words = cwWords(cw.words.slice(-CW_WORDS_SHOWN).join(' '))
+    const key = [cw.state, cw.error, cw.pitchHz, cw.model, bars, cw.pending, ...words.map((w) => w.value)].join('|')
+    if (key === this.cwKey) return
+    this.cwKey = key
+
+    const head = el('button', 'cwline-head', `CW ${cw.pitchHz} Hz ${'▮'.repeat(bars)}${'▯'.repeat(5 - bars)}`)
+    head.type = 'button'
+    head.title = t('cw.title')
+    head.addEventListener('click', () => void cw.toggle())
+    const text = el('div', 'cwline-text')
+    if (cw.state === 'error') text.append(el('span', 'cwline-error', cw.error))
+    else if (cw.state !== 'on') text.append(el('span', 'cwline-pending', t('cw.starting')))
+    else {
+      for (const w of words) {
+        if (w.kind === 'other') text.append(el('span', 'cwline-word', w.value))
+        else text.append(this.suggestButton(w.value, () => this.insertCwWord(w.value), `cwline-word cwline-word--${w.kind}`))
+      }
+      if (cw.pending) text.append(el('span', 'cwline-pending', cw.pending))
+      if (words.length === 0 && !cw.pending) text.append(el('span', 'cwline-pending', t('cw.listening')))
+    }
+    this.cwEl.replaceChildren(head, text)
+    text.scrollLeft = text.scrollWidth
+  }
+
+  /** A tapped decoded word goes to the end of the line, as if typed (+ a space). */
+  private insertCwWord(value: string): void {
+    if (this.txMode) return
+    this.stampFirstKeystroke()
+    const line = this.line.trimEnd()
+    this.line = `${line ? `${line} ` : ''}${value} `
+    this.notice = ''
+    this.renderAll()
   }
 
   /** A tap on the chat line: "@CALL " to answer. */

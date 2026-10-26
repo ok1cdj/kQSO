@@ -1,0 +1,9 @@
+{
+  "//": "The CW decoder worker only (ui/cw/worker.ts). WebWorker lib, like the OPFS worker, plus Vite's import.meta.env and ?url imports.",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "WebWorker", "WebWorker.AsyncIterable"],
+    "types": ["vite/client"]
+  },
+  "include": ["src/ui/cw/worker.ts", "src/ui/cw/protocol.ts", "src/ui/globals.d.ts"]
+}
