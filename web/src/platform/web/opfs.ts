@@ -4,10 +4,11 @@
 
 import type { LogMeta } from '../../core/model'
 import { readLogFile, writeLogHeader } from '../../core/index'
-import type { GeoPosition, KQSOPlatform, KeyerTransport, LogSummary, RefTileStore, TcpTransport } from '../types'
+import type { GeoPosition, KQSOPlatform, KeyerTransport, LogSummary, RefTileStore, SerialRigTransport, TcpTransport } from '../types'
 import { browserPosition, geolocationAvailable } from './geo'
 import { WebBluetoothKeyer, webBluetoothAvailable } from './keyer'
 import { WsTcpTransport, kstRelayUrl } from './kst-ws'
+import { WebSerialRig, webSerialAvailable } from './serial'
 import type { RequestBody, WorkerRequest, WorkerResponse } from './protocol'
 
 /** True when OPFS + Workers are available (i.e. the web shim can persist). */
@@ -33,6 +34,10 @@ export class WebPlatform implements KQSOPlatform {
   private settingsWrites: Promise<void> = Promise.resolve()
   /** CW keyer over Web Bluetooth — Chrome / Edge only; Safari and Firefox have none. */
   readonly keyer: KeyerTransport | undefined = webBluetoothAvailable() ? new WebBluetoothKeyer() : undefined
+  /** Any Icom over USB / CT-17 — Web Serial, Chrome / Edge on the desktop only. */
+  readonly serialRig: SerialRigTransport | undefined = webSerialAvailable()
+    ? new WebSerialRig(navigator.serial!, { get: (k) => this.getSetting(k), set: (k, v) => this.setSetting(k, v) })
+    : undefined
   /** ON4KST chat through the kQSO relay; none in a build without a relay address. */
   readonly tcp: TcpTransport | undefined = kstRelayUrl() ? new WsTcpTransport(kstRelayUrl()) : undefined
   /** The browser asks for the permission itself, on the first call. */

@@ -53,7 +53,8 @@ and the map.
 - **Export** ADIF (and EDI per band), **push to your own Wavelog**.
 - **Crash-safe:** every QSO is written at once; an unfinished one comes back after a restart.
 - **CW keyer** (M5-ESP32-keyer) and **Icom radios over CI-V** (beta) — the IC-705 over
-  its Bluetooth, any Icom through the keyer: macros, ESM, band / mode / frequency from
+  its Bluetooth, any Icom on a USB cable / CT-17 (Chrome / Edge on a computer) or through
+  the keyer: macros, ESM, band / mode / frequency from
   the radio, voice memories, transverters.
 - **E-ink and standard display**, light and dark theme, English and Czech.
 
@@ -158,12 +159,14 @@ tokens are ignored. See **Settings → How to log** in the app for the full gram
   Tested with the M5-ESP32-keyer v2; please report bugs on
   [GitHub Issues](https://github.com/ok1cdj/kQSO/issues).
 - **Icom radios over CI-V (beta)** (off by default; Settings → Radio): the **IC-705 over
-  its Bluetooth LE** (Android / iOS app), or **any Icom through the M5-ESP32-keyer** on
+  its Bluetooth LE** (Android / iOS app), **any Icom on a serial port** — its own USB or a
+  CT-17 / USB–CI-V cable, through Web Serial (Chrome / Edge on a computer; the bus rate and
+  the radio's address are found by themselves; untested on a real radio so far), or **any Icom through the M5-ESP32-keyer** on
   the radio's CI-V jack (keyer firmware 2.1.0+, its `CIVTX` / `CIVRX` tunnel; Android /
   iOS app, Chrome / Edge — one keyer link for CW and the radio). Radio definitions
   (`web/src/core/rigmodel.ts`) give each model its bands, tuning range and CI-V
   functions: IC-705, IC-706 / MkII / MkIIG, IC-910 (optional 23 cm unit), IC-9700,
-  IC-7300, IC-7610, IC-7100; the model goes by the CI-V address the keyer found or is
+  IC-7300, IC-7610, IC-7100; the model goes by the CI-V address found or is
   chosen in Settings. Tested so far: IC-705 (Bluetooth), IC-706MkII and IC-910 (keyer; Android, iPad, browser). Band, mode and
   the exact frequency (ADIF `FREQ`) follow the radio, a typed band / mode tunes it (`F28300` = 28.300 MHz; a band the radio doesn't
   work isn't tuned — only the log switches and QSOs are logged on it, and nothing keys

@@ -289,6 +289,7 @@
 <p>kQSO reads and tunes Icom radios. Known models: <b>IC-705, IC-706 / MkII / MkIIG, IC-910</b> (optional 23 cm unit), <b>IC-9700, IC-7300, IC-7610, IC-7100</b>; another radio with an unknown address is driven as a generic CI-V radio (band, mode, frequency).</p>
 <ul>
 <li><b>IC-705 over its Bluetooth</b> (Android and iOS apps): Settings → Radio → IC-705 Bluetooth → Connect. The first time open MENU → SET → Bluetooth Set → Pairing Reception on the radio.</li>
+<li><b>Any Icom on a USB cable or a CI-V interface</b> (CT-17, a USB–CI-V cable; Chrome / Edge on a computer): Settings → Radio → USB / serial → Connect and pick the port. kQSO finds the bus rate and the radio's address by itself. The IC-9700 and IC-705 have two USB ports; if the radio isn't found, pick the other one. On Linux your user must be in the <code>dialout</code> (or <code>uucp</code>) group.</li>
 <li><b>Any Icom through the M5-ESP32-keyer</b> on the radio's CI-V jack (firmware 2.1.0 and newer; apps and Chrome / Edge): Settings → Radio → Via the keyer. Switch CI-V Transceive on in the radio.</li>
 </ul>
 <p>Band, mode and the exact frequency then come from the radio. A typed band or mode tunes the radio, <code>F28300</code> tunes it to 28.300 MHz. A band the radio can't do switches only the log. The radio model goes by its CI-V address; choose it by hand if the address was changed.</p>
@@ -315,8 +316,8 @@
 <tr><td><kbd>Alt+W</kbd> <kbd>Alt+D</kbd> <kbd>Alt+H</kbd> <kbd>Alt+E</kbd></td><td>discard the QSO / delete the last / help / edit the last</td></tr>
 <tr><td><kbd>Alt+X</kbd></td><td>take the locator the database offers</td></tr>
 <tr><td><kbd>Alt+M</kbd></td><td>mode CW → SSB → FM</td></tr>
-<tr><td><kbd>Alt+L</kbd> / <kbd>Alt+Q</kbd></td><td>QSO list / back to the logs</td></tr>
 <tr><td><kbd>Alt+N</kbd> / <kbd>Alt+P</kbd></td><td>next / previous band</td></tr>
+<tr><td><kbd>Alt+L</kbd> / <kbd>Alt+Q</kbd></td><td>QSO list / back to the logs</td></tr>
 <tr><td><kbd>F5</kbd> <kbd>F6</kbd> <kbd>F7</kbd> <kbd>F8</kbd> <kbd>F11</kbd> <kbd>F12</kbd></td><td>macros CQ EX TU ? MY INFO; in SSB / FM F5–F8 the voice memories T1–T4</td></tr>
 <tr><td><kbd>PgUp</kbd> / <kbd>PgDn</kbd></td><td>CW speed ±2 WPM</td></tr>
 <tr><td><kbd>Alt+R</kbd> <kbd>Alt+S</kbd> <kbd>Alt+C</kbd> <kbd>Alt+K</kbd></td><td>RUN / S&amp;P / connect the keyer / CW keyboard</td></tr>

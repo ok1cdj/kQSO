@@ -64,6 +64,8 @@ export {
   CivProtocol,
   CivCwOutput,
   RIG_ADDR,
+  CTRL_ADDR,
+  FrameAssembler,
   civCommand,
   toHex,
   fromHex,

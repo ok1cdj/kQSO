@@ -919,7 +919,7 @@ export class LoggingScreen implements Screen {
     this.syncRig()
     // Every VFO step lands here; redraw only when something shown changes.
     const s = this.state.sticky
-    const shown = `${this.rig.link}|${this.rig.ready}|${this.rig.detached}|${this.rig.xvertBand}|${this.rig.mode}|${this.rig.voicePlaying}|${s.band}|${s.mode}|${this.keyer.connected}`
+    const shown = `${this.rig.link}|${this.rig.label}|${this.rig.ready}|${this.rig.detached}|${this.rig.xvertBand}|${this.rig.mode}|${this.rig.voicePlaying}|${s.band}|${s.mode}|${this.keyer.connected}`
     if (shown !== this.rigShown) changed = true
     this.rigShown = shown
     if (changed) this.renderAll()

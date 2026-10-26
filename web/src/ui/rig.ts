@@ -1,6 +1,7 @@
 // Radio controller, one for the whole app (the link survives screen changes). Owns the
-// CivProtocol over one of two transports: the IC-705's own Bluetooth (platform.rig,
-// handshake first), or any Icom on the keyer's CI-V bus (KeyerCivTransport, ui/keyer-civ.ts).
+// CivProtocol over one of three transports: the IC-705's own Bluetooth (platform.rig,
+// handshake first), any Icom on the keyer's CI-V bus (KeyerCivTransport, ui/keyer-civ.ts),
+// or any Icom on a serial port — USB, CT-17 (platform.serialRig, desktop Chrome / Edge).
 // The radio's frequency and mode (CI-V transceive), tuning from the logging line; what
 // the radio can do comes from its definition (core/rigmodel.ts). CW through the radio
 // is KeyerController's (CivCwOutput over this protocol). Nothing happens until the radio
@@ -33,21 +34,21 @@ import {
   setMode,
 } from '../core/index'
 import type { RigEvent, RigModel, Timers, Xvert } from '../core/index'
-import type { KQSOPlatform, KeyerLinkState, RigTransport } from '../platform/index'
+import type { KQSOPlatform, KeyerLinkState, RigTransport, SerialRigTransport } from '../platform/index'
 import { switchOn } from './dom'
 import type { KeyerCivTransport } from './keyer-civ'
 
 export const RIG_SETTINGS = {
   enabled: 'rigEnabled', // '1' / '0', default off
-  source: 'rigSource', // 'ic705' (its own Bluetooth, APK) | 'keyer' (CI-V through the keyer)
-  model: 'rigModel', // radio via the keyer: 'auto' (by its address) or a RigModel id
+  source: 'rigSource', // 'ic705' (its own Bluetooth, the apps) | 'keyer' (CI-V through the keyer) | 'serial' (USB / CT-17)
+  model: 'rigModel', // radio via the keyer or a serial port: 'auto' (by its address) or a RigModel id
   options: 'rigOptions', // JSON string[]: bands of optional units switched on (IC-910 23 cm)
   clientId: 'rigClientId', // random UUID: with the name, how the radio knows this install
   xvert: 'rigXvert', // '1' / '0', default off — transverters on
   xverts: 'rigXverts', // JSON Xvert[] (core/xvert.ts)
 } as const
 
-export type RigSource = 'ic705' | 'keyer'
+export type RigSource = 'ic705' | 'keyer' | 'serial'
 
 /** Name shown in the radio's paired device list (16 characters at most). */
 const RIG_CLIENT_NAME = 'kQSO'
@@ -61,6 +62,8 @@ export type RigNotice =
 const RETRY_MS = 1500
 /** Keeps the radio's output flowing (Ic705Protocol: it sends only after a write). */
 const POLL_MS = 250
+/** On a serial port: frequency and mode also when CI-V Transceive is off in the radio. */
+const SERIAL_POLL_MS = 1000
 /** Voice memory: when to start asking whether the radio is still transmitting, and how often. */
 const VOICE_FIRST_MS = 800
 const VOICE_POLL_MS = 300
@@ -87,9 +90,9 @@ function randomUuid(): string {
 export class RigController {
   readonly available: boolean
   enabled = false
-  /** Where the radio is: the IC-705's own Bluetooth, or the keyer's CI-V bus. */
+  /** Where the radio is: the IC-705's own Bluetooth, the keyer's CI-V bus or a serial port. */
   source: RigSource
-  /** Radio via the keyer: 'auto' (by the address the keyer found) or a RigModel id. */
+  /** Radio via the keyer or a serial port: 'auto' (by the address found) or a RigModel id. */
   modelChoice = 'auto'
   /** Bands of optional units switched on (IC-910 23 cm). */
   options: string[] = []
@@ -117,6 +120,7 @@ export class RigController {
   readonly proto: CivProtocol | undefined
 
   private readonly ic705: RigTransport | undefined
+  private readonly serial: SerialRigTransport | undefined
   private keyerTr: KeyerCivTransport | undefined
   private readonly listeners = new Set<() => void>()
   private clientId = ''
@@ -127,8 +131,9 @@ export class RigController {
   constructor(private readonly platform: KQSOPlatform) {
     const tr = platform.rig
     this.ic705 = tr
-    this.available = tr !== undefined || platform.keyer !== undefined
-    this.source = tr ? 'ic705' : 'keyer'
+    this.serial = platform.serialRig
+    this.available = tr !== undefined || this.serial !== undefined || platform.keyer !== undefined
+    this.source = tr ? 'ic705' : this.serial ? 'serial' : 'keyer'
     if (!this.available) return
     this.proto = new CivProtocol(
       (bytes) => {
@@ -146,6 +151,12 @@ export class RigController {
     tr?.onState((s, name) => {
       if (this.source === 'ic705') this.onLink(s, name)
     })
+    this.serial?.onData((bytes) => {
+      if (this.source === 'serial') this.proto?.receive(bytes)
+    })
+    this.serial?.onState((s, name) => {
+      if (this.source === 'serial') this.onLink(s, name)
+    })
   }
 
   /** The keyer's CI-V tunnel (KeyerController.civLink) — it needs this controller's
@@ -161,29 +172,42 @@ export class RigController {
   }
 
   private get transport(): RigTransport | undefined {
-    return this.source === 'ic705' ? this.ic705 : this.keyerTr
+    return this.source === 'ic705' ? this.ic705 : this.source === 'serial' ? this.serial : this.keyerTr
   }
 
-  /** Both ways to a radio exist here (APK); otherwise Settings shows no choice. */
+  /** This way to a radio exists here. */
+  has(src: RigSource): boolean {
+    return src === 'ic705' ? this.ic705 !== undefined : src === 'serial' ? this.serial !== undefined : this.platform.keyer !== undefined
+  }
+
+  /** At least two ways to a radio exist here; otherwise Settings shows no choice. */
   get sourceChoice(): boolean {
-    return this.ic705 !== undefined && this.platform.keyer !== undefined
+    return (['ic705', 'serial', 'keyer'] as const).filter((s) => this.has(s)).length > 1
   }
 
-  /** What the radio is and can do. Via the keyer: chosen in Settings, else by the
-   *  address the keyer found. */
+  /** What the radio is and can do. Via the keyer or a serial port: chosen in Settings,
+   *  else by the address found. */
   get model(): RigModel {
     if (this.source === 'ic705') return IC705
     return (this.modelChoice === 'auto' ? undefined : modelById(this.modelChoice)) ?? this.detectedModel
   }
 
-  /** Via the keyer: the model at the address the keyer found (Settings: "Auto (…)"). */
+  /** Via the keyer or a serial port: the model at the address found (Settings: "Auto (…)"). */
   get detectedModel(): RigModel {
-    return modelForAddr(this.keyerTr?.addr)
+    return modelForAddr(this.addr)
   }
 
-  /** Via the keyer: the radio's CI-V address as the keyer found it. */
+  /** The radio's CI-V address: via the keyer as the keyer found it, on a serial port as
+   *  the probe found it. */
   get addr(): number | undefined {
-    return this.source === 'keyer' ? this.keyerTr?.addr : RIG_ADDR
+    if (this.source === 'keyer') return this.keyerTr?.addr
+    if (this.source === 'serial') return this.serial?.addr
+    return RIG_ADDR
+  }
+
+  /** On a serial port: the bus rate found. */
+  get baud(): number | undefined {
+    return this.source === 'serial' ? this.serial?.baud : undefined
   }
 
   /** Via the keyer: connected, but its firmware has no CI-V tunnel. */
@@ -201,8 +225,7 @@ export class RigController {
     const p = this.platform
     this.enabled = switchOn(await p.getSetting(RIG_SETTINGS.enabled), false)
     const src = await p.getSetting(RIG_SETTINGS.source)
-    if (src === 'keyer' && this.platform.keyer) this.source = 'keyer'
-    else if (src === 'ic705' && this.ic705) this.source = 'ic705'
+    if ((src === 'keyer' || src === 'ic705' || src === 'serial') && this.has(src)) this.source = src
     if (this.proto) this.proto.rigAddr = this.source === 'ic705' ? RIG_ADDR : undefined
     this.modelChoice = (await p.getSetting(RIG_SETTINGS.model)) ?? 'auto'
     this.options = parseOptions(await p.getSetting(RIG_SETTINGS.options))
@@ -330,10 +353,10 @@ export class RigController {
     this.emit()
   }
 
-  /** IC-705 Bluetooth or the keyer (Settings). The old link goes, the new one comes
-   *  up when the radio is switched on. */
+  /** IC-705 Bluetooth, a serial port or the keyer (Settings). The old link goes, the new
+   *  one comes up when the radio is switched on. */
   async setSource(src: RigSource, save = true): Promise<void> {
-    if (src === this.source || (src === 'ic705' && !this.ic705) || (src === 'keyer' && !this.platform.keyer)) return
+    if (src === this.source || !this.has(src)) return
     this.wantLink = false
     await this.transport?.disconnect()
     this.source = src
@@ -351,7 +374,7 @@ export class RigController {
     this.emit()
   }
 
-  /** Radio via the keyer: 'auto' or a model id (Settings). */
+  /** Radio via the keyer or a serial port: 'auto' or a model id (Settings). */
   async setModel(id: string): Promise<void> {
     this.modelChoice = id
     await this.platform.setSetting(RIG_SETTINGS.model, id)
@@ -618,7 +641,7 @@ export class RigController {
       this.freqHz = undefined
       this.modeCode = undefined
       // Via the keyer its own controller retries the link.
-      if (was === 'on' && this.wantLink && this.enabled && !this.retried && this.source === 'ic705') {
+      if (was === 'on' && this.wantLink && this.enabled && !this.retried && this.source !== 'keyer') {
         this.retried = true
         window.setTimeout(() => {
           if (this.wantLink && this.link === 'off' && this.transport) void this.transport.connect(false).catch(() => {})
@@ -629,10 +652,11 @@ export class RigController {
   }
 
   /** Link up. IC-705: Icom handshake, transceive on, then the current frequency and
-   *  mode. Via the keyer: no handshake, and the radio's Transceive is its own menu. */
+   *  mode. Via the keyer or a serial port: no handshake, and the radio's Transceive is
+   *  its own menu (on a serial port polled instead). */
   private async start(): Promise<void> {
     const p = this.proto!
-    if (this.source === 'keyer') {
+    if (this.source !== 'ic705') {
       p.markReady()
       this.refresh()
       return
@@ -655,8 +679,15 @@ export class RigController {
       this.ready = true
       this.retried = false
       window.clearInterval(this.pollTimer)
-      // Only the IC-705's Bluetooth needs it; on a wired bus transceive frames just come.
+      // The IC-705's Bluetooth needs it; on the keyer's bus transceive frames just come.
       if (this.source === 'ic705') this.pollTimer = window.setInterval(() => this.proto?.poll(readFreq()), POLL_MS)
+      // A serial port: cheap on a wire, and works with CI-V Transceive off too.
+      if (this.source === 'serial') {
+        this.pollTimer = window.setInterval(() => {
+          this.proto?.poll(readFreq())
+          this.proto?.poll(readMode())
+        }, SERIAL_POLL_MS)
+      }
     }
     if (ev.type === 'freq') {
       this.freqHz = ev.hz

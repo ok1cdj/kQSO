@@ -289,6 +289,7 @@
 <p>kQSO umí číst a ladit rádia Icom. Známé modely: <b>IC-705, IC-706 / MkII / MkIIG, IC-910</b> (volitelný modul 23 cm), <b>IC-9700, IC-7300, IC-7610, IC-7100</b>; jiné rádio s neznámou adresou se ovládá jako obecné CI-V (pásmo, mód, kmitočet).</p>
 <ul>
 <li><b>IC-705 přes jeho Bluetooth</b> (aplikace pro Android a iOS): Nastavení → Rádio → IC-705 Bluetooth → Připojit. Poprvé na rádiu otevři MENU → SET → Bluetooth Set → Pairing Reception.</li>
+<li><b>Jakýkoli Icom na USB kabelu nebo přes CI-V převodník</b> (CT-17, kabel USB–CI-V; Chrome / Edge na počítači): Nastavení → Rádio → USB / sériová linka → Připojit a vyber port. Rychlost linky a adresu rádia kQSO najde samo. IC-9700 a IC-705 mají na USB dva porty; když se rádio nenajde, vyber ten druhý. Na Linuxu musí být uživatel ve skupině <code>dialout</code> (nebo <code>uucp</code>).</li>
 <li><b>Jakýkoli Icom přes klíčovač M5-ESP32-keyer</b> na CI-V konektoru rádia (firmware 2.1.0 a novější; aplikace i Chrome / Edge): Nastavení → Rádio → Přes klíčovač. V rádiu zapni CI-V Transceive.</li>
 </ul>
 <p>Pásmo, mód a přesný kmitočet se pak berou z rádia. Napsané pásmo nebo mód rádio přeladí, <code>F28300</code> ho naladí na 28,300 MHz. Pásmo, které rádio neumí, přepne jen log. Model rádia se pozná podle CI-V adresy; při změněné adrese ho vyber ručně.</p>
@@ -315,8 +316,8 @@
 <tr><td><kbd>Alt+W</kbd> <kbd>Alt+D</kbd> <kbd>Alt+H</kbd> <kbd>Alt+E</kbd></td><td>zahodit spojení / smazat poslední / nápověda / upravit poslední</td></tr>
 <tr><td><kbd>Alt+X</kbd></td><td>vzít lokátor nabídnutý z databáze</td></tr>
 <tr><td><kbd>Alt+M</kbd></td><td>mód CW → SSB → FM</td></tr>
-<tr><td><kbd>Alt+L</kbd> / <kbd>Alt+Q</kbd></td><td>seznam QSO / zpět na logy</td></tr>
 <tr><td><kbd>Alt+N</kbd> / <kbd>Alt+P</kbd></td><td>další / předchozí pásmo</td></tr>
+<tr><td><kbd>Alt+L</kbd> / <kbd>Alt+Q</kbd></td><td>seznam QSO / zpět na logy</td></tr>
 <tr><td><kbd>F5</kbd> <kbd>F6</kbd> <kbd>F7</kbd> <kbd>F8</kbd> <kbd>F11</kbd> <kbd>F12</kbd></td><td>makra CQ EX TU ? MY INFO; v SSB / FM F5–F8 hlasové paměti T1–T4</td></tr>
 <tr><td><kbd>PgUp</kbd> / <kbd>PgDn</kbd></td><td>rychlost CW ±2 WPM</td></tr>
 <tr><td><kbd>Alt+R</kbd> <kbd>Alt+S</kbd> <kbd>Alt+C</kbd> <kbd>Alt+K</kbd></td><td>RUN / S&amp;P / připojit klíčovač / CW klávesnice</td></tr>

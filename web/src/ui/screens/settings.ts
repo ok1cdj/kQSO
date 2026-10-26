@@ -693,16 +693,19 @@ export class SettingsScreen implements Screen {
       void r.setEnabled(on, false).then(() => paint()) // yesNo has saved it
     }, false)
 
-    // IC-705 Bluetooth | via the keyer — only where both exist (APK).
+    // IC-705 Bluetooth | USB / serial | via the keyer — those that exist here, when more than one.
     const source = el('div', 'segmented')
     source.hidden = !r.sourceChoice
-    const sourceBtns = (['ic705', 'keyer'] as const).map((src) => {
-      const b = button(t(src === 'ic705' ? 'settings.rigSourceIc705' : 'settings.rigSourceKeyer'), () => void r.setSource(src), 'btn')
-      source.append(b)
-      return { src, b }
-    })
+    const sourceLabel = { ic705: 'settings.rigSourceIc705', serial: 'settings.rigSourceSerial', keyer: 'settings.rigSourceKeyer' } as const
+    const sourceBtns = (['ic705', 'serial', 'keyer'] as const)
+      .filter((src) => r.has(src))
+      .map((src) => {
+        const b = button(t(sourceLabel[src]), () => void r.setSource(src), 'btn')
+        source.append(b)
+        return { src, b }
+      })
 
-    // Model (via the keyer): Auto (what the address says) or one from the table.
+    // Model (via the keyer or a serial port): Auto (what the address says) or one from the table.
     const model = el('div', 'segmented segmented--wrap')
     const modelBtns = [{ id: 'auto', label: '' }, ...RIG_MODELS.map((m) => ({ id: m.id, label: m.label }))].map(({ id, label }) => {
       const b = button(label, () => void r.setModel(id), 'btn')
@@ -718,16 +721,19 @@ export class SettingsScreen implements Screen {
     const status = el('div', 'about')
     // Via the keyer the link is the keyer's (its section): no second set of buttons here.
     const keyerNote = el('div', 'about')
+    const serialHint = el('div', 'about', t('settings.rigSerialHint'))
     const link = el('div', 'segmented')
-    const name = (): string => (r.source === 'keyer' ? r.model.label : r.name ?? 'IC-705')
-    const via = (): string => (r.source === 'keyer' && r.name ? ` · ${t('settings.rigVia', { name: r.name })}` : '')
+    const name = (): string => (r.source === 'ic705' ? r.name ?? 'IC-705' : r.model.label)
+    const via = (): string =>
+      r.source === 'keyer' && r.name ? ` · ${t('settings.rigVia', { name: r.name })}` : r.baud !== undefined ? ` · ${r.baud} Bd` : ''
     let shownModel = ''
     const xvertBox = el('div', 'keyer-settings')
     const paint = (): void => {
       for (const { src, b } of sourceBtns) b.setAttribute('aria-pressed', String(r.source === src))
-      modelBox.hidden = r.source !== 'keyer'
+      modelBox.hidden = r.source === 'ic705'
       link.hidden = r.source === 'keyer'
       keyerNote.hidden = r.source !== 'keyer'
+      serialHint.hidden = r.source !== 'serial'
       keyerNote.textContent = t(this.keyer.link === 'off' ? 'settings.rigKeyerOff' : 'settings.rigKeyerLink')
       const det = r.detectedModel
       const addr = r.addr === undefined ? '' : `, ${r.addr.toString(16).toUpperCase().padStart(2, '0')}`
@@ -763,6 +769,8 @@ export class SettingsScreen implements Screen {
         status.textContent = [name(), f, r.mode].filter((x) => x !== undefined).join(' · ') + via()
       } else if (r.link === 'on') {
         status.textContent = t('settings.rigHandshake', { name: name() })
+      } else if (r.link === 'connecting' && r.source === 'serial') {
+        status.textContent = t('settings.rigSerialSearching')
       } else if (r.link === 'connecting') {
         status.textContent = r.source === 'keyer' && this.keyer.link === 'on' ? t('settings.rigNoRadio', { name: r.name ?? 'keyer' }) : t('settings.rigConnecting', { name: r.source === 'keyer' ? (r.name ?? 'keyer') : name() })
       } else {
@@ -784,7 +792,7 @@ export class SettingsScreen implements Screen {
       button(t('settings.keyerDisconnect'), () => void r.disconnect(), 'btn'),
       button(t('settings.keyerForget'), () => void r.forget(), 'btn'),
     )
-    body.append(source, modelBox, options, status, keyerNote, link, xvertBox)
+    body.append(source, modelBox, options, status, keyerNote, link, serialHint, xvertBox)
     return this.fold('rig', t('settings.rig'), state, seg, el('div', 'about', t('settings.rigHint')), body)
   }
 

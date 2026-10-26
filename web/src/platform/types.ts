@@ -40,8 +40,9 @@ export interface KeyerTransport {
 }
 
 /**
- * BLE link to an Icom IC-705 (CI-V over Icom's BLE serial). Raw bytes both ways; the
- * handshake and CI-V itself are core/civ.ts. APK only.
+ * Link to an Icom radio: the IC-705's own BLE serial (the apps), the keyer's CI-V tunnel
+ * (ui/keyer-civ.ts) or a serial port (SerialRigTransport). Raw bytes both ways; the
+ * handshake and CI-V itself are core/civ.ts.
  */
 export interface RigTransport {
   /** As KeyerTransport.connect: `pick` = chooser, otherwise the remembered radio quietly. */
@@ -53,6 +54,15 @@ export interface RigTransport {
   readonly mtu: number
   onData(cb: (bytes: Uint8Array) => void): void
   onState(cb: (s: KeyerLinkState, name?: string) => void): void
+}
+
+/** Any Icom on a wire through Web Serial (platform/web/serial.ts): it finds the bus rate
+ *  and the radio's address itself. */
+export interface SerialRigTransport extends RigTransport {
+  /** The radio's CI-V address, once found. */
+  readonly addr: number | undefined
+  /** The bus rate the port is open at. */
+  readonly baud: number | undefined
 }
 
 /** Link state of a TCP connection; `reason` on 'off' says why (shown to the user). */
@@ -144,8 +154,11 @@ export interface KQSOPlatform {
   /** CW keyer over BLE; undefined where the host has no BLE (Safari, Firefox, memory). */
   readonly keyer?: KeyerTransport | undefined
 
-  /** IC-705 over BLE; APK only. */
+  /** IC-705 over BLE; the apps only. */
   readonly rig?: RigTransport | undefined
+
+  /** Any Icom over a serial port (USB, CT-17); Chrome / Edge on the desktop only. */
+  readonly serialRig?: SerialRigTransport | undefined
 
   /** TCP for the ON4KST chat; undefined where there is none (web build without a relay). */
   readonly tcp?: TcpTransport | undefined
