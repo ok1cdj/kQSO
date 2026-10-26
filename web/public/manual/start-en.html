@@ -10,12 +10,12 @@
 <main class="manual" data-lang="en">
 <p class="manual-lang"><a href="start-cs.html">Česky</a></p>
 <h1>kQSO — first steps</h1>
-<p class="muted">Two complete examples from creating the log to sending it off: a VHF contest and a SOTA activation. The details of each step are in the <a href="en.html">manual</a>.</p>
+<p class="muted">Two complete examples from creating the log to sending it off: a VHF contest and an activation (SOTA, POTA, WWFF…). The details of each step are in the <a href="en.html">manual</a>.</p>
 
 <nav class="manual-toc">
 <ol>
 <li><a href="#contest">VHF contest</a></li>
-<li><a href="#sota">SOTA activation</a></li>
+<li><a href="#activation">Activation (SOTA, POTA, WWFF…)</a></li>
 </ol>
 </nav>
 
@@ -63,9 +63,10 @@
 </div>
 <p>The QSOs go to your own logbook with <b>export</b> (ADIF with all bands) or <b>Wavelog</b>.</p>
 
-<h2 id="sota">2. SOTA activation</h2>
+<h2 id="activation">2. Activation (SOTA, POTA, WWFF…)</h2>
+<p>The example shows a SOTA summit that also lies in a POTA park. GMA, WWFF, TOTA and BOTA work the same way; only the reference and where you upload the log differ.</p>
 
-<h3>Step 1: on the summit, create the log</h3>
+<h3>Step 1: on site, create the log</h3>
 <p><b>+ New log</b>, the <b>Activation</b> profile, your call (with <code>/P</code> if you like). Tap the crosshair button: it fills the locator from your position and, under <b>My reference</b>, offers the nearest SOTA and GMA summits, POTA and WWFF parks, TOTA towers and BOTA bunkers within 25 km. Tap to add them, several at once if you like (a summit + a park). It works without signal too, when the area is downloaded (Settings → Offline references; the area around home downloads by itself).</p>
 <figure class="phone"><img src="img/en/start-sota-newlog.webp" alt="New log, activation with references from the position" width="390" height="1180" loading="lazy"><figcaption>Klínovec: summit OK/KA-001 and park DE-0409 picked.</figcaption></figure>
 
@@ -74,13 +75,13 @@
 <figure class="crop"><img src="img/en/start-sota-qso.webp" alt="A QSO in an activation" width="390" height="170" loading="lazy"><figcaption><code>DL1ABC 579</code>: 40 m CW.</figcaption></figure>
 <p>Band and mode are switched by typing: <code>20m ssb</code> ⏎. They stay for the next QSOs until you change them.</p>
 
-<h3>Step 3: summit-to-summit (S2S)</h3>
-<p>When a station calls from another summit or park, add its reference after the call. It is typed with slashes, the last one becomes a dash: <code>OK1ABC/P 57 OK/ZC/001</code> ⏎ ⏎. The last saved QSO then shows under the line, reference included.</p>
+<h3>Step 3: QSO with another activator (S2S, P2P)</h3>
+<p>When a station calls from another summit, park, tower or bunker, add its reference after the call. It is typed with slashes, the last one becomes a dash: <code>OK1ABC/P 57 OK/ZC/001</code> ⏎ ⏎. The last saved QSO then shows under the line, reference included.</p>
 <figure class="crop"><img src="img/en/start-sota-saved.webp" alt="S2S QSO saved" width="390" height="170" loading="lazy"><figcaption>A saved S2S: OK1ABC/P from OK/ZC-001.</figcaption></figure>
-<p>A valid SOTA activation needs at least 4 QSOs; the count is in the header (<b>QSO n</b>).</p>
+<p>How many QSOs make a valid activation is up to the program (SOTA 4, POTA 10, WWFF 44); the count is in the header (<b>QSO n</b>).</p>
 
 <h3>Step 4: at home, export and upload</h3>
-<p>On the log list tap <b>export</b>. When the activation has several own references, a row comes up with the <b>whole ADIF</b> and one file per reference, named the way each program wants it (e.g. <code>OK1CDJ-P@DE-0409-20260815.adi</code>). Upload each file to its program: SOTA to sotadata.org.uk, POTA to pota.app.</p>
+<p>On the log list tap <b>export</b>. When the activation has several own references, a row comes up with the <b>whole ADIF</b> and one file per reference, named the way each program wants it (e.g. <code>OK1CDJ-P@DE-0409-20260815.adi</code>). Upload each file to its program: SOTA to sotadata.org.uk, POTA to pota.app, the others as their program says.</p>
 <figure class="crop"><img src="img/en/start-sota-export.webp" alt="Export per reference" width="390" height="87" loading="lazy"><figcaption>Export: whole ADIF, SOTA OK/KA-001, POTA DE-0409.</figcaption></figure>
 <p>Activations aren't pushed to Wavelog. With one reference, <b>export</b> saves a single ADIF straight away.</p>
 

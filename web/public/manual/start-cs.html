@@ -10,12 +10,12 @@
 <main class="manual" data-lang="cs">
 <p class="manual-lang"><a href="start-en.html">English</a></p>
 <h1>kQSO — první kroky</h1>
-<p class="muted">Dva celé příklady od založení logu po odeslání: VKV závod a SOTA aktivace. Podrobnosti ke každému kroku jsou v <a href="cs.html">návodu</a>.</p>
+<p class="muted">Dva celé příklady od založení logu po odeslání: VKV závod a aktivace (SOTA, POTA, WWFF…). Podrobnosti ke každému kroku jsou v <a href="cs.html">návodu</a>.</p>
 
 <nav class="manual-toc">
 <ol>
 <li><a href="#contest">VKV závod</a></li>
-<li><a href="#sota">SOTA aktivace</a></li>
+<li><a href="#activation">Aktivace (SOTA, POTA, WWFF…)</a></li>
 </ol>
 </nav>
 
@@ -63,9 +63,10 @@
 </div>
 <p>Do svého deníku dostaneš spojení tlačítkem <b>export</b> (ADIF se všemi pásmy) nebo <b>Wavelog</b>.</p>
 
-<h2 id="sota">2. SOTA aktivace</h2>
+<h2 id="activation">2. Aktivace (SOTA, POTA, WWFF…)</h2>
+<p>Příklad je ukázaný na SOTA vrcholu, který leží zároveň v POTA parku. Pro GMA, WWFF, TOTA i BOTA je postup stejný, liší se jen reference a kam log nakonec nahraješ.</p>
 
-<h3>Krok 1: na vrcholu založ log</h3>
+<h3>Krok 1: na místě založ log</h3>
 <p><b>+ Nový log</b>, profil <b>Aktivace</b>, volačka (klidně s <code>/P</code>). Klepni na tlačítko se zaměřovačem: vyplní lokátor z polohy a pod <b>Moje reference</b> nabídne nejbližší vrcholy SOTA, GMA, parky POTA a WWFF, rozhledny TOTA a bunkry BOTA do 25 km. Klepnutím je přidáš, klidně víc naráz (vrchol + park). Funguje to i bez signálu, když máš oblast stažená (Nastavení → Reference offline; okolí domova se stáhne samo).</p>
 <figure class="phone"><img src="img/cs/start-sota-newlog.webp" alt="Nový log, aktivace s referencemi z polohy" width="390" height="1180" loading="lazy"><figcaption>Klínovec: vybraný vrchol OK/KA-001 a park DE-0409.</figcaption></figure>
 
@@ -74,13 +75,13 @@
 <figure class="crop"><img src="img/cs/start-sota-qso.webp" alt="Spojení v aktivaci" width="390" height="170" loading="lazy"><figcaption><code>DL1ABC 579</code>: 40 m CW.</figcaption></figure>
 <p>Pásmo a mód přepneš psaním: <code>20m ssb</code> ⏎. Platí pro další spojení, dokud je nezměníš.</p>
 
-<h3>Krok 3: vrchol–vrchol (S2S)</h3>
-<p>Když volá stanice z jiného vrcholu nebo parku, připiš její referenci za značku. Píše se s lomítkem, poslední lomítko se změní na pomlčku: <code>OK1ABC/P 57 OK/ZC/001</code> ⏎ ⏎. Pod řádkem je pak poslední zapsané spojení i s referencí.</p>
+<h3>Krok 3: spojení s jinou aktivací (S2S, P2P)</h3>
+<p>Když volá stanice z jiného vrcholu, parku, rozhledny nebo bunkru, připiš její referenci za značku. Píše se s lomítkem, poslední lomítko se změní na pomlčku: <code>OK1ABC/P 57 OK/ZC/001</code> ⏎ ⏎. Pod řádkem je pak poslední zapsané spojení i s referencí.</p>
 <figure class="crop"><img src="img/cs/start-sota-saved.webp" alt="S2S spojení zapsané" width="390" height="170" loading="lazy"><figcaption>Zapsané S2S: OK1ABC/P z OK/ZC-001.</figcaption></figure>
-<p>Na platnou SOTA aktivaci potřebuješ aspoň 4 spojení; počet vidíš v hlavičce (<b>QSO n</b>).</p>
+<p>Kolik spojení je na platnou aktivaci potřeba, určuje program (SOTA 4, POTA 10, WWFF 44); počet vidíš v hlavičce (<b>QSO n</b>).</p>
 
 <h3>Krok 4: doma log exportuj a nahraj</h3>
-<p>V seznamu logů klepni na <b>export</b>. Má-li aktivace víc vlastních referencí, objeví se řádek s <b>celým ADIF</b> a souborem pro každou referenci zvlášť, pojmenovaným tak, jak ho který program chce (třeba <code>OK1CDJ-P@DE-0409-20260815.adi</code>). Každý soubor nahraj do jeho programu: SOTA na sotadata.org.uk, POTA na pota.app.</p>
+<p>V seznamu logů klepni na <b>export</b>. Má-li aktivace víc vlastních referencí, objeví se řádek s <b>celým ADIF</b> a souborem pro každou referenci zvlášť, pojmenovaným tak, jak ho který program chce (třeba <code>OK1CDJ-P@DE-0409-20260815.adi</code>). Každý soubor nahraj do jeho programu: SOTA na sotadata.org.uk, POTA na pota.app, ostatní podle pravidel svého programu.</p>
 <figure class="crop"><img src="img/cs/start-sota-export.webp" alt="Export po referencích" width="390" height="87" loading="lazy"><figcaption>Export: celý ADIF, SOTA OK/KA-001, POTA DE-0409.</figcaption></figure>
 <p>Aktivace se do Wavelogu neposílají. S jednou referencí uloží <b>export</b> rovnou jeden ADIF.</p>
 
