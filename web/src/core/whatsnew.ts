@@ -14,6 +14,17 @@ export interface WhatsNewEntry {
 /** Newest first. */
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    version: '1.15',
+    cs: [
+      'Rádio Icom na počítači kabelem: Chrome / Edge, vlastní USB rádia (IC-7300, 9700, 705 …) nebo CT-17 / kabel USB–CI-V. Rychlost linky a adresu kQSO najde samo. Nastavení → Rádio → USB / sériová linka; podrobně v návodu.',
+      'Pásmo z klávesnice: Alt+N další, Alt+P předchozí.',
+    ],
+    en: [
+      'An Icom radio on a computer by cable: Chrome / Edge, the radio\'s own USB (IC-7300, 9700, 705 …) or a CT-17 / USB–CI-V cable. kQSO finds the bus rate and the address itself. Settings → Radio → USB / serial; details in the manual.',
+      'Band from the keyboard: Alt+N next, Alt+P previous.',
+    ],
+  },
+  {
     version: '1.14',
     cs: [
       'ON4KST chat přímo v logu VKV závodu: zprávy, stanice se vzdáleností, azimutem a pásmy, na kterých jsou QRV, žádost o sked jedním klepnutím a psaní ze vstupního řádku (@ZNAČKA text). Na tabletu na šířku aktivní stanice pod závodním panelem. Nastavení → ON4KST chat; bez účtu si ho vyzkoušíš se značkou DEMO.',

@@ -4,6 +4,17 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 
 ## [Unreleased]
 
+### Added
+- **Icom radios over a serial port** (Chrome / Edge on a computer, Web Serial): the radio's own USB (IC-7300, 9700, 705, 7610, 7100) or a CT-17 / USB–CI-V cable, a third way next to the IC-705's Bluetooth and the M5 keyer. Settings → Radio → USB / serial → Connect picks the port; the bus rate (115200 / 19200 / 9600 / 4800) and the CI-V address are found by listening and asking, remembered with the port for the next connection, and the model goes by the address. DTR / RTS are held low (a radio keying on them doesn't transmit because of kQSO); frequency and mode are read every second, so it works with CI-V Transceive off too; a switched-off radio or a pulled cable comes back by itself. Tuning, CW through the radio and voice memories as with the other connections. Tested on a real radio on Linux.
+- **Band from the keyboard**: Alt+N next band, Alt+P previous (160 m … 4 mm, round the ends); a connected radio tunes to it. Not in satellite logs.
+- **Manual**: "Radio on a computer: USB or a CI-V cable" — drivers, port names, one program and one kQSO window per port, and on Linux the `dialout` group and a udev rule keeping ModemManager (which keys the radio while probing the port) away.
+
+### Changed
+- **First steps**: the activation example is shown on SOTA but explained for every program (POTA, WWFF, GMA, TOTA, BOTA): QSOs with other activators, the minimum per program, where to upload.
+
+### Fixed
+- The radio's model in the log header (705, 7300 …) now updates when the model becomes known after the header was drawn.
+
 ## [1.14] – 2026-10-25
 
 ### Added
