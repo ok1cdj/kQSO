@@ -7,8 +7,8 @@ type — callsign, band/mode, report, serial, locator, award reference — so yo
 log a QSO with almost no taps. It runs as a web app (offline PWA), as an
 Android app and as an iOS app for iPhone and iPad (the same web app in a native shell).
 
-Built for the **Mudita Kompakt** (480×800 e-ink), and just as usable on any other
-phone, tablet or desktop.
+It runs on any phone, tablet or computer, and has an e-ink display mode as well (tuned
+on the **Mudita Kompakt**, 480×800).
 
 - **Live web:** <https://kqso.ok1cdj.com/> (web 1.14; the old `ok1cdj.github.io/kQSO/` redirects there)
 - **Android:** [Google Play](https://play.google.com/store/apps/details?id=com.ok1cdj.kqso), or the APK from [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.14) — the same signature, so either updates the other

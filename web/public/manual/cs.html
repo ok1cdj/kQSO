@@ -289,7 +289,7 @@
 <p>kQSO umí číst a ladit rádia Icom. Známé modely: <b>IC-705, IC-706 / MkII / MkIIG, IC-910</b> (volitelný modul 23 cm), <b>IC-9700, IC-7300, IC-7610, IC-7100</b>; jiné rádio s neznámou adresou se ovládá jako obecné CI-V (pásmo, mód, kmitočet).</p>
 <ul>
 <li><b>IC-705 přes jeho Bluetooth</b> (aplikace pro Android a iOS): Nastavení → Rádio → IC-705 Bluetooth → Připojit. Poprvé na rádiu otevři MENU → SET → Bluetooth Set → Pairing Reception.</li>
-<li><b>Jakýkoli Icom na USB kabelu nebo přes CI-V převodník</b> (CT-17, kabel USB–CI-V; Chrome / Edge na počítači): Nastavení → Rádio → USB / sériová linka → Připojit a vyber port. Rychlost linky a adresu rádia kQSO najde samo. IC-9700 a IC-705 mají na USB dva porty; když se rádio nenajde, vyber ten druhý. Na Linuxu musí být uživatel ve skupině <code>dialout</code> (nebo <code>uucp</code>).</li>
+<li><b>Jakýkoli Icom na USB kabelu nebo přes CI-V převodník</b> (Chrome / Edge na počítači): Nastavení → Rádio → USB / sériová linka → Připojit. Podrobně v části <a href="#radio-usb">Rádio na počítači</a>.</li>
 <li><b>Jakýkoli Icom přes klíčovač M5-ESP32-keyer</b> na CI-V konektoru rádia (firmware 2.1.0 a novější; aplikace i Chrome / Edge): Nastavení → Rádio → Přes klíčovač. V rádiu zapni CI-V Transceive.</li>
 </ul>
 <p>Pásmo, mód a přesný kmitočet se pak berou z rádia. Napsané pásmo nebo mód rádio přeladí, <code>F28300</code> ho naladí na 28,300 MHz. Pásmo, které rádio neumí, přepne jen log. Model rádia se pozná podle CI-V adresy; při změněné adrese ho vyber ručně.</p>
@@ -297,6 +297,23 @@
 <figure class="crop"><img src="img/cs/settings-rig-on.webp" alt="Rádio CI-V" width="374" height="881" loading="lazy"><figcaption>Rádio – CI-V zapnuté: výběr modelu.</figcaption></figure>
 <p><b>Transvertory (XVERT):</b> pro každé pásmo kmitočet RF a mezifrekvence na rádiu. Klepnutím na pásmo jeho transvertor zapneš. Napsané pásmo pak rádio naladí na mezifrekvenci a do logu jde kmitočet RF (v hlavičce XV).</p>
 <figure class="crop"><img src="img/cs/settings-xvert.webp" alt="Transvertory" width="390" height="696" loading="lazy"><figcaption>Tabulka transvertorů, předvyplněná obvyklými hodnotami.</figcaption></figure>
+
+<h3 id="radio-usb">Rádio na počítači: USB nebo CI-V kabel</h3>
+<p>V prohlížeči <b>Chrome</b> nebo <b>Edge</b> na počítači (Windows, Linux, macOS) se rádio připojí přímo kabelem, bez klíčovače. Firefox a Safari sériový port neumí, aplikace pro Android a iOS také ne.</p>
+<ul>
+<li><b>Rádio s USB</b> (IC-7300, 9700, 705, 7610, 7100 …): stačí obyčejný USB kabel do rádia. Ve Windows je potřeba ovladač USB od Icomu (CP210x od Silicon Labs), na Linuxu a macOS je ovladač v systému.</li>
+<li><b>Starší rádio</b> (IC-706, 910 …): převodník na konektor CI-V / REMOTE (3,5 mm jack) — Icom CT-17 nebo kabel USB–CI-V.</li>
+</ul>
+<p><b>Připojení:</b> Nastavení → Rádio → Ano → <b>USB / sériová linka</b> → <b>Připojit</b> a v nabídce prohlížeče vyber port (Windows <code>COMx</code>, Linux <code>ttyUSB0</code>, macOS <code>cu.SLAB…</code> / <code>cu.usbserial…</code>). Rychlost linky (115200, 19200, 9600, 4800) a CI-V adresu rádia kQSO najde samo, model určí podle adresy. Stavový řádek pak ukazuje třeba <i>IC-7300 · 14.030 MHz · CW · 115200 Bd</i>. Nalezený port, rychlost i adresu si kQSO pamatuje: příště se po zapnutí připojí samo a rychle.</p>
+<ul>
+<li><b>CI-V Transceive</b> v rádiu zapni, ať kQSO sleduje ladění hned. Bez něj čte kmitočet a mód každou sekundu.</li>
+<li><b>IC-9700 a IC-705</b> mají na USB dva porty; když se rádio nenajde, odpoj a vyber ten druhý.</li>
+<li><b>Port smí mít otevřený jen jeden program</b> — zavři jiný logger nebo CAT program, a kQSO měj otevřené jen v jednom okně či kartě.</li>
+<li><b>DTR a RTS</b> drží kQSO dole, takže rádio, které na nich klíčuje (USB SEND / USB Keying), od kQSO nevysílá.</li>
+<li><b>Vypnuté rádio</b> nebo vytažený kabel: kQSO ukáže odpojení a po zapnutí rádia (zastrčení kabelu) se připojí samo.</li>
+<li><b>Linux:</b> uživatel musí být ve skupině <code>dialout</code> (nebo <code>uucp</code>). Když rádio po zapnutí na chvíli zaklíčuje, zkouší jeho port ModemManager; odstaví ho udev pravidlo, např. <code>/etc/udev/rules.d/99-icom.rules</code>: <code>ATTRS{idVendor}=="10c4", ENV{ID_MM_DEVICE_IGNORE}="1"</code> (pak <code>sudo udevadm control --reload-rules</code> a znovu zapojit).</li>
+</ul>
+<p>Ladění z řádku, CW makra přes rádio a hlasové paměti fungují stejně jako u ostatních připojení (viz výše).</p>
 
 <h3>CW klíčovač M5</h3>
 <p>Klíčovač <a href="https://keyer.ok1cdj.com/build.html">M5-ESP32-keyer</a> je klíčovač na stavbu; díly, schémata a nahrání firmwaru najdeš na <a href="https://keyer.ok1cdj.com/build.html">keyer.ok1cdj.com</a>. Připojuje se přes Bluetooth (aplikace pro Android a iOS, Chrome / Edge): Nastavení → Klíčovač M5 → CW klíčování Ano → Připojit. V CW pak lišta nabízí makra CQ, EX, TU, MY, LOC/REF a ?, hlavička ukazuje RUN nebo S&amp;P a rychlost. S rádiem, které klíčuje CW přes CI-V, klíčovač M5 nepotřebuješ (viz <a href="#radio">Rádio</a>).</p>

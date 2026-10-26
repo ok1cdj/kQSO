@@ -289,7 +289,7 @@
 <p>kQSO reads and tunes Icom radios. Known models: <b>IC-705, IC-706 / MkII / MkIIG, IC-910</b> (optional 23 cm unit), <b>IC-9700, IC-7300, IC-7610, IC-7100</b>; another radio with an unknown address is driven as a generic CI-V radio (band, mode, frequency).</p>
 <ul>
 <li><b>IC-705 over its Bluetooth</b> (Android and iOS apps): Settings → Radio → IC-705 Bluetooth → Connect. The first time open MENU → SET → Bluetooth Set → Pairing Reception on the radio.</li>
-<li><b>Any Icom on a USB cable or a CI-V interface</b> (CT-17, a USB–CI-V cable; Chrome / Edge on a computer): Settings → Radio → USB / serial → Connect and pick the port. kQSO finds the bus rate and the radio's address by itself. The IC-9700 and IC-705 have two USB ports; if the radio isn't found, pick the other one. On Linux your user must be in the <code>dialout</code> (or <code>uucp</code>) group.</li>
+<li><b>Any Icom on a USB cable or a CI-V interface</b> (Chrome / Edge on a computer): Settings → Radio → USB / serial → Connect. Details under <a href="#radio-usb">Radio on a computer</a>.</li>
 <li><b>Any Icom through the M5-ESP32-keyer</b> on the radio's CI-V jack (firmware 2.1.0 and newer; apps and Chrome / Edge): Settings → Radio → Via the keyer. Switch CI-V Transceive on in the radio.</li>
 </ul>
 <p>Band, mode and the exact frequency then come from the radio. A typed band or mode tunes the radio, <code>F28300</code> tunes it to 28.300 MHz. A band the radio can't do switches only the log. The radio model goes by its CI-V address; choose it by hand if the address was changed.</p>
@@ -297,6 +297,23 @@
 <figure class="crop"><img src="img/en/settings-rig-on.webp" alt="Radio CI-V" width="374" height="838" loading="lazy"><figcaption>Radio – CI-V on: picking the model.</figcaption></figure>
 <p><b>Transverters (XVERT):</b> per band the RF frequency and the IF on the radio. Tap a band to switch its transverter on. A typed band then tunes the radio to the IF and the log gets the RF frequency (XV in the header).</p>
 <figure class="crop"><img src="img/en/settings-xvert.webp" alt="Transverters" width="390" height="696" loading="lazy"><figcaption>The transverter table, prefilled with the usual values.</figcaption></figure>
+
+<h3 id="radio-usb">Radio on a computer: USB or a CI-V cable</h3>
+<p>In <b>Chrome</b> or <b>Edge</b> on a computer (Windows, Linux, macOS) the radio connects straight by cable, no keyer needed. Firefox and Safari have no serial port, nor do the Android and iOS apps.</p>
+<ul>
+<li><b>A radio with USB</b> (IC-7300, 9700, 705, 7610, 7100 …): a plain USB cable into the radio. Windows needs Icom's USB driver (Silicon Labs CP210x); Linux and macOS have it built in.</li>
+<li><b>An older radio</b> (IC-706, 910 …): an interface on the CI-V / REMOTE jack (3.5 mm) — Icom's CT-17 or a USB–CI-V cable.</li>
+</ul>
+<p><b>Connecting:</b> Settings → Radio → Yes → <b>USB / serial</b> → <b>Connect</b>, and pick the port in the browser's list (Windows <code>COMx</code>, Linux <code>ttyUSB0</code>, macOS <code>cu.SLAB…</code> / <code>cu.usbserial…</code>). kQSO finds the bus rate (115200, 19200, 9600, 4800) and the radio's CI-V address by itself and tells the model by the address. The status line then shows e.g. <i>IC-7300 · 14.030 MHz · CW · 115200 Bd</i>. The port, rate and address are remembered: next time kQSO connects by itself, quickly.</p>
+<ul>
+<li><b>CI-V Transceive</b> on in the radio makes kQSO follow the dial at once. Without it the frequency and mode are read every second.</li>
+<li><b>The IC-9700 and IC-705</b> have two USB ports; if the radio isn't found, disconnect and pick the other one.</li>
+<li><b>Only one program can have the port open</b> — close another logger or CAT program, and keep kQSO open in one window or tab only.</li>
+<li><b>DTR and RTS</b> are held low by kQSO, so a radio keying on them (USB SEND / USB Keying) doesn't transmit because of kQSO.</li>
+<li><b>Radio switched off</b> or the cable out: kQSO shows it disconnected and connects again by itself when the radio is on (the cable back).</li>
+<li><b>Linux:</b> your user must be in the <code>dialout</code> (or <code>uucp</code>) group. If the radio keys for a while when it is switched on, ModemManager is probing its port; a udev rule keeps it away, e.g. <code>/etc/udev/rules.d/99-icom.rules</code>: <code>ATTRS{idVendor}=="10c4", ENV{ID_MM_DEVICE_IGNORE}="1"</code> (then <code>sudo udevadm control --reload-rules</code> and plug it in again).</li>
+</ul>
+<p>Tuning from the line, CW macros through the radio and voice memories work as with the other connections (see above).</p>
 
 <h3>M5 CW keyer</h3>
 <p>The <a href="https://keyer.ok1cdj.com/build.html">M5-ESP32-keyer</a> is a home-built keyer; parts, schematics and the firmware flasher are at <a href="https://keyer.ok1cdj.com/build.html">keyer.ok1cdj.com</a>. It connects over Bluetooth (Android and iOS apps, Chrome / Edge): Settings → M5 keyer → CW keying Yes → Connect. In CW the strip then offers the macros CQ, EX, TU, MY, LOC/REF and ?, and the header shows RUN or S&amp;P and the speed. With a radio that keys CW over CI-V you don't need the M5 keyer (see <a href="#radio">Radio</a>).</p>
