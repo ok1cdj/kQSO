@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { matchShortcut, nextMode } from '../src/ui/shortcuts'
+import { matchShortcut, nextBand, nextMode } from '../src/ui/shortcuts'
 import type { KeyInput } from '../src/ui/shortcuts'
 
 const key = (k: string, mods: Partial<KeyInput> = {}): KeyInput => ({
@@ -55,6 +55,24 @@ describe('matchShortcut', () => {
     expect(matchShortcut(key('m', { code: 'KeyM', metaKey: true }))).toBeUndefined()
     expect(matchShortcut(key('M', { code: 'KeyM', ctrlKey: true, shiftKey: true }))).toBeUndefined() // the browser's
     expect(matchShortcut(alt('KeyM'))).toEqual({ type: 'mode' })
+  })
+
+  it('Alt+N the next band, Alt+P the previous one; Alt+B stays the browser\'s', () => {
+    expect(matchShortcut(alt('KeyN', '˜'))).toEqual({ type: 'band', step: 1 })
+    expect(matchShortcut(alt('KeyP', 'π'))).toEqual({ type: 'band', step: -1 })
+    expect(matchShortcut(key('n', { code: 'KeyN', ctrlKey: true, altKey: true }))).toBeUndefined() // AltGr
+    expect(matchShortcut(alt('KeyB'))).toBeUndefined()
+  })
+})
+
+describe('nextBand', () => {
+  it('steps in band-plan order and goes round the ends', () => {
+    expect(nextBand('2m', 1)).toBe('70cm')
+    expect(nextBand('70cm', -1)).toBe('2m')
+    expect(nextBand('10m', 1)).toBe('6m')
+    expect(nextBand('4mm', 1)).toBe('160m')
+    expect(nextBand('160m', -1)).toBe('4mm')
+    expect(nextBand('xx', 1)).toBe('160m')
   })
 })
 

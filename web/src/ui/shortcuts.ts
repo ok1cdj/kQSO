@@ -1,8 +1,10 @@
 // Hardware-keyboard shortcuts on the logging screen, as in Tučňák: macros from F5 (F1–F4
 // belong to the browser / system), PgUp / PgDn the CW speed, Alt+letter the line commands
-// and navigation (Alt+O the ON4KST chat, Alt+G its sked QRG), Ctrl+Enter save now, Ctrl+M ESM. Pure — DOM-free, so it can be unit-tested; the
+// and navigation (Alt+O the ON4KST chat, Alt+G its sked QRG, Alt+N / Alt+P the band), Ctrl+Enter save now, Ctrl+M ESM. Pure — DOM-free, so it can be unit-tested; the
 // logging screen decides whether a shortcut applies (keyer, radio) and lets the key
 // through when it doesn't.
+
+import { BANDS } from '../core/index'
 
 /** The macro memories F5 F6 F7 F8 F11 F12 (F9 / F10 stay free); the first four are also
  *  the radio's voice memories T1–T4 in SSB / FM. */
@@ -15,6 +17,7 @@ export type Shortcut =
   | { readonly type: 'keyer'; readonly letter: 'R' | 'S' | 'C' | 'K' } // the keyer command
   | { readonly type: 'loc' } // take the locator the database offers
   | { readonly type: 'mode' } // CW → SSB → FM
+  | { readonly type: 'band'; readonly step: 1 | -1 } // the next / previous band
   | { readonly type: 'list' }
   | { readonly type: 'back' }
   | { readonly type: 'save' }
@@ -42,6 +45,8 @@ const ALT: Readonly<Record<string, Shortcut>> = {
   KeyK: { type: 'keyer', letter: 'K' },
   KeyX: { type: 'loc' },
   KeyM: { type: 'mode' },
+  KeyN: { type: 'band', step: 1 }, // Alt+B is the browser's
+  KeyP: { type: 'band', step: -1 },
   KeyL: { type: 'list' },
   KeyQ: { type: 'back' },
   KeyO: { type: 'chat' },
@@ -62,6 +67,14 @@ export function matchShortcut(e: KeyInput): Shortcut | undefined {
   if (e.key === 'PageUp') return { type: 'speed', delta: 2 }
   if (e.key === 'PageDown') return { type: 'speed', delta: -2 }
   return undefined
+}
+
+/** Alt+N / Alt+P: the next / previous band in band-plan order (160m … 4mm, round
+ *  the end); a band not in the list starts at 160m. */
+export function nextBand(band: string, step: 1 | -1): string {
+  const i = BANDS.indexOf(band)
+  if (i < 0) return BANDS[0]!
+  return BANDS[(i + step + BANDS.length) % BANDS.length]!
 }
 
 /** Alt+M: the next mode in CW → SSB → FM (anything else starts at CW). */

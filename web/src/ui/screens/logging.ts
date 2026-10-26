@@ -13,6 +13,7 @@ import {
   writeLogFile,
   matchCommand,
   matchKeyerCommand,
+  applyBand,
   applyMode,
   buildQso,
   matchTuneCommand,
@@ -68,7 +69,7 @@ import type { KeyboardMode } from '../keyboard'
 import type { KeyAction } from '../keys'
 import type { KeyerController } from '../keyer'
 import { VOICE_MEMORIES } from '../rig'
-import { matchShortcut, nextMode } from '../shortcuts'
+import { matchShortcut, nextBand, nextMode } from '../shortcuts'
 import type { Shortcut } from '../shortcuts'
 import { ContestBoard } from '../contest-board'
 import type { RigController } from '../rig'
@@ -479,6 +480,10 @@ export class LoggingScreen implements Screen {
       case 'mode':
         this.cycleMode()
         return true
+      case 'band':
+        if (PROFILES[this.meta.profile].fixedBand) return false
+        this.cycleBand(sc.step)
+        return true
       case 'list':
         this.nav.toQsoList()
         return true
@@ -541,6 +546,14 @@ export class LoggingScreen implements Screen {
     const mode = nextMode(this.state.sticky.mode)
     this.state = { ...this.state, sticky: applyMode(this.state.sticky, mode) }
     if (this.rigSets()) void this.rig.tune(undefined, mode)
+    this.renderAll()
+  }
+
+  /** Alt+N / Alt+P: the next / previous band, as if typed; a radio connected tunes to it. */
+  private cycleBand(step: 1 | -1): void {
+    const band = nextBand(this.state.sticky.band, step)
+    this.state = { ...this.state, sticky: applyBand(this.state.sticky, band) }
+    if (this.rigSets()) void this.rig.tune(band, undefined)
     this.renderAll()
   }
 
