@@ -226,6 +226,9 @@ export class RigController {
     this.enabled = switchOn(await p.getSetting(RIG_SETTINGS.enabled), false)
     const src = await p.getSetting(RIG_SETTINGS.source)
     if ((src === 'keyer' || src === 'ic705' || src === 'serial') && this.has(src)) this.source = src
+    // Before the serial port the web had only the keyer and stored no choice: a radio
+    // already switched on stays on the keyer.
+    else if (src === null && this.enabled && this.source === 'serial' && this.has('keyer')) this.source = 'keyer'
     if (this.proto) this.proto.rigAddr = this.source === 'ic705' ? RIG_ADDR : undefined
     this.modelChoice = (await p.getSetting(RIG_SETTINGS.model)) ?? 'auto'
     this.options = parseOptions(await p.getSetting(RIG_SETTINGS.options))

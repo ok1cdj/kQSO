@@ -37,7 +37,12 @@ interface SerialFound {
   readonly addr: number
   readonly vid?: number | undefined
   readonly pid?: number | undefined
+  /** Which of the allowed ports with this USB id (the IC-9700 / 705 have two alike). */
+  readonly nth?: number | undefined
 }
+
+/** Errors after which the port stays open with a new stream (a bad rate, a collision). */
+const READ_GLITCHES = new Set(['BreakError', 'BufferOverrunError', 'FramingError', 'ParityError'])
 
 /** Web Serial exists here (Chrome / Edge on the desktop in a secure context). */
 export function webSerialAvailable(): boolean {
@@ -93,13 +98,10 @@ export class WebSerialRig implements SerialRigTransport {
 
   async connect(pick: boolean): Promise<boolean> {
     if (!pick && this.port && this.wanted) return true
+    // Wanted even when the radio isn't there yet: switched on later, it comes up by itself.
+    if (!pick) this.wanted = true
     const saved = await this.load()
-    let port: SerialPort | undefined
-    if (pick) port = await this.serial.requestPort()
-    else {
-      const ports = await this.serial.getPorts()
-      port = ports.find((p) => sameDevice(p, saved)) ?? ports[0]
-    }
+    const port = pick ? await this.serial.requestPort() : remembered(await this.serial.getPorts(), saved)
     if (!port) return false
     const run = ++this.run
     await this.closePort()
@@ -168,7 +170,9 @@ export class WebSerialRig implements SerialRigTransport {
         if (addr === undefined || run !== this.run) continue
         this.addr = addr
         const info = this.port?.getInfo() ?? {}
-        const found: SerialFound = { baud, addr, vid: info.usbVendorId, pid: info.usbProductId }
+        const alike = (await this.serial.getPorts().catch(() => [])).filter((p) => sameId(p, info))
+        const nth = this.port ? Math.max(0, alike.indexOf(this.port)) : 0
+        const found: SerialFound = { baud, addr, vid: info.usbVendorId, pid: info.usbProductId, nth }
         await this.store.set(SERIAL_SETTING, JSON.stringify(found)).catch(() => {})
         if (run !== this.run) return
         // Once more now the radio answers: a port just plugged in may not have taken it.
@@ -246,18 +250,30 @@ export class WebSerialRig implements SerialRigTransport {
   }
 
   private async readLoop(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<void> {
-    try {
-      for (;;) {
-        const { value, done } = await reader.read()
-        if (done) break
-        if (value) this.received(value)
+    for (;;) {
+      let glitch = false
+      try {
+        for (;;) {
+          const { value, done } = await reader.read()
+          if (done) break
+          if (value) this.received(value)
+        }
+      } catch (e) {
+        // A bad rate or a collision on the bus: the port goes on with a new stream.
+        glitch = e instanceof Error && READ_GLITCHES.has(e.name)
+      } finally {
+        reader.releaseLock()
       }
-    } catch {
-      // The port went away (or our cancel).
-    } finally {
-      reader.releaseLock()
+      if (this.reader !== reader) return // closed by us
+      const next = glitch ? this.port?.readable : null
+      if (!next) {
+        void this.gone() // the port went away
+        return
+      }
+      this.frames.reset()
+      reader = next.getReader()
+      this.reader = reader
     }
-    if (this.reader === reader) void this.gone() // not closed by us
   }
 
   private received(bytes: Uint8Array): void {
@@ -346,10 +362,16 @@ export class WebSerialRig implements SerialRigTransport {
   }
 }
 
-function sameDevice(p: SerialPort, saved: SerialFound | undefined): boolean {
-  if (saved?.vid === undefined) return false
+/** The radio's port among those allowed: by its USB id and which of the alike ones it
+ *  was; with nothing remembered, only a single allowed port — never a guess. */
+function remembered(ports: readonly SerialPort[], saved: SerialFound | undefined): SerialPort | undefined {
+  if (saved?.vid === undefined) return ports.length === 1 ? ports[0] : undefined
+  return ports.filter((p) => sameId(p, { usbVendorId: saved.vid, usbProductId: saved.pid }))[saved.nth ?? 0]
+}
+
+function sameId(p: SerialPort, id: { readonly usbVendorId?: number | undefined; readonly usbProductId?: number | undefined }): boolean {
   const i = p.getInfo()
-  return i.usbVendorId === saved.vid && i.usbProductId === saved.pid
+  return i.usbVendorId === id.usbVendorId && i.usbProductId === id.usbProductId
 }
 
 function unique(xs: readonly (number | undefined)[]): number[] {

@@ -69,6 +69,13 @@ class FakePort extends EventTarget {
     this.ctrl?.error(new Error('device lost'))
   }
 
+  /** A framing error (bad rate, collision): the port goes on with a new stream. */
+  glitch(): void {
+    const old = this.ctrl
+    this.readable = new ReadableStream<Uint8Array>({ start: (c) => void (this.ctrl = c) })
+    old?.error(new DOMException('framing', 'FramingError'))
+  }
+
   private onWrite(b: Uint8Array): void {
     this.written.push(b)
     if (this.echo) this.ctrl?.enqueue(b)
@@ -146,7 +153,7 @@ describe('WebSerialRig', () => {
     expect(port.opens).toEqual([115200, 19200])
     expect(states).toEqual(['connecting', 'on'])
     expect(port.signals.every((s) => s.dataTerminalReady === false && s.requestToSend === false)).toBe(true)
-    expect(JSON.parse(store.m.get(SERIAL_SETTING)!)).toEqual({ baud: 19200, addr: 0x94, vid: 0x10c4, pid: 0xea60 })
+    expect(JSON.parse(store.m.get(SERIAL_SETTING)!)).toEqual({ baud: 19200, addr: 0x94, vid: 0x10c4, pid: 0xea60, nth: 0 })
     await tr.disconnect()
     expect(port.isOpen).toBe(false)
     expect(tr.state).toBe('off')
@@ -216,6 +223,44 @@ describe('WebSerialRig', () => {
     await tr.disconnect()
   })
 
+  it('a framing error is no lost port: reading goes on', async () => {
+    const { tr, data } = rig(port)
+    await tr.connect(true)
+    await until(() => tr.state === 'on')
+    port.glitch()
+    await new Promise((r) => setTimeout(r, 20))
+    expect(tr.state).toBe('on')
+    port.send(Uint8Array.from([0xfe, 0xfe, 0x00, 0x94, 0x01, 0x03, 0x01, 0xfd]))
+    await until(() => data.length > 0)
+    await tr.disconnect()
+  })
+
+  it('the remembered one of two alike ports (IC-9700); nothing remembered and several ports: no guess', async () => {
+    const other = new FakePort(undefined)
+    const store = new MemStore()
+    store.m.set(SERIAL_SETTING, JSON.stringify({ baud: 19200, addr: 0x94, vid: 0x10c4, pid: 0xea60, nth: 1 }))
+    const serial = new FakeSerial([other, port])
+    const tr = new WebSerialRig(serial as unknown as Serial, store, FAST)
+    await tr.connect(false)
+    await until(() => tr.state === 'on')
+    expect(other.opens).toEqual([])
+    await tr.disconnect()
+
+    const guess = new WebSerialRig(new FakeSerial([other, port]) as unknown as Serial, new MemStore(), FAST)
+    expect(await guess.connect(false)).toBe(false)
+    expect(other.opens).toEqual([])
+  })
+
+  it('a radio switched on after kQSO started comes up by itself', async () => {
+    const serial = new FakeSerial([])
+    const tr = new WebSerialRig(serial as unknown as Serial, new MemStore(), FAST)
+    expect(await tr.connect(false)).toBe(false)
+    serial.ports = [port]
+    serial.dispatchEvent(new Event('connect'))
+    await until(() => tr.state === 'on')
+    await tr.disconnect()
+  })
+
   it('a radio that goes quiet is looked for again, and found when it is back', async () => {
     const { tr, states } = rig(port)
     await tr.connect(true)
@@ -280,6 +325,21 @@ describe('RigController on a serial port', () => {
     expect(rig.mode).toBe('CW')
     await rig.setEnabled(false)
     expect(rig.link).toBe('off')
+  })
+
+  it('a radio already on via the keyer stays on the keyer (no choice stored before)', async () => {
+    const { RigController } = await import('../../src/ui/rig')
+    const serialRig = new WebSerialRig(new FakeSerial([]) as unknown as Serial, new MemStore(), FAST)
+    const platform = Object.assign(new MemoryPlatform(), { serialRig, keyer: {} }) as unknown as KQSOPlatform
+    await platform.setSetting('rigEnabled', '1')
+    const rig = new RigController(platform)
+    await rig.init()
+    expect(rig.source).toBe('keyer')
+
+    const fresh = Object.assign(new MemoryPlatform(), { serialRig, keyer: {} }) as unknown as KQSOPlatform
+    const rig2 = new RigController(fresh)
+    await rig2.init()
+    expect(rig2.source).toBe('serial')
   })
 
   it('next to the IC-705 Bluetooth: a choice, the stored one wins', async () => {
