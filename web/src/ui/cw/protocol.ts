@@ -39,6 +39,8 @@ export type CwResponse =
   | { id: number; ok: false; error: string }
   | { id: 0; event: 'progress'; loaded: number; total: number }
   | { id: 0; event: 'text'; committed: string; pending: string }
+  // the tuning indicator, once a second: the CW signal to tune to, null = none heard
+  | { id: 0; event: 'signal'; signal: { hz: number; snrDb: number } | null }
   | { id: 0; event: 'error'; error: string }
 
 /** CwRequest variants with the `id` stripped (assigned by the RPC layer). */

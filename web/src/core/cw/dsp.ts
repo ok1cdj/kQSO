@@ -1,4 +1,5 @@
-// CW decoder, the signal part: FFT / STFT and the spectrogram the DeepCW model takes in.
+// CW decoder, the signal part: FFT / STFT, the spectrogram the DeepCW model takes in and
+// the per-bin CW detector behind the tuning indicator.
 // Ported from DeepCW (github.com/e04/web-deep-cw-decoder @ f3bea57: src/stft.ts,
 // src/utils/spectrogramUtils.ts, src/utils/audioFilters.ts, src/const.ts), trimmed to
 // the English narrow / wide models. Copyright (c) 2026 e04, MIT License, see
@@ -17,6 +18,7 @@ export const BIN_RESOLUTION = SAMPLE_RATE / FFT_LENGTH
 export const DECODABLE_MIN_FREQ_HZ = 400
 export const DECODABLE_MAX_FREQ_HZ = 1200
 export const NARROW_SHIFT_BINS = 3
+export const CW_DETECT_HOP_LENGTH = 192
 
 /** Output frame t of the model is centred on this sample of its input (centre padding). */
 export function outputFrameCenterSample(frame: number): number {
@@ -375,4 +377,57 @@ export function bandpass(audio: Float32Array, sampleRate: number, centerHz: numb
     if (p < passes - 1) output = new Float32Array(audio.length)
   }
   return output
+}
+
+// --- CW detection ----------------------------------------------------------------------
+
+const cwDetectStft = new STFT(FFT_LENGTH, CW_DETECT_HOP_LENGTH)
+const CW_ON_LEVEL_QUANTILE = 0.9
+// Keying sidebands of a strong signal show up as weaker peaks next to it.
+const CW_SIDEBAND_MASK_HZ = 150
+const CW_SIDEBAND_MASK_DB = 18
+
+export interface BinSnr {
+  frequencies: number[]
+  snrDb: Float32Array
+}
+
+/** Per-bin CW SNR: the bin's keyed-on power (90th percentile over time) against the median
+ *  power of the whole band. Pure noise scores about 5 dB. Bins far weaker than a nearby
+ *  strong one are taken for its keying sidebands and dropped to 0 dB. */
+export function estimateCwBinSnr(audio: Float32Array, minHz: number, maxHz: number): BinSnr | undefined {
+  const steps = cwDetectStft.frameCount(audio.length)
+  if (steps === 0) return undefined
+  const minBin = Math.max(0, Math.ceil(Math.max(0, minHz) / BIN_RESOLUTION))
+  const maxBin = Math.min(TOTAL_BINS - 1, Math.floor(Math.min(SAMPLE_RATE / 2, maxHz) / BIN_RESOLUTION))
+  const bins = maxBin - minBin + 1
+  if (bins <= 0) return undefined
+
+  const powers = new Float32Array(bins * steps)
+  cwDetectStft.forEachSpectrum(audio, (spectrum, frame) => {
+    for (let bin = minBin; bin <= maxBin; bin++) {
+      const re = spectrum[bin * 2]!
+      const im = spectrum[bin * 2 + 1]!
+      powers[(bin - minBin) * steps + frame] = re * re + im * im
+    }
+  })
+  const noise = Math.max(Float32Array.from(powers).sort()[Math.floor(powers.length / 2)]!, 1e-12)
+  const snr = new Float32Array(bins)
+  for (let i = 0; i < bins; i++) {
+    const sorted = powers.subarray(i * steps, (i + 1) * steps).slice().sort()
+    const on = sorted[Math.floor(CW_ON_LEVEL_QUANTILE * (steps - 1))]!
+    snr[i] = 10 * Math.log10(Math.max(on, 1e-12) / noise)
+  }
+
+  const mask = Math.round(CW_SIDEBAND_MASK_HZ / BIN_RESOLUTION)
+  const masked = snr.slice()
+  for (let i = 0; i < bins; i++) {
+    for (let j = Math.max(0, i - mask); j <= Math.min(bins - 1, i + mask); j++) {
+      if (snr[j]! - snr[i]! > CW_SIDEBAND_MASK_DB) {
+        masked[i] = 0
+        break
+      }
+    }
+  }
+  return { frequencies: Array.from({ length: bins }, (_, i) => (minBin + i) * BIN_RESOLUTION), snrDb: masked }
 }

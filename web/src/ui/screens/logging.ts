@@ -77,6 +77,7 @@ import { KST_SETTINGS, notSentWhy } from '../kst'
 import type { KstController } from '../kst'
 import type { CwDecoderController } from '../cw/decoder'
 import { cwWords } from '../../core/cw/words'
+import { tuneDirection } from '../../core/cw/tune'
 import type { ChatContext } from './chat'
 
 export interface LoggingNav {
@@ -1543,14 +1544,23 @@ export class LoggingScreen implements Screen {
     // The level in 6 dB steps, so it doesn't repaint for every flicker (e-ink).
     const bars = Number.isFinite(cw.level) ? Math.max(0, Math.min(5, Math.round((cw.level + 48) / 9))) : 0
     const words = cwWords(cw.words.slice(-CW_WORDS_SHOWN).join(' '))
-    const key = [cw.state, cw.error, cw.pitchHz, cw.model, bars, cw.pending, ...words.map((w) => w.value)].join('|')
+    const sig = cw.state === 'on' ? cw.signal : undefined
+    const dir = sig ? tuneDirection(sig.hz, cw.pitchHz) : undefined
+    const key = [cw.state, cw.error, cw.pitchHz, cw.model, bars, sig?.hz, cw.pending, ...words.map((w) => w.value)].join('|')
     if (key === this.cwKey) return
     this.cwKey = key
 
-    const head = el('button', 'cwline-head', `CW ${cw.pitchHz} Hz ${'▮'.repeat(bars)}${'▯'.repeat(5 - bars)}`)
-    head.type = 'button'
+    // Just information: a click here used to turn the decoder off, and the line went with it.
+    const head = el('span', 'cwline-head', `CW ${cw.pitchHz} Hz ${'▮'.repeat(bars)}${'▯'.repeat(5 - bars)}`)
     head.title = t('cw.title')
-    head.addEventListener('click', () => void cw.toggle())
+    // The tuning indicator: where the CW signal is against the pitch; a tap decodes there.
+    const hz = sig ? Math.round(sig.hz) : 0
+    const tune = el('button', 'cwline-tune', !sig ? '—' : dir === 0 ? `● ${hz}` : dir! < 0 ? `◀ ${hz}` : `${hz} ▶`)
+    tune.type = 'button'
+    tune.title = !sig ? t('cw.noSignal') : dir === 0 ? t('cw.tuned') : t('cw.tuneTo', { hz })
+    tune.disabled = !sig || dir === 0
+    tune.addEventListener('click', () => void cw.tuneToSignal())
+    if (cw.state !== 'on') tune.hidden = true
     const text = el('div', 'cwline-text')
     // The share dialog wants a real click (not pointerdown: a touch wouldn't count).
     const pick = (): HTMLButtonElement => button(t('cw.pickTab'), () => void cw.pickTab(), 'cwline-word')
@@ -1568,7 +1578,7 @@ export class LoggingScreen implements Screen {
       if (cw.pending) text.append(el('span', 'cwline-pending', cw.pending))
       if (words.length === 0 && !cw.pending) text.append(el('span', 'cwline-pending', t('cw.listening')))
     }
-    this.cwEl.replaceChildren(head, text)
+    this.cwEl.replaceChildren(head, tune, text)
     text.scrollLeft = text.scrollWidth
   }
 

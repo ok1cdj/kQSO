@@ -10,6 +10,7 @@ import {
 import { BLANK_INDEX, VOCABULARY, bestPath, decodeCtc, type CtcResult } from '../src/core/cw/ctc'
 import { CwStream, confirmedSplit } from '../src/core/cw/stream'
 import { cutToDigits, cwWord, cwWords } from '../src/core/cw/words'
+import { findCw, tuneDirection } from '../src/core/cw/tune'
 import { synthCw } from './cw-synth'
 import reference from './fixtures/cw-spectrogram.json'
 
@@ -211,5 +212,39 @@ describe('words', () => {
 
   it('upper-cases', () => {
     expect(cwWord('ok2ih')).toEqual({ kind: 'call', value: 'OK2IH' })
+  })
+})
+
+describe('tuning indicator', () => {
+  const mix = (...parts: Float32Array[]) => {
+    const n = Math.min(...parts.map((p) => p.length))
+    const out = new Float32Array(n)
+    for (const p of parts) for (let i = 0; i < n; i++) out[i]! += p[i]!
+    return out
+  }
+
+  it('finds a station off the pitch', () => {
+    const audio = synthCw('CQ TEST OK1CDJ', { pitchHz: 640, snr: 3, seed: 4 })
+    const s = findCw(audio, 700)
+    expect(s).toBeDefined()
+    expect(Math.abs(s!.hz - 640)).toBeLessThanOrEqual(12.5)
+    expect(tuneDirection(s!.hz, 700)).toBe(-1)
+  })
+
+  it('says tuned in when the station is at the pitch', () => {
+    const s = findCw(synthCw('CQ TEST OK1CDJ', { pitchHz: 700, snr: 3, seed: 5 }), 700)
+    expect(tuneDirection(s!.hz, 700)).toBe(0)
+  })
+
+  it('keeps the station at the pitch over a stronger one elsewhere', () => {
+    const mine = synthCw('CQ TEST OK1CDJ', { pitchHz: 700, snr: Infinity, seed: 6 })
+    const other = synthCw('TEST OK2IH OK2IH', { pitchHz: 950, snr: Infinity, seed: 7 }).map((v) => v * 3)
+    const noise = synthCw('', { snr: 1, seed: 8, padS: 6 })
+    const s = findCw(mix(mine, other, noise), 700)
+    expect(Math.abs(s!.hz - 700)).toBeLessThanOrEqual(12.5)
+  })
+
+  it('finds nothing in plain noise', () => {
+    expect(findCw(synthCw('', { snr: 1, seed: 9, padS: 3 }), 700)).toBeUndefined()
   })
 })

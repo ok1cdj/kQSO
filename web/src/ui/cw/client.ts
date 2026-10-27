@@ -26,6 +26,8 @@ export class CwDecoderClient {
   private progress: ((loaded: number, total: number) => void) | undefined
   /** New committed text (append it) and the pending tail (replaces the previous one). */
   onText: ((committed: string, pending: string) => void) | undefined
+  /** The tuning indicator: the CW signal heard, undefined = none. */
+  onSignal: ((signal: { hz: number; snrDb: number } | undefined) => void) | undefined
   /** The decode loop failed (a broken model file, out of memory). */
   onError: ((error: string) => void) | undefined
 
@@ -81,6 +83,7 @@ export class CwDecoderClient {
     if ('event' in msg) {
       if (msg.event === 'progress') this.progress?.(msg.loaded, msg.total)
       else if (msg.event === 'text') this.onText?.(msg.committed, msg.pending)
+      else if (msg.event === 'signal') this.onSignal?.(msg.signal ?? undefined)
       else this.onError?.(msg.error)
       return
     }

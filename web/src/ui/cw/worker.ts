@@ -9,8 +9,9 @@ import type * as Ort from 'onnxruntime-web'
 import ortGlueUrl from 'onnxruntime-web/ort-wasm-simd-threaded.mjs?url'
 import assets from '../../core/cw/assets.json'
 import { bestPath, decodeCtc, type CtcResult } from '../../core/cw/ctc'
-import { narrowSpectrogram, shiftedSpectrogram, wideSpectrogram, type Spectrogram } from '../../core/cw/dsp'
+import { SAMPLE_RATE, narrowSpectrogram, shiftedSpectrogram, wideSpectrogram, type Spectrogram } from '../../core/cw/dsp'
 import { CwStream } from '../../core/cw/stream'
+import { findCw } from '../../core/cw/tune'
 import type { CwAsset, CwModel, CwRequest, CwResponse, CwStatus, CwTuning } from './protocol'
 
 declare const self: DedicatedWorkerGlobalScope
@@ -177,6 +178,17 @@ async function infer(audio: Float32Array, t: CwTuning): Promise<CtcResult> {
 // --- streaming -------------------------------------------------------------------------
 
 const stream = new CwStream()
+// The last few seconds of audio for the tuning indicator (the stream drops what it commits).
+const recent = new Float32Array(4 * SAMPLE_RATE)
+let recentLen = 0
+
+function keepRecent(samples: Float32Array): void {
+  const n = Math.min(samples.length, recent.length)
+  const keep = Math.min(recentLen, recent.length - n)
+  recent.copyWithin(0, recentLen - keep, recentLen)
+  recent.set(samples.subarray(samples.length - n), keep)
+  recentLen = keep + n
+}
 let tuning: CwTuning | undefined
 let timer: ReturnType<typeof setInterval> | undefined
 let busy = false
@@ -185,6 +197,7 @@ async function start(t: CwTuning): Promise<void> {
   await session(t.model) // load now, so a missing or broken file shows as an error here
   tuning = t
   stream.reset()
+  recentLen = 0
   timer ??= setInterval(() => void pump(), STEP_MS)
 }
 
@@ -207,6 +220,7 @@ async function pump(): Promise<void> {
   if (busy || !t) return
   busy = true
   try {
+    if (recentLen >= SAMPLE_RATE) post({ id: 0, event: 'signal', signal: findCw(recent.subarray(0, recentLen), t.pitchHz) ?? null })
     const step = await stream.step((audio) => infer(audio, t))
     if (step && tuning === t) post({ id: 0, event: 'text', ...step })
   } catch (err) {
@@ -223,7 +237,10 @@ async function pump(): Promise<void> {
 self.onmessage = async (e: MessageEvent<CwRequest>) => {
   const req = e.data
   if (req.op === 'audio') {
-    if (tuning) stream.push(req.samples)
+    if (tuning) {
+      stream.push(req.samples)
+      keepRecent(req.samples)
+    }
     return
   }
   try {

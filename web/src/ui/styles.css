@@ -1232,13 +1232,32 @@ a.help-text,
 }
 .cwline-head {
   flex: none;
-  font: inherit;
   font-size: 0.8rem;
   padding: 0.15rem 0.3rem;
-  border: 0;
-  background: none;
   color: var(--muted);
+}
+.cwline-tune {
+  flex: none;
+  font: inherit;
+  font-size: 0.85rem;
+  min-width: 4.5em;
+  padding: 0.1rem 0.3rem;
+  border: var(--border-w) solid var(--fg);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--fg);
   cursor: pointer;
+}
+.cwline-tune:disabled {
+  border-color: transparent;
+  cursor: default;
+}
+.cwline-tune:not(:disabled):active {
+  background: var(--fg);
+  color: var(--bg);
+}
+.cwline-tune[hidden] {
+  display: none;
 }
 .cwline-text {
   flex: 1;

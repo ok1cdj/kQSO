@@ -51,6 +51,8 @@ export class CwDecoderController {
   words: string[] = []
   /** The not-yet-final tail. */
   pending = ''
+  /** The CW signal the tuning indicator shows (Hz, SNR), undefined = none heard. */
+  signal: { hz: number; snrDb: number } | undefined
   /** Peak of the input in dBFS, refreshed a few times a second while on. */
   level = -Infinity
   private levelAt = 0
@@ -59,6 +61,11 @@ export class CwDecoderController {
     this.client.onText = (committed, pending) => {
       if (committed) this.words = [...this.words, ...committed.split(' ')].slice(-KEEP_WORDS)
       this.pending = pending
+      this.notify()
+    }
+    this.client.onSignal = (signal) => {
+      if (signal?.hz === this.signal?.hz) return
+      this.signal = signal
       this.notify()
     }
     this.client.onError = (error) => this.fail(error)
@@ -224,10 +231,16 @@ export class CwDecoderController {
     )
   }
 
+  /** The tap on the tuning indicator: decode at the signal it found. */
+  async tuneToSignal(): Promise<void> {
+    if (this.signal) await this.setPitch(this.signal.hz)
+  }
+
   private async halt(): Promise<void> {
     this.capture.stop()
     await this.client.stop().catch(() => {})
     this.state = 'off'
+    this.signal = undefined
     this.pending = ''
     this.level = -Infinity
     this.notify()
