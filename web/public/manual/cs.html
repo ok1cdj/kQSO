@@ -22,7 +22,7 @@
 <li><a href="#activation">Aktivace a satelity</a></li>
 <li><a href="#export">Export a Wavelog</a></li>
 <li><a href="#databases">Databáze značek a reference offline</a></li>
-<li><a href="#radio">Rádio (CI-V) a CW klíčovač</a></li>
+<li><a href="#radio">Rádio (CI-V), CW klíčovač a dekodér</a></li>
 <li><a href="#keys">Hardwarová klávesnice</a></li>
 <li><a href="#settings">Nastavení</a></li>
 <li><a href="#faq">Otázky a potíže</a></li>
@@ -283,7 +283,7 @@
 <figure class="crop"><img src="img/cs/settings-refs.webp" alt="Reference offline" width="374" height="320" loading="lazy"><figcaption>Reference offline.</figcaption></figure>
 </div>
 
-<h2 id="radio">8. Rádio (CI-V) a CW klíčovač</h2>
+<h2 id="radio">8. Rádio (CI-V), CW klíčovač a dekodér</h2>
 <p class="note">Obojí je beta. Chyby prosím hlas na <a href="https://github.com/ok1cdj/kQSO/issues">GitHub Issues</a>.</p>
 <h3>Rádio – CI-V</h3>
 <p>kQSO umí číst a ladit rádia Icom. Známé modely: <b>IC-705, IC-706 / MkII / MkIIG, IC-910</b> (volitelný modul 23 cm), <b>IC-9700, IC-7300, IC-7610, IC-7100</b>; jiné rádio s neznámou adresou se ovládá jako obecné CI-V (pásmo, mód, kmitočet).</p>
@@ -324,6 +324,20 @@
 </ul>
 <figure class="crop"><img src="img/cs/settings-keyer-on.webp" alt="Klíčovač M5" width="374" height="1540" loading="lazy"><figcaption>Klíčovač M5: rychlost, ESM a makra pro VKV závod / RUN.</figcaption></figure>
 
+<h3 id="cw">CW dekodér</h3>
+<p>kQSO dekóduje CW ze zvuku rádia neuronovou sítí <a href="https://github.com/e04/web-deep-cw-decoder">DeepCW</a> (autor e04, licence MIT). Dekódovaný text běží pod hlavičkou logu a klepnutím na značku, report, číslo nebo lokátor ho vložíš do řádku. Běží v prohlížeči <b>Chrome</b> nebo <b>Edge</b> na počítači; Firefox, Safari a aplikace pro Android a iOS ho zatím nemají.</p>
+<ul>
+<li><b>Zapnutí:</b> Nastavení → CW dekodér → <b>Stáhnout</b> (jednou asi 14 MB, pak funguje i bez sítě) → <b>Zapnout</b>. Dekodér poslouchá jen v otevřeném logu při módu CW; v SSB, FM a v seznamu logů je zvuk i dekodér v klidu. V logu ho zapíná a vypíná <kbd>Alt+U</kbd>.</li>
+<li><b>Zvukový vstup:</b> USB zvuková karta rádia (IC-7300, 9700, 705 … mají zvuk na stejném USB kabelu jako CI-V) nebo linkový vstup počítače. Poprvé prohlížeč požádá o povolení mikrofonu; tlačítko <i>Zobrazit zvukové vstupy</i> v Nastavení ho vyvolá dřív, aby šel vstup vybrat podle názvu.</li>
+<li><b>Jiná záložka prohlížeče</b> (WebSDR, KiwiSDR): vyber ji jako vstup, v logu klepni na <i>Vyber záložku s SDR</i> a v nabídce prohlížeče zaškrtni <i>Sdílet také zvuk karty</i>. SDR přitom slyšíš dál.</li>
+<li><b>Výška CW tónu</b> v Nastavení má odpovídat nastavení CW pitch v rádiu (často 600–700 Hz). <b>Úzký model</b> (výchozí) dekóduje stanici právě na této výšce tónu a málo zatěžuje procesor. <b>Široký model</b> (dalších 15 MB) slyší vše mezi 400 a 1200 Hz nebo jen ve filtru kolem tónu; hodí se na slabý nebo ujíždějící signál.</li>
+</ul>
+<figure class="crop"><img src="img/cs/settings-cw.webp" alt="CW dekodér v Nastavení" width="374" height="669" loading="lazy"><figcaption>Nastavení → CW dekodér: stažený model, zapnuto, výška tónu a zvukový vstup.</figcaption></figure>
+<figure class="crop"><img src="img/cs/cw-line.webp" alt="Řádek CW dekodéru" width="390" height="84" loading="lazy"><figcaption>Řádek dekodéru na telefonu: úroveň vstupu, ladička a text; slova v rámečku jsou značka, report, číslo nebo lokátor.</figcaption></figure>
+<p><b>Řádek dekodéru</b> ukazuje výšku tónu, na které dekodér poslouchá, úroveň vstupu (▮▮▮▮▯, na telefonu jeden sloupeček ▆ před ladičkou; když je prázdná nebo plná, uprav hlasitost USB zvuku v rádiu nebo v systému) a <b>ladičku</b>: <code>● 700</code> = signál je na tvé výšce tónu, <code>◀ 650</code> / <code>750 ▶</code> = nejsilnější CW signál je níž / výš. Klepnutím na ladičku dekodér poslouchá tam, kde signál je, dokud nezavřeš log nebo nezměníš mód; výška tónu v Nastavení se nemění. Ještě nepotvrzený konec textu je šedý.</p>
+<figure class="crop"><img src="img/cs/cw-tap.webp" alt="Klepnutí na slova" width="390" height="206" loading="lazy"><figcaption>Klepnutí na OK1KPA, 047 a JN79US je vloží do řádku; 5NN se zapíše jako 599.</figcaption></figure>
+<p><b>Linux:</b> když rádio mezi zvukovými vstupy chybí, má jeho USB karta v PipeWire / PulseAudio profil jen pro výstup. Přepni ji na vstup (pavucontrol → Konfigurace, nebo příkazem, název karty najde <code>pactl list short cards</code>):<code class="cmd">pactl set-card-profile alsa_card.usb-Burr-Brown_from_TI_USB_Audio_CODEC-00 input:analog-stereo</code>Pro digitální módy (zvuk do rádia) ji vrať na <code>output:analog-stereo</code>, nebo zvol duplexní profil, pokud ho karta nabízí.</p>
+
 <h2 id="keys">9. Hardwarová klávesnice</h2>
 <p>S klávesnicí (počítač, tablet) fungují tyto zkratky. Zkratka, která zrovna nemá co dělat, klávesu nechá být.</p>
 <table>
@@ -339,6 +353,7 @@
 <tr><td><kbd>PgUp</kbd> / <kbd>PgDn</kbd></td><td>rychlost CW ±2 WPM</td></tr>
 <tr><td><kbd>Alt+R</kbd> <kbd>Alt+S</kbd> <kbd>Alt+C</kbd> <kbd>Alt+K</kbd></td><td>RUN / S&amp;P / připojit klíčovač / CW klávesnice</td></tr>
 <tr><td><kbd>Ctrl+M</kbd></td><td>ESM zapnout / vypnout</td></tr>
+<tr><td><kbd>Alt+U</kbd></td><td>CW dekodér zapnout / vypnout (v logu při CW)</td></tr>
 <tr><td><kbd>Alt+O</kbd> / <kbd>Alt+G</kbd></td><td>ON4KST chat / QRG pro sked</td></tr>
 </table>
 
@@ -352,6 +367,7 @@
 <dt>Databáze značek, Reference offline</dt><dd>Viz <a href="#databases">Databáze značek</a>.</dd>
 <dt>Rádio – CI-V, Klíčovač M5</dt><dd>Viz <a href="#radio">Rádio a klíčovač</a>.</dd>
 <dt>ON4KST chat</dt><dd>Účet, žádost o sked, ztlumené stanice; viz <a href="#chat">ON4KST chat</a>.</dd>
+<dt>CW dekodér</dt><dd>Stažení modelu, zapnutí, model, výška tónu, zvukový vstup; viz <a href="#cw">CW dekodér</a>.</dd>
 <dt>Úložiště</dt><dd>Kde jsou data a jestli jsou trvalá. Ve webové verzi zapne trvalé úložiště přidání na plochu a první QSO.</dd>
 <dt>Kontrolovat aktualizace / Anonymní statistiky</dt><dd>Android z GitHubu: jednou denně dotaz na novou verzi. Web: anonymní počty obrazovek a funkcí (nikdy obsah logu); obojí jde vypnout.</dd>
 <dt>O aplikaci</dt><dd>Verze, licence, odkazy, <b>Jak zadávat spojení</b>, <b>Návod</b> a <b>Co je nového</b>.</dd>
@@ -386,6 +402,8 @@
 <dd>Účty ON4KST jsou jen pro radioamatéry s licencí (registrace na <a href="https://www.on4kst.org/">on4kst.org</a>). Bez účtu si chat vyzkoušíš se značkou <code>DEMO</code>, viz <a href="#chat">ON4KST chat</a>.</dd>
 <dt>Chat se nepřipojí nebo ho v logu nevidím.</dt>
 <dd>Chat je jen v logu VKV závodu na pásmech od 6 m výš. Důvod, proč se nepřipojí (špatné heslo, chybí účet), ukáže stav v chatu i v Nastavení → ON4KST chat. Když spojení spadne, kQSO se připojí znovu samo.</dd>
+<dt>CW dekodér nevidí rádio nebo nic nedekóduje.</dt>
+<dd>Dekodér je jen v Chrome / Edge na počítači a poslouchá jen v logu při CW. Vyber vstup rádia v Nastavení → CW dekodér (na Linuxu viz profil karty v části <a href="#cw">CW dekodér</a>), sleduj úroveň v řádku a výšku tónu nastav stejně jako CW pitch v rádiu.</dd>
 </dl>
 <footer class="manual-foot"><p>kQSO — autor <b>OK1CDJ</b> · licence <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0</a> · <a href="https://github.com/ok1cdj/kQSO">github.com/ok1cdj/kQSO</a></p></footer>
 </main>

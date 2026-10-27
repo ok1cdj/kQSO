@@ -22,7 +22,7 @@
 <li><a href="#activation">Activations and satellites</a></li>
 <li><a href="#export">Export and Wavelog</a></li>
 <li><a href="#databases">Callsign database and offline references</a></li>
-<li><a href="#radio">Radio (CI-V) and the CW keyer</a></li>
+<li><a href="#radio">Radio (CI-V), the CW keyer and decoder</a></li>
 <li><a href="#keys">Hardware keyboard</a></li>
 <li><a href="#settings">Settings</a></li>
 <li><a href="#faq">Questions and problems</a></li>
@@ -283,7 +283,7 @@
 <figure class="crop"><img src="img/en/settings-refs.webp" alt="Offline references" width="374" height="342" loading="lazy"><figcaption>Offline references.</figcaption></figure>
 </div>
 
-<h2 id="radio">8. Radio (CI-V) and the CW keyer</h2>
+<h2 id="radio">8. Radio (CI-V), the CW keyer and decoder</h2>
 <p class="note">Both are beta. Please report bugs on <a href="https://github.com/ok1cdj/kQSO/issues">GitHub Issues</a>.</p>
 <h3>Radio – CI-V</h3>
 <p>kQSO reads and tunes Icom radios. Known models: <b>IC-705, IC-706 / MkII / MkIIG, IC-910</b> (optional 23 cm unit), <b>IC-9700, IC-7300, IC-7610, IC-7100</b>; another radio with an unknown address is driven as a generic CI-V radio (band, mode, frequency).</p>
@@ -324,6 +324,20 @@
 </ul>
 <figure class="crop"><img src="img/en/settings-keyer-on.webp" alt="M5 keyer" width="374" height="1540" loading="lazy"><figcaption>M5 keyer: speed, ESM and the VHF contest / RUN macros.</figcaption></figure>
 
+<h3 id="cw">CW decoder</h3>
+<p>kQSO decodes CW from the radio's audio with <a href="https://github.com/e04/web-deep-cw-decoder">DeepCW</a>, a neural network (by e04, MIT licence). The decoded text runs under the log's header, and a tap on a call, report, serial or locator puts it into the line. It runs in <b>Chrome</b> or <b>Edge</b> on a computer; Firefox, Safari and the Android and iOS apps don't have it yet.</p>
+<ul>
+<li><b>Turning it on:</b> Settings → CW decoder → <b>Download</b> (about 14 MB once, then it works offline) → <b>Turn on</b>. The decoder listens only while a log is open in CW; in SSB, FM and in the list of logs the audio and the decoder rest. In a log <kbd>Alt+U</kbd> turns it on and off.</li>
+<li><b>Audio input:</b> the radio's USB sound card (the IC-7300, 9700, 705 … have audio on the same USB cable as CI-V) or the computer's line input. The first time the browser asks for the microphone permission; <i>Show the audio inputs</i> in Settings asks earlier, so the input can be picked by its name.</li>
+<li><b>Another browser tab</b> (WebSDR, KiwiSDR): pick it as the input, in the log tap <i>Pick the tab with the SDR</i> and in the browser's dialog tick <i>Also share tab audio</i>. You keep hearing the SDR.</li>
+<li><b>CW pitch</b> in Settings should match the radio's CW pitch setting (often 600–700 Hz). The <b>narrow model</b> (default) decodes the station right at that pitch and is light on the CPU. The <b>wide model</b> (another 15 MB) hears everything between 400 and 1200 Hz, or only within a filter around the pitch; for a weak or drifting signal.</li>
+</ul>
+<figure class="crop"><img src="img/en/settings-cw.webp" alt="CW decoder in Settings" width="374" height="669" loading="lazy"><figcaption>Settings → CW decoder: model downloaded, turned on, pitch and audio input.</figcaption></figure>
+<figure class="crop"><img src="img/en/cw-line.webp" alt="CW decoder line" width="390" height="84" loading="lazy"><figcaption>The decoder's line on a phone: input level, tuning indicator and text; framed words are a call, report, serial or locator.</figcaption></figure>
+<p><b>The decoder's line</b> shows the pitch the decoder listens at, the input level (▮▮▮▮▯, on a phone one bar ▆ before the tuning indicator; when it's empty or full, set the USB audio level in the radio or the system) and the <b>tuning indicator</b>: <code>● 700</code> = the signal is at your pitch, <code>◀ 650</code> / <code>750 ▶</code> = the strongest CW signal is below / above. A tap on the indicator makes the decoder listen where the signal is, until you close the log or change the mode; the pitch in Settings stays. The not-yet-final end of the text is grey.</p>
+<figure class="crop"><img src="img/en/cw-tap.webp" alt="Tapping the words" width="390" height="206" loading="lazy"><figcaption>Taps on OK1KPA, 047 and JN79US put them into the line; 5NN goes in as 599.</figcaption></figure>
+<p><b>Linux:</b> when the radio is missing among the audio inputs, its USB card has an output-only profile in PipeWire / PulseAudio. Switch it to input (pavucontrol → Configuration, or by command; <code>pactl list short cards</code> shows the card's name):<code class="cmd">pactl set-card-profile alsa_card.usb-Burr-Brown_from_TI_USB_Audio_CODEC-00 input:analog-stereo</code>For digital modes (audio to the radio) set it back to <code>output:analog-stereo</code>, or pick a duplex profile if the card offers one.</p>
+
 <h2 id="keys">9. Hardware keyboard</h2>
 <p>With a keyboard (computer, tablet) these shortcuts work. A shortcut with nothing to do right now leaves the key alone.</p>
 <table>
@@ -339,6 +353,7 @@
 <tr><td><kbd>PgUp</kbd> / <kbd>PgDn</kbd></td><td>CW speed ±2 WPM</td></tr>
 <tr><td><kbd>Alt+R</kbd> <kbd>Alt+S</kbd> <kbd>Alt+C</kbd> <kbd>Alt+K</kbd></td><td>RUN / S&amp;P / connect the keyer / CW keyboard</td></tr>
 <tr><td><kbd>Ctrl+M</kbd></td><td>ESM on / off</td></tr>
+<tr><td><kbd>Alt+U</kbd></td><td>CW decoder on / off (in a log in CW)</td></tr>
 <tr><td><kbd>Alt+O</kbd> / <kbd>Alt+G</kbd></td><td>ON4KST chat / sked QRG</td></tr>
 </table>
 
@@ -352,6 +367,7 @@
 <dt>Callsign database, Offline references</dt><dd>See <a href="#databases">Callsign database</a>.</dd>
 <dt>Radio – CI-V, M5 keyer</dt><dd>See <a href="#radio">Radio and keyer</a>.</dd>
 <dt>ON4KST chat</dt><dd>Account, sked request, muted stations; see <a href="#chat">ON4KST chat</a>.</dd>
+<dt>CW decoder</dt><dd>Model download, on / off, model, pitch, audio input; see <a href="#cw">CW decoder</a>.</dd>
 <dt>Storage</dt><dd>Where the data is and whether it is persistent. In the web app, adding it to the home screen and the first QSO make the storage persistent.</dd>
 <dt>Check for updates / Anonymous usage statistics</dt><dd>Android from GitHub: once a day asks for a new version. Web: anonymous counts of screens and features (never log content); both can be switched off.</dd>
 <dt>About</dt><dd>Version, licence, links, <b>How to log</b>, <b>Manual</b> and <b>What's new</b>.</dd>
@@ -386,6 +402,8 @@
 <dd>ON4KST accounts are for licensed radio amateurs only (sign up at <a href="https://www.on4kst.org/">on4kst.org</a>). Without one, try the chat with the call <code>DEMO</code>, see <a href="#chat">ON4KST chat</a>.</dd>
 <dt>The chat doesn't connect, or I don't see it in the log.</dt>
 <dd>The chat is only in a VHF contest log on 6 m and up. Why it doesn't connect (wrong password, no account) shows in the chat's status and in Settings → ON4KST chat. When the link drops, kQSO connects again by itself.</dd>
+<dt>The CW decoder doesn't see the radio or decodes nothing.</dt>
+<dd>The decoder is only in Chrome / Edge on a computer and listens only in a log in CW. Pick the radio's input in Settings → CW decoder (on Linux see the card profile under <a href="#cw">CW decoder</a>), watch the level in the line and set the pitch to the radio's CW pitch.</dd>
 </dl>
 <footer class="manual-foot"><p>kQSO — by <b>OK1CDJ</b> · licence <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0</a> · <a href="https://github.com/ok1cdj/kQSO">github.com/ok1cdj/kQSO</a></p></footer>
 </main>

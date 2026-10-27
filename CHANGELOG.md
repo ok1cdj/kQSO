@@ -4,6 +4,15 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 
 ## [Unreleased]
 
+### Added
+- **CW decoder** (Chrome / Edge on a computer) with [DeepCW](https://github.com/e04/web-deep-cw-decoder) by e04 (MIT), a neural network run by onnxruntime-web in a worker. Settings → CW decoder: Download (about 14 MB once: the runtime and the narrow model; the wide model another 15 MB, from kqso.ok1cdj.com/cw/, checked by SHA-256, then offline), Turn on; Alt+U in a log.
+  - It listens only while a log is open in CW; in SSB / FM and in the list of logs the audio input and the worker rest.
+  - **Input**: the radio's USB sound card or a line input (picked by name), or **another browser tab** (WebSDR, KiwiSDR) shared with its sound.
+  - **Models**: narrow (the station at your CW pitch, light on the CPU) or wide (400–1200 Hz, optionally a filter around the pitch).
+  - **The line under the log's header**: the pitch, the input level, the decoded text (the not-yet-final end grey); calls, reports, serials and locators are framed, a tap puts the word into the input line (5NN → 599).
+  - **Tuning indicator**: ● the signal is at your pitch, ◀ / ▶ it is below / above; a tap decodes at the signal until the log closes or the mode changes (the pitch in Settings stays).
+- **Manual**: the CW decoder section with screenshots, Alt+U, and on Linux switching the radio's USB card to an input profile (PipeWire / PulseAudio).
+
 ## [1.15] – 2026-10-26
 
 ### Added

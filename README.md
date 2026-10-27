@@ -56,6 +56,9 @@ and the map.
   its Bluetooth, any Icom on a USB cable / CT-17 (Chrome / Edge on a computer) or through
   the keyer: macros, ESM, band / mode / frequency from
   the radio, voice memories, transverters.
+- **CW decoder** (Chrome / Edge on a computer): [DeepCW](https://github.com/e04/web-deep-cw-decoder)
+  decodes the radio's audio (USB sound card) or a WebSDR / KiwiSDR tab; a tap puts a call,
+  report or locator into the line.
 - **E-ink and standard display**, light and dark theme, English and Czech.
 
 Details of each feature are [below](#feature-details); the full **manual** with screenshots is in the app (Settings → About → Manual) and on the web: [English](https://kqso.ok1cdj.com/manual/en.html) · [česky](https://kqso.ok1cdj.com/manual/cs.html).
@@ -180,6 +183,18 @@ tokens are ignored. See **Settings → How to log** in the app for the full gram
   The radio must be in CW (else kQSO says so); with break-in off only the sidetone sounds.
   Safety: CW is handed over in parts of up to 30 characters; if the link drops while
   sending, the radio still finishes the part it has (the M5 keyer stops at once).
+- **CW decoder** (web in Chrome / Edge on a computer; off by default; Settings → CW
+  decoder, Alt+U): [DeepCW](https://github.com/e04/web-deep-cw-decoder) by e04 (MIT), a
+  CTC neural network over a spectrogram, run by `onnxruntime-web` (WASM, one thread) in a
+  worker (`web/src/core/cw/`, `web/src/ui/cw/`). The runtime and the models are not in the
+  bundle or the APK: `deploy.yml` puts them under `cw/` (`web/scripts/cwdata.py`: the models
+  from `e04/deepcw-engine` at a fixed commit, the WASM from `node_modules`, `index.json`
+  with sizes and SHA-256) and the app downloads them on demand into OPFS, then works
+  offline. Input: `getUserMedia` (the radio's USB sound card, no echo cancellation /
+  noise suppression / AGC) at 9600 Hz, or another tab through `getDisplayMedia`. It runs
+  only in an open log in CW; the narrow model reads the 3 spectrogram bins at the CW
+  pitch, the wide one 400–1200 Hz. Tuning indicator from DeepCW's per-bin CW detector.
+  Android / iOS: later (microphone permissions, CPU on a phone).
 - **E-ink / standard display modes** (the APK starts in e-ink), keep-screen-on while
   logging, EN / CS UI (by the system language).
 
@@ -196,7 +211,9 @@ Out of scope: ADIF import (the flow is log → export → forget).
 
 ## Development
 
-TypeScript + Vite + Vitest, **no runtime dependencies** (static bundle, no CDN).
+TypeScript + Vite + Vitest, **no runtime dependencies** (static bundle, no CDN) — with
+one exception: `onnxruntime-web` (pinned), loaded only by the CW decoder's worker once
+the user turns it on; its WASM is downloaded on demand, not bundled.
 
 ```bash
 cd web
@@ -276,3 +293,8 @@ keytool -genkeypair -v -keystore keystore/kqso.jks -alias kqso \
 ## License
 
 GPL-3.0 — see [`LICENSE`](LICENSE). Privacy policy: <https://kqso.ok1cdj.com/privacy.html>
+
+The CW decoder builds on [DeepCW](https://github.com/e04/web-deep-cw-decoder) and
+[deepcw-engine](https://github.com/e04/deepcw-engine) by e04 (MIT; notice in
+`web/src/core/cw/LICENSE-DeepCW.txt`); the runtime is
+[ONNX Runtime Web](https://github.com/microsoft/onnxruntime) (MIT).
