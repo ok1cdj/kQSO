@@ -75,6 +75,16 @@ export class CwDecoderClient {
     if (!this.worker) {
       this.worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
       this.worker.onmessage = (e: MessageEvent<CwResponse>) => this.receive(e.data)
+      // The worker didn't load (offline after a deploy) or died: settle every call, the
+      // next one starts a fresh worker.
+      this.worker.onerror = (e) => {
+        e.preventDefault()
+        this.worker?.terminate()
+        this.worker = undefined
+        const error = new Error(e.message || 'CW worker failed')
+        for (const p of this.pending.values()) p.reject(error)
+        this.pending.clear()
+      }
     }
     return this.worker
   }

@@ -117,8 +117,9 @@ export class CwDecoderController {
     return s.ort.stored && s[this.model].stored
   }
 
-  download(onProgress?: (loaded: number, total: number) => void): Promise<void> {
-    return this.client.download(this.model, onProgress)
+  async download(onProgress?: (loaded: number, total: number) => void): Promise<void> {
+    await this.client.download(this.model, onProgress)
+    if (this.state === 'error') this.restart()
   }
 
   async remove(): Promise<void> {
@@ -159,10 +160,19 @@ export class CwDecoderController {
   /** Bring the input and the worker in line with enabled && active, one change at a time. */
   private sync(): void {
     this.syncing = this.syncing.then(async () => {
-      const want = this.available && this.enabled && this.active
-      if (want && this.state === 'off') await this.run()
-      else if (!want && this.state !== 'off') await this.halt()
+      if (this.wanted && this.state === 'off') await this.run()
+      else if (!this.wanted && this.state !== 'off') await this.halt()
     })
+  }
+
+  private get wanted(): boolean {
+    return this.available && this.enabled && this.active
+  }
+
+  /** Start over: another input, a model downloaded, a setting changed after an error. */
+  private restart(): void {
+    this.syncing = this.syncing.then(() => this.halt())
+    this.sync()
   }
 
   private async run(): Promise<void> {
@@ -208,6 +218,12 @@ export class CwDecoderController {
     try {
       await this.listen() // first, while the click still counts
       await this.client.start(this.tuning)
+      // The log left CW (or closed) while the dialog was open: halt() has run or will.
+      if (!this.wanted) {
+        this.capture.stop()
+        await this.client.stop().catch(() => {})
+        return
+      }
       this.state = 'on'
     } catch (err) {
       this.capture.stop()
@@ -285,13 +301,14 @@ export class CwDecoderController {
   async setDevice(deviceId: string): Promise<void> {
     this.deviceId = deviceId
     await this.platform.setSetting(CW_SETTINGS.device, deviceId)
-    if (this.state === 'on') {
-      this.syncing = this.syncing.then(() => this.halt())
-      this.sync()
-    }
+    if (this.state !== 'off') this.restart()
   }
 
   private async retune(): Promise<void> {
+    if (this.state === 'error') {
+      this.restart()
+      return
+    }
     if (this.state !== 'on') {
       this.notify()
       return
@@ -319,6 +336,8 @@ export class CwDecoderController {
 
   private fail(error: string): void {
     this.capture.stop()
+    // The worker's loop too: it would decode the leftover buffer every second.
+    void this.client.stop().catch(() => {})
     this.state = 'error'
     this.error = error
     this.level = -Infinity
