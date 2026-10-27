@@ -169,8 +169,12 @@ export class LoggingScreen implements Screen {
   private sysMirror = SENTINEL // what the hidden input held after the last sync
   private composing = false // IME composition running: don't touch the input's value
   private readonly onKeydown = (e: KeyboardEvent): void => this.onHardwareKey(e)
-  // Rotation, a system keyboard, a resized window: the board may come or go (no-op otherwise).
-  private readonly onResize = (): void => this.applyBoard()
+  // Rotation, a system keyboard, a resized window: the board may come or go (no-op otherwise),
+  // the CW line's text may fit or not.
+  private readonly onResize = (): void => {
+    this.applyBoard()
+    this.fitCwText()
+  }
   private readonly onWideChange = (): void => {
     this.renderStrip()
     this.applyBoard()
@@ -1585,8 +1589,15 @@ export class LoggingScreen implements Screen {
       if (words.length === 0 && !cw.pending) text.append(el('span', 'cwline-pending', t('cw.listening')))
     }
     this.cwEl.replaceChildren(head, tune, text)
+    this.fitCwText()
+  }
+
+  /** The newest words in view; older ones cut off on the left fade out instead of showing
+   *  half a letter. Again on resize: the width changes without new text. */
+  private fitCwText(): void {
+    const text = this.cwEl.querySelector<HTMLElement>('.cwline-text')
+    if (!text || this.cwEl.hidden) return
     text.scrollLeft = text.scrollWidth
-    // Older words cut off on the left fade out instead of showing half a letter.
     text.classList.toggle('cwline-text--cut', text.scrollWidth > text.clientWidth)
   }
 
