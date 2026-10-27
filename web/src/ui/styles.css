@@ -1269,6 +1269,35 @@ a.help-text,
   overflow-x: auto;
   scrollbar-width: none;
 }
+/* Older words cut off on the left fade out (not on e-ink: no grey there). */
+.cwline-text--cut {
+  mask-image: linear-gradient(to right, transparent, #000 1.5em);
+}
+:root[data-display='eink'] .cwline-text--cut {
+  mask-image: none;
+}
+/* The level as one bar inside the tuning indicator: only on a phone, see below. */
+.cwline-level {
+  display: none;
+  margin-right: 0.2em;
+}
+/* Phone upright: the head goes, its level moves into the tuning indicator, so the
+   decoded text gets most of the width. */
+@media (max-width: 600px) {
+  .cwline {
+    gap: 0.3rem;
+  }
+  .cwline-head {
+    display: none;
+  }
+  .cwline-level {
+    display: inline;
+  }
+  .cwline-tune {
+    min-width: 0;
+    padding: 0.1rem 0.25rem;
+  }
+}
 .cwline-word {
   flex: none;
 }

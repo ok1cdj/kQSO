@@ -97,6 +97,8 @@ const WIDE = window.matchMedia('(min-aspect-ratio: 1/1)')
 const BOARD_MIN_WIDTH = 720
 // CW decoder line: the latest decoded words it shows (the rest scrolls off to the left).
 const CW_WORDS_SHOWN = 24
+/** The input level in one character, 0–5 (the phone's compact CW line). */
+const CW_LEVEL = '▁▂▃▄▆█'
 // Last read keyboard setting: the next mount lays out right away, init() re-reads it.
 let keyboardMode: KeyboardMode = 'kqso'
 // System keyboard: the hidden <input> holds SENTINEL + the line, so Backspace on an
@@ -1551,11 +1553,15 @@ export class LoggingScreen implements Screen {
     this.cwKey = key
 
     // Just information: a click here used to turn the decoder off, and the line went with it.
+    // On a phone it hides; the level goes into the tuning indicator as one bar (CSS).
     const head = el('span', 'cwline-head', `CW ${cw.decodeHz} Hz ${'▮'.repeat(bars)}${'▯'.repeat(5 - bars)}`)
     head.title = t('cw.title')
     // The tuning indicator: where the CW signal is against the pitch; a tap decodes there.
     const hz = sig ? Math.round(sig.hz) : 0
-    const tune = el('button', 'cwline-tune', !sig ? '—' : dir === 0 ? `● ${hz}` : dir! < 0 ? `◀ ${hz}` : `${hz} ▶`)
+    const tune = el('button', 'cwline-tune')
+    const level = el('span', 'cwline-level', CW_LEVEL[bars])
+    level.title = `${t('cw.title')} · ${cw.decodeHz} Hz`
+    tune.append(level, !sig ? '—' : dir === 0 ? `● ${hz}` : dir! < 0 ? `◀ ${hz}` : `${hz} ▶`)
     tune.type = 'button'
     tune.title = !sig ? t('cw.noSignal') : dir === 0 ? t('cw.tuned') : t('cw.tuneTo', { hz })
     tune.disabled = !sig || dir === 0
@@ -1580,6 +1586,8 @@ export class LoggingScreen implements Screen {
     }
     this.cwEl.replaceChildren(head, tune, text)
     text.scrollLeft = text.scrollWidth
+    // Older words cut off on the left fade out instead of showing half a letter.
+    text.classList.toggle('cwline-text--cut', text.scrollWidth > text.clientWidth)
   }
 
   /** A tapped decoded word goes to the end of the line, as if typed (+ a space). */
