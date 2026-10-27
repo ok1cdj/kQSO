@@ -128,6 +128,12 @@ async function remove(): Promise<void> {
 let ortModule: Promise<typeof Ort> | undefined
 const sessions = new Map<CwModel, Promise<Ort.InferenceSession>>()
 
+/** Fetch the runtime's JS while online, so the service worker has it for the field: it
+ *  caches lazily and starts empty after every deploy. The wasm and models are in OPFS. */
+async function warm(): Promise<void> {
+  await Promise.all([import('onnxruntime-web/wasm'), fetch(ortGlueUrl)])
+}
+
 function runtime(): Promise<typeof Ort> {
   ortModule ??= (async () => {
     const binary = await readFile(FILES.ort.file)
@@ -204,6 +210,8 @@ async function pump(): Promise<void> {
     const step = await stream.step((audio) => infer(audio, t))
     if (step && tuning === t) post({ id: 0, event: 'text', ...step })
   } catch (err) {
+    // The same audio would fail again every second: stop until the next start.
+    stop()
     post({ id: 0, event: 'error', error: err instanceof Error ? err.message : String(err) })
   } finally {
     busy = false
@@ -223,6 +231,9 @@ self.onmessage = async (e: MessageEvent<CwRequest>) => {
     switch (req.op) {
       case 'status':
         value = await status()
+        break
+      case 'warm':
+        await warm()
         break
       case 'download':
         await download(req.model)

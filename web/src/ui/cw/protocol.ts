@@ -24,6 +24,7 @@ export type CwStatus = Record<CwAsset, CwAssetStatus>
 
 export type CwRequest =
   | { id: number; op: 'status' }
+  | { id: number; op: 'warm' }
   | { id: number; op: 'download'; model: CwModel }
   | { id: number; op: 'remove' }
   | { id: number; op: 'start'; tuning: CwTuning }

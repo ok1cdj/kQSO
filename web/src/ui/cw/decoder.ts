@@ -8,7 +8,7 @@
 import type { KQSOPlatform } from '../../platform/index'
 import { switchOn } from '../dom'
 import { t } from '../i18n'
-import { CwCapture, audioInputs, type AudioInput } from './audio'
+import { CwCapture, NoTabAudioError, TAB_SOURCE, audioInputs, unlockInputs, type AudioInput } from './audio'
 import { CwDecoderClient, cwDecoderAvailable, type CwModel, type CwStatus, type CwTuning } from './client'
 
 export const CW_SETTINGS = {
@@ -16,7 +16,7 @@ export const CW_SETTINGS = {
   model: 'cwModel', // 'narrow' | 'wide'
   pitch: 'cwPitch', // Hz, the rig's CW pitch
   width: 'cwWidth', // Hz, wide model's filter around the pitch; '' = the whole band
-  device: 'cwDevice', // audio input deviceId, '' = the default one
+  device: 'cwDevice', // audio input deviceId, '' = the default one, 'tab' = another browser tab
 } as const
 
 export const PITCH_MIN = 400
@@ -26,7 +26,8 @@ const PITCH_DEFAULT = 700
 const KEEP_WORDS = 80
 const LEVEL_EVERY_MS = 250
 
-export type CwState = 'off' | 'starting' | 'on' | 'error'
+/** 'tab': listening from another tab, waiting for the click that picks it (pickTab). */
+export type CwState = 'off' | 'starting' | 'tab' | 'on' | 'error'
 
 export class CwDecoderController {
   readonly available = cwDecoderAvailable()
@@ -39,6 +40,8 @@ export class CwDecoderController {
   /** A log is open in CW. */
   private active = false
   private syncing: Promise<void> = Promise.resolve()
+  /** The last run() found the runtime and the model downloaded. */
+  private filesReady = false
   error = ''
   model: CwModel = 'narrow'
   pitchHz = PITCH_DEFAULT
@@ -70,6 +73,8 @@ export class CwDecoderController {
     this.widthHz = Number(await get(CW_SETTINGS.width)) || undefined
     this.deviceId = (await get(CW_SETTINGS.device)) ?? ''
     this.enabled = switchOn(await get(CW_SETTINGS.on), false)
+    // Turned on: cache the worker and the runtime's JS for an offline log later.
+    if (this.enabled) void this.client.warm().catch(() => {})
     this.notify()
     this.sync()
   }
@@ -107,13 +112,18 @@ export class CwDecoderController {
     await this.client.remove()
   }
 
-  inputs(): Promise<AudioInput[]> {
+  inputs(): Promise<{ inputs: AudioInput[]; locked: boolean }> {
     return audioInputs()
+  }
+
+  unlockInputs(): Promise<void> {
+    return unlockInputs()
   }
 
   /** Settings and Alt+U: on = listen whenever a log is open in CW. */
   async setEnabled(on: boolean): Promise<void> {
     this.enabled = on
+    if (on) void this.client.warm().catch(() => {})
     if (on) this.error = ''
     await this.platform.setSetting(CW_SETTINGS.on, on ? '1' : '0')
     this.notify()
@@ -141,8 +151,15 @@ export class CwDecoderController {
   }
 
   private async run(): Promise<void> {
-    if (!(await this.ready().catch(() => false))) {
+    this.filesReady = await this.ready().catch(() => false)
+    if (!this.filesReady) {
       this.fail(t('cw.needDownload'))
+      return
+    }
+    // The share dialog opens only from a click: the log shows a button for it.
+    if (this.deviceId === TAB_SOURCE) {
+      this.state = 'tab'
+      this.notify()
       return
     }
     this.state = 'starting'
@@ -150,7 +167,7 @@ export class CwDecoderController {
     this.notify()
     try {
       await this.client.start(this.tuning)
-      await this.capture.start(this.deviceId, (block) => this.client.audio(block), (db) => this.onLevel(db))
+      await this.listen()
       this.state = 'on'
     } catch (err) {
       await this.client.stop().catch(() => {})
@@ -159,6 +176,52 @@ export class CwDecoderController {
       return
     }
     this.notify()
+  }
+
+  /** The log offers "Pick the tab": waiting for it, or after a failed pick (no sound,
+   *  sharing stopped) — not when the model is missing, that needs Settings first. */
+  get canPickTab(): boolean {
+    return this.deviceId === TAB_SOURCE && (this.state === 'tab' || (this.state === 'error' && this.filesReady))
+  }
+
+  /** The click on "Pick the tab": the browser's share dialog opens right from it. */
+  async pickTab(): Promise<void> {
+    if (!this.canPickTab) return
+    this.state = 'starting'
+    this.error = ''
+    this.notify()
+    try {
+      await this.listen() // first, while the click still counts
+      await this.client.start(this.tuning)
+      this.state = 'on'
+    } catch (err) {
+      this.capture.stop()
+      await this.client.stop().catch(() => {})
+      // Cancelled in the dialog: back to the button.
+      if (err instanceof DOMException && err.name === 'NotAllowedError') {
+        this.state = 'tab'
+        this.notify()
+      } else this.fail(micError(err))
+      return
+    }
+    this.notify()
+  }
+
+  private listen(): Promise<void> {
+    return this.capture.start(
+      this.deviceId,
+      (block) => this.client.audio(block),
+      (db) => this.onLevel(db),
+      () => {
+        // A tab whose sharing was stopped: offer the button again; a lost device: say so.
+        if (this.deviceId === TAB_SOURCE) {
+          void this.client.stop().catch(() => {})
+          this.state = 'tab'
+          this.level = -Infinity
+          this.notify()
+        } else this.fail(t('cw.inputEnded'))
+      },
+    )
   }
 
   private async halt(): Promise<void> {
@@ -209,7 +272,8 @@ export class CwDecoderController {
       return
     }
     // A model that isn't downloaded can't run: stop and say so.
-    if (!(await this.ready())) {
+    this.filesReady = await this.ready()
+    if (!this.filesReady) {
       await this.halt()
       this.fail(t('cw.needDownload'))
       return
@@ -242,6 +306,7 @@ function clampPitch(hz: number): number {
 }
 
 function micError(err: unknown): string {
+  if (err instanceof NoTabAudioError) return t('cw.noTabAudio')
   const name = err instanceof DOMException ? err.name : ''
   if (name === 'NotAllowedError' || name === 'SecurityError') return t('cw.noMic')
   if (name === 'NotFoundError' || name === 'OverconstrainedError') return t('cw.noInput')

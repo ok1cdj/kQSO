@@ -33,6 +33,7 @@ import { fieldsAround, parseField } from '../../core/refdb'
 import { REFS_URL, downloadTile, programsOn, removeTile, setProgramsOn, storedTiles } from '../refsync'
 import { REF_PROGRAMS } from '../../core/refdb'
 import type { CwDecoderController } from '../cw/decoder'
+import { TAB_SOURCE, tabAudioAvailable } from '../cw/audio'
 
 export interface SettingsNav {
   back(): void
@@ -773,10 +774,22 @@ export class SettingsScreen implements Screen {
 
     // Inputs: the labels only show once the browser has given the permission (after Start).
     const input = selectRow(t('settings.cwInput'), [['', t('settings.cwInputDefault')]], cw.deviceId)
+    const unlock = button(t('settings.cwInputUnlock'), () => {
+      void cw
+        .unlockInputs()
+        .then(fillInputs)
+        .catch(() => (status.textContent = t('cw.noMic')))
+    }, 'btn')
+    unlock.hidden = true
     const fillInputs = async (): Promise<void> => {
-      const list = await cw.inputs().catch(() => [])
+      const { inputs: list, locked } = await cw.inputs().catch(() => ({ inputs: [], locked: false }))
+      unlock.hidden = !locked
       input.select.replaceChildren(
-        ...[{ deviceId: '', label: t('settings.cwInputDefault') }, ...list.filter((d) => d.deviceId && d.deviceId !== 'default')].map((d) => {
+        ...[
+          { deviceId: '', label: t('settings.cwInputDefault') },
+          ...(tabAudioAvailable() ? [{ deviceId: TAB_SOURCE, label: t('settings.cwInputTab') }] : []),
+          ...list.filter((d) => d.deviceId && d.deviceId !== 'default'),
+        ].map((d) => {
           const o = el('option', undefined, d.label)
           o.value = d.deviceId
           o.selected = d.deviceId === cw.deviceId
@@ -821,6 +834,8 @@ export class SettingsScreen implements Screen {
       width.row,
       widthHint,
       input.row,
+      unlock,
+      ...(tabAudioAvailable() ? [el('div', 'about', t('settings.cwInputTabHint'))] : []),
       credit,
     )
   }

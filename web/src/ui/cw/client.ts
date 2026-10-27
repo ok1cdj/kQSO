@@ -7,9 +7,11 @@ import type { CwModel, CwRequestBody, CwResponse, CwStatus, CwTuning } from './p
 
 export type { CwModel, CwStatus, CwTuning } from './protocol'
 
-/** The browser can store the models (OPFS), run the worker and record audio. */
+/** The browser can store the models (OPFS), run the worker and record audio into a
+ *  9600 Hz AudioContext. Chrome / Edge only: Firefox refuses to connect a 48 kHz input
+ *  to a context at another rate. */
 export function cwDecoderAvailable(): boolean {
-  return platformKind() === 'opfs' && typeof navigator.mediaDevices?.getUserMedia === 'function'
+  return platformKind() === 'opfs' && typeof navigator.mediaDevices?.getUserMedia === 'function' && /Chrome\//.test(navigator.userAgent)
 }
 
 interface Pending {
@@ -29,6 +31,11 @@ export class CwDecoderClient {
 
   status(): Promise<CwStatus> {
     return this.call({ op: 'status' })
+  }
+
+  /** Load the worker and the runtime's JS now (online), so they work offline later. */
+  warm(): Promise<void> {
+    return this.call({ op: 'warm' })
   }
 
   /** The runtime and the model, whichever aren't stored yet. */

@@ -229,7 +229,6 @@ export class LoggingScreen implements Screen {
     this.unsubscribeRig?.()
     this.unsubscribeKst?.()
     this.unsubscribeCw?.()
-    this.cw.setActive(false)
     this.exitTx()
     this.recentResize?.disconnect()
     clearInterval(this.sixHTimer)
@@ -1553,7 +1552,13 @@ export class LoggingScreen implements Screen {
     head.title = t('cw.title')
     head.addEventListener('click', () => void cw.toggle())
     const text = el('div', 'cwline-text')
-    if (cw.state === 'error') text.append(el('span', 'cwline-error', cw.error))
+    // The share dialog wants a real click (not pointerdown: a touch wouldn't count).
+    const pick = (): HTMLButtonElement => button(t('cw.pickTab'), () => void cw.pickTab(), 'cwline-word')
+    if (cw.state === 'tab') text.append(pick())
+    else if (cw.state === 'error') {
+      text.append(el('span', 'cwline-error', cw.error))
+      if (cw.canPickTab) text.append(pick())
+    }
     else if (cw.state !== 'on') text.append(el('span', 'cwline-pending', t('cw.starting')))
     else {
       for (const w of words) {

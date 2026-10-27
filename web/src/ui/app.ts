@@ -39,7 +39,8 @@ export class App {
   private readonly keyer = new KeyerController(this.platform, this.rig)
   // ON4KST chat: one link too, it stays up while moving between screens.
   private readonly kst = new KstController(this.platform)
-  // CW decoder: keeps listening while moving between screens.
+  // CW decoder: keeps listening while moving between the open log's screens (QSO edit,
+  // list, chat, Settings); the log list stops it.
   private readonly cw = new CwDecoderController(this.platform)
   private root!: HTMLElement
   private current: Screen | null = null
@@ -118,6 +119,7 @@ export class App {
   showLogList(): void {
     // No log open: the chat goes offline (in ON4KST too); the chat screen connects it again.
     if (this.kst.wanted || this.kst.link !== 'off') this.kst.disconnect()
+    this.cw.setActive(false)
     this.show(
       new LogListScreen(this.platform, {
         openLog: (id) => this.showLogging(id),
