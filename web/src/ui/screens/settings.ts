@@ -736,7 +736,7 @@ export class SettingsScreen implements Screen {
         ? t('settings.cwSummaryOff')
         : cw.state === 'error'
           ? cw.error
-          : t(cw.state === 'on' ? 'settings.cwSummaryOn' : 'settings.cwSummaryWaiting', { model: modelLabel(), hz: cw.pitchHz })
+          : t(cw.state === 'on' ? 'settings.cwSummaryOn' : 'settings.cwSummaryWaiting', { model: modelLabel(), hz: cw.decodeHz })
       if (downloading) return
       status.textContent = cw.state === 'error' ? cw.error : missingBytes > 0 ? t('settings.cwNeedDownload', { mb: mb(missingBytes) }) : t('settings.cwStored')
     }

@@ -44,7 +44,10 @@ export class CwDecoderController {
   private filesReady = false
   error = ''
   model: CwModel = 'narrow'
+  /** The pitch from Settings (the rig's CW pitch). */
   pitchHz = PITCH_DEFAULT
+  /** A tap on the tuning indicator: decode here until the decoder stops; never saved. */
+  private tunedHz: number | undefined
   widthHz: number | undefined
   deviceId = ''
   /** Final words, oldest first. */
@@ -95,8 +98,13 @@ export class CwDecoderController {
     for (const fn of this.listeners) fn()
   }
 
+  /** Where the decoder listens now: the tuned signal, else the pitch from Settings. */
+  get decodeHz(): number {
+    return this.tunedHz ?? this.pitchHz
+  }
+
   get tuning(): CwTuning {
-    return { model: this.model, pitchHz: this.pitchHz, ...(this.model === 'wide' && this.widthHz ? { widthHz: this.widthHz } : {}) }
+    return { model: this.model, pitchHz: this.decodeHz, ...(this.model === 'wide' && this.widthHz ? { widthHz: this.widthHz } : {}) }
   }
 
   status(): Promise<CwStatus> {
@@ -233,7 +241,9 @@ export class CwDecoderController {
 
   /** The tap on the tuning indicator: decode at the signal it found. */
   async tuneToSignal(): Promise<void> {
-    if (this.signal) await this.setPitch(this.signal.hz)
+    if (!this.signal) return
+    this.tunedHz = clampPitch(this.signal.hz)
+    await this.retune()
   }
 
   private async halt(): Promise<void> {
@@ -241,6 +251,7 @@ export class CwDecoderController {
     await this.client.stop().catch(() => {})
     this.state = 'off'
     this.signal = undefined
+    this.tunedHz = undefined
     this.pending = ''
     this.level = -Infinity
     this.notify()
@@ -260,6 +271,7 @@ export class CwDecoderController {
 
   async setPitch(hz: number): Promise<void> {
     this.pitchHz = clampPitch(hz)
+    this.tunedHz = undefined
     await this.platform.setSetting(CW_SETTINGS.pitch, String(this.pitchHz))
     await this.retune()
   }

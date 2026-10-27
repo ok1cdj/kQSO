@@ -1545,13 +1545,13 @@ export class LoggingScreen implements Screen {
     const bars = Number.isFinite(cw.level) ? Math.max(0, Math.min(5, Math.round((cw.level + 48) / 9))) : 0
     const words = cwWords(cw.words.slice(-CW_WORDS_SHOWN).join(' '))
     const sig = cw.state === 'on' ? cw.signal : undefined
-    const dir = sig ? tuneDirection(sig.hz, cw.pitchHz) : undefined
-    const key = [cw.state, cw.error, cw.pitchHz, cw.model, bars, sig?.hz, cw.pending, ...words.map((w) => w.value)].join('|')
+    const dir = sig ? tuneDirection(sig.hz, cw.decodeHz) : undefined
+    const key = [cw.state, cw.error, cw.decodeHz, cw.model, bars, sig?.hz, cw.pending, ...words.map((w) => w.value)].join('|')
     if (key === this.cwKey) return
     this.cwKey = key
 
     // Just information: a click here used to turn the decoder off, and the line went with it.
-    const head = el('span', 'cwline-head', `CW ${cw.pitchHz} Hz ${'▮'.repeat(bars)}${'▯'.repeat(5 - bars)}`)
+    const head = el('span', 'cwline-head', `CW ${cw.decodeHz} Hz ${'▮'.repeat(bars)}${'▯'.repeat(5 - bars)}`)
     head.title = t('cw.title')
     // The tuning indicator: where the CW signal is against the pitch; a tap decodes there.
     const hz = sig ? Math.round(sig.hz) : 0
