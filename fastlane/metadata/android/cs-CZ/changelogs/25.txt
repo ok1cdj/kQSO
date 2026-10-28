@@ -1,0 +1,1 @@
+Na webu kqso.ok1cdj.com (Chrome / Edge na počítači) nový CW dekodér: neuronová síť DeepCW dekóduje CW ze zvuku rádia nebo z WebSDR, klepnutím vložíš značku, report nebo lokátor do řádku. V aplikaci zatím není; v návodu je o něm nová kapitola.

@@ -1,0 +1,1 @@
+New on the web at kqso.ok1cdj.com (Chrome / Edge on a computer): a CW decoder. The DeepCW neural network decodes CW from the radio's audio or a WebSDR; a tap puts a call, report or locator into the line. Not in the app yet; the manual has a new chapter on it.

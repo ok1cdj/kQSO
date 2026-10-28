@@ -10,8 +10,8 @@ Android app and as an iOS app for iPhone and iPad (the same web app in a native 
 It runs on any phone, tablet or computer, and has an e-ink display mode as well (tuned
 on the **Mudita Kompakt**, 480×800).
 
-- **Live web:** <https://kqso.ok1cdj.com/> (web 1.15; the old `ok1cdj.github.io/kQSO/` redirects there)
-- **Android:** [Google Play](https://play.google.com/store/apps/details?id=com.ok1cdj.kqso), or the APK from [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.15) — the same signature, so either updates the other
+- **Live web:** <https://kqso.ok1cdj.com/> (web 1.16; the old `ok1cdj.github.io/kQSO/` redirects there)
+- **Android:** [Google Play](https://play.google.com/store/apps/details?id=com.ok1cdj.kqso), or the APK from [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.16) — the same signature, so either updates the other
 - **iOS (iPhone, iPad):** App Store (in review)
 - **Manual** (with screenshots): [English](https://kqso.ok1cdj.com/manual/en.html) · [česky](https://kqso.ok1cdj.com/manual/cs.html), also in the app under Settings → About
 - **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)

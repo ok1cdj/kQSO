@@ -16,10 +16,10 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
     version: '1.16',
     cs: [
-      'CW dekodér (Chrome / Edge na počítači): neuronová síť DeepCW dekóduje CW ze zvuku rádia (USB zvuková karta) nebo z jiné záložky s WebSDR / KiwiSDR. Text běží v logu při CW, klepnutím na značku, report nebo lokátor ho vložíš do řádku; ladička ukáže, kde signál je. Nastavení → CW dekodér, Alt+U; podrobně v návodu.',
+      'CW dekodér na webu (Chrome / Edge na počítači; v aplikacích zatím není): neuronová síť DeepCW dekóduje CW ze zvuku rádia (USB zvuková karta) nebo z jiné záložky s WebSDR / KiwiSDR. Text běží v logu při CW, klepnutím na značku, report nebo lokátor ho vložíš do řádku; ladička ukáže, kde signál je. Nastavení → CW dekodér, Alt+U; podrobně v návodu.',
     ],
     en: [
-      'CW decoder (Chrome / Edge on a computer): the DeepCW neural network decodes CW from the radio\'s audio (its USB sound card) or from another tab with a WebSDR / KiwiSDR. The text runs in a log in CW, a tap on a call, report or locator puts it into the line; the tuning indicator shows where the signal is. Settings → CW decoder, Alt+U; details in the manual.',
+      'CW decoder on the web (Chrome / Edge on a computer; not in the apps yet): the DeepCW neural network decodes CW from the radio\'s audio (its USB sound card) or from another tab with a WebSDR / KiwiSDR. The text runs in a log in CW, a tap on a call, report or locator puts it into the line; the tuning indicator shows where the signal is. Settings → CW decoder, Alt+U; details in the manual.',
     ],
   },
   {
