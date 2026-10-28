@@ -188,8 +188,9 @@ tokens are ignored. See **Settings → How to log** in the app for the full gram
   CTC neural network over a spectrogram, run by `onnxruntime-web` (WASM, one thread) in a
   worker (`web/src/core/cw/`, `web/src/ui/cw/`). The runtime and the models are not in the
   bundle or the APK: `deploy.yml` puts them under `cw/` (`web/scripts/cwdata.py`: the models
-  from `e04/deepcw-engine` at a fixed commit, the WASM from `node_modules`, `index.json`
-  with sizes and SHA-256) and the app downloads them on demand into OPFS, then works
+  from `e04/deepcw-engine` at a fixed commit, the WASM from `node_modules`; sizes and
+  SHA-256 pinned in `web/src/core/cw/assets.json`, the hash in each file name) and the
+  app downloads them on demand into OPFS, checks the hash, then works
   offline. Input: `getUserMedia` (the radio's USB sound card, no echo cancellation /
   noise suppression / AGC) at 9600 Hz, or another tab through `getDisplayMedia`. It runs
   only in an open log in CW; the narrow model reads the 3 spectrogram bins at the CW
