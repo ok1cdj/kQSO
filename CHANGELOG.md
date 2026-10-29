@@ -6,6 +6,7 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 
 ### Changed
 - **iOS app in the App Store**: the web app on iPhone / iPad offers it on the log list (instead of the add-to-home hint) and in Settings → About; README and the manual link it.
+- **Log header on phones**: when the band, serial, keyer, radio, azimuth and 6H don't fit on one row, they wrap to a second one instead of being cut off (the azimuth and the 6H time were lost); on a narrow phone the QSO button shows only the count (`12 ›`).
 
 ## [1.16] – 2026-10-28
 

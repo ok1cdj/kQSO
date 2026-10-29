@@ -161,9 +161,11 @@ body {
   border-bottom: var(--border-w) solid var(--fg);
   padding: 0.25rem 0.4rem;
 }
+/* Wraps to a second row when it doesn't fit (phone: keyer + radio + azimuth + 6H) — nothing cut off. */
 .hdr-mid {
   display: flex;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.5rem;
   align-items: center;
   flex: 1 1 0; /* basis 0 → shrinks to leftover space, never pushes the nav buttons off */
   min-width: 0;
@@ -186,7 +188,7 @@ body {
   cursor: pointer;
   transition: background var(--transition), color var(--transition);
 }
-/* Narrow phones (OnePlus 360 px): "‹ Logy" → "‹", the header middle needs the room. */
+/* Narrow phones (OnePlus 360 px): "‹ Logy" → "‹", "QSO 12 ›" → "12 ›", the header middle needs the room. */
 @media (max-width: 400px) {
   .hdr-nav-word {
     display: none;

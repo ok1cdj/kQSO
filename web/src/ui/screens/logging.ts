@@ -1106,8 +1106,16 @@ export class LoggingScreen implements Screen {
       mid,
       ...(this.chatOn() ? [this.chatButton()] : []),
       button('?', () => this.nav.toHelp(), 'hdr-nav'),
-      button(`QSO ${this.qsos.length} ›`, () => this.nav.toQsoList(), 'hdr-nav'),
+      this.navQsosButton(),
     )
+  }
+
+  /** "QSO 12 ›"; on a narrow phone only "12 ›" (styles.css), as the "‹ Logy" button. */
+  private navQsosButton(): HTMLButtonElement {
+    const b = button('', () => this.nav.toQsoList(), 'hdr-nav')
+    b.title = 'QSO'
+    b.append(el('span', 'hdr-nav-word', 'QSO '), document.createTextNode(`${this.qsos.length} ›`))
+    return b
   }
 
   /** "‹ Logy"; on a narrow phone only "‹" (styles.css), so the header middle fits. */
