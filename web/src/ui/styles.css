@@ -1516,6 +1516,10 @@ button.cwline-word:active {
 .chat-detail-head {
   font-size: 1.1rem;
 }
+/* [hidden] must win over display:flex. */
+.chat-detail-top[hidden] {
+  display: none;
+}
 /* Mute / Report: below the messages, set apart from the contest buttons. */
 .chat-detail-mod {
   margin-top: 1rem;
@@ -1577,6 +1581,17 @@ button.cwline-word:active {
 }
 .chat-st--new .chat-st-call {
   text-decoration: underline;
+}
+/* Stations: km from–to, after the sort / filter buttons. */
+.chat-km {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.chat-km-input {
+  width: 4.5em;
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
 }
 .chat-compose {
   display: flex;

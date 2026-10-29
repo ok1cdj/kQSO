@@ -451,9 +451,12 @@ export interface KstView {
   readonly desc: boolean
   readonly hideWorked: boolean
   readonly hideAway: boolean
+  /** Farthest shown, km; null = no limit (null, not undefined: it survives the JSON). A
+   *  station without a locator stays in. */
+  readonly maxKm: number | null
 }
 
-export const KST_VIEW_DEFAULT: KstView = { sort: 'km', desc: false, hideWorked: true, hideAway: true }
+export const KST_VIEW_DEFAULT: KstView = { sort: 'km', desc: false, hideWorked: true, hideAway: true, maxKm: 900 }
 
 /** Active = wrote something in the last 30 minutes. */
 export const KST_ACTIVE_S = 30 * 60
@@ -488,11 +491,38 @@ export function sortStations(list: readonly KstStation[], by: KstSort, desc = fa
   })
 }
 
+/** Within the view's km limit (no locator = can't tell, kept). */
+function inKm(s: KstStation, view: KstView): boolean {
+  return s.km === undefined || view.maxKm === null || s.km <= view.maxKm
+}
+
 /** The view's filters, then its order. */
 export function viewStations(list: readonly KstStation[], view: KstView): KstStation[] {
   return sortStations(
-    list.filter((s) => (!view.hideWorked || !s.worked) && (!view.hideAway || !s.away)),
+    list.filter((s) => (!view.hideWorked || !s.worked) && (!view.hideAway || !s.away) && inKm(s, view)),
     view.sort,
     view.desc,
   )
+}
+
+// --- locators for the log ------------------------------------------------------------
+
+/** The locator a station has set in the chat now (ON4KST: what it is on today, newer than
+ *  the callsign database), by its base call. */
+export function chatLocator(chat: KstState, call: string): string | undefined {
+  // The log has DL1ABC/P, the chat DL1ABC: its locator there is where it is today.
+  const bc = baseCall(call).replace(/\/(P|M|A|QRP)$/, '')
+  for (const u of chat.users.values()) if (u.loc && baseCall(u.call) === bc) return u.loc
+  return undefined
+}
+
+/** The chat's stations on this locator (base calls), for a locator typed before the call. */
+export function chatCallsAt(chat: KstState, loc: string, limit: number): string[] {
+  const l = loc.toUpperCase()
+  const calls = new Set<string>()
+  for (const u of chat.users.values()) {
+    if (u.loc === l && !chat.isMe(u.call)) calls.add(baseCall(u.call))
+    if (calls.size >= limit) break
+  }
+  return [...calls]
 }

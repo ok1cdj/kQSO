@@ -50,6 +50,8 @@ import {
   chatTarget,
   chatText,
   expandSked,
+  chatCallsAt,
+  chatLocator,
   kstStations,
   locatorToSet,
   matchSkedQrg,
@@ -1301,9 +1303,10 @@ export class LoggingScreen implements Screen {
     return undefined
   }
 
-  /** The call's locator: from this log when worked already (another band), else the database's. */
+  /** The call's locator: from this log when worked already (another band), else the one it
+   *  has set in the chat (today's), else the database's. */
   private knownLoc(call: string): string | undefined {
-    return this.loggedLoc(call) ?? this.db.lookup(call)?.loc
+    return this.loggedLoc(call) ?? (this.chatOn() ? chatLocator(this.kst.chat, call) : undefined) ?? this.db.lookup(call)?.loc
   }
 
   /** The known locator for the call just entered, while none is typed. */
@@ -1312,12 +1315,14 @@ export class LoggingScreen implements Screen {
     return call && this.state.partial.grid === undefined ? this.knownLoc(call) : undefined
   }
 
-  /** Locator entered before the call (VHF contest): buttons for the calls the database
-   *  knows there, a tap fills the call in. Worked ones inverted, as in the strip. */
+  /** Locator entered before the call (VHF contest): buttons for the calls the chat (first)
+   *  and the database know there, a tap fills the call in. Worked ones inverted, as in the strip. */
   private callsAtLocator(cls: string): HTMLElement[] {
     const { call, grid } = this.state.partial
     if (call !== undefined || grid === undefined || this.line.trim().length >= 2) return []
-    return this.db.byLocator(grid, 3).map(({ call: c }) => {
+    const chat = this.chatOn() ? chatCallsAt(this.kst.chat, grid, 3) : []
+    const calls = [...new Set([...chat, ...this.db.byLocator(grid, 3).map((e) => e.call)])].slice(0, 3)
+    return calls.map((c) => {
       const worked = isDupe(this.qsos, c, this.state.sticky.band, this.dupeMode())
       return this.suggestButton(c, () => this.fillCall(c), worked ? `${cls} suggest--worked` : cls)
     })

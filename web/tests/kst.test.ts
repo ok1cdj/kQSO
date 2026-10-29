@@ -22,6 +22,9 @@ import {
   isActive,
   sortStations,
   viewStations,
+  KST_VIEW_DEFAULT,
+  chatLocator,
+  chatCallsAt,
 } from '../src/core/kst'
 import type { KstEvent } from '../src/core/kst'
 
@@ -341,9 +344,36 @@ describe('station list', () => {
     expect(az.at(-1)!.call).toBe('XX1XX')
   })
   it('the view filters worked and away, then sorts', () => {
-    const v = { sort: 'call', desc: false, hideWorked: true, hideAway: true } as const
+    const v = { sort: 'call', desc: false, hideWorked: true, hideAway: true, maxKm: null } as const
     expect(viewStations(list, v).map((s) => s.call)).toEqual(['OK1KPA', 'XX1XX'])
     expect(viewStations(list, { ...v, hideAway: false }).map((s) => s.call)).toEqual(['OK1KPA', 'SP3TYF', 'XX1XX'])
     expect(viewStations(list, { ...v, hideWorked: false, hideAway: false, desc: true }).map((s) => s.call)).toEqual(['XX1XX', 'SP3TYF', 'OK1KPA', 'DL1ABC-432'])
+  })
+  it('the farthest km; a station without a locator stays in', () => {
+    const v = { sort: 'km', desc: false, hideWorked: false, hideAway: false, maxKm: null } as const
+    const kms = viewStations(list, v).map((s) => s.km)
+    const [near, mid] = [kms[0]!, kms[1]!]
+    const shown = (maxKm: number | null) => viewStations(list, { ...v, maxKm }).map((s) => s.km)
+    expect(shown(near)).toEqual([near, undefined])
+    expect(shown(mid)).toEqual([near, mid, undefined])
+    expect(shown(null)).toEqual(kms)
+    expect(KST_VIEW_DEFAULT.maxKm).toBe(900)
+  })
+})
+
+describe('locators from the chat', () => {
+  const chat = new KstState('OK1CDJ')
+  for (const l of ['UA0|2|OK1KPA|Petr|JO60LJ|0|', 'UA0|2|DL1ABC-432|Hans|JO62AA|0|', 'UA0|2|OK1CDJ-2|me|JO62AA|0|', 'UA0|2|XX1XX|nobody||0|'])
+    chat.apply(parseFrame(l)!)
+
+  it("a station's locator by its base call", () => {
+    expect(chatLocator(chat, 'OK1KPA')).toBe('JO60LJ')
+    expect(chatLocator(chat, 'DL1ABC/P')).toBe('JO62AA')
+    expect(chatLocator(chat, 'XX1XX')).toBeUndefined()
+    expect(chatLocator(chat, 'OK2ZZ')).toBeUndefined()
+  })
+  it('the stations on a locator, without me', () => {
+    expect(chatCallsAt(chat, 'jo62aa', 3)).toEqual(['DL1ABC'])
+    expect(chatCallsAt(chat, 'JN79US', 3)).toEqual([])
   })
 })

@@ -3,8 +3,8 @@
 // log's locator, worked on the log's band). A tap on a message or a station puts
 // "@CALL " into the line at the bottom; Sked fills in the sked request, Log goes back to
 // the log with the call and locator typed in. A long press (or ⋯ on a station) opens
-// the station's detail: its data, its messages, and — out of the way of contest work —
-// Mute and Report. Muted stations are hidden here and everywhere else. Text from the
+// the station's detail: its data, a line that writes to it, its messages, and — out of
+// the way of contest work — Mute and Report. Muted stations are hidden here and everywhere else. Text from the
 // chat is only ever set as text, never as HTML.
 
 import { LiveDb, PROFILES, SKED_DEFAULT, baseCall, combineSources, emptySuggestions, expandSked, isDupe, kstStations, locatorToSet, qrvLabels, readLogFile, roomForBand, unionQrv, viewStations } from '../../core/index'
@@ -49,7 +49,14 @@ export class ChatScreen implements Screen {
   private readonly locEl = el('div', 'chat-loc')
   private readonly tabsEl = el('div', 'segmented')
   private readonly toolsEl = el('div', 'segmented segmented--wrap chat-tools')
+  // Stations: the farthest km. Kept across renders (a frame comes with every message), so
+  // typing in it isn't cut off; only the buttons before it are rebuilt.
+  private readonly kmEl = el('span', 'chat-km')
+  private readonly kmMax = kmInput()
   private readonly bodyEl = el('div', 'chat-body')
+  /** The detail's station data and buttons; the write line goes right under it. */
+  private readonly detailTopEl = el('div', 'chat-detail chat-detail-top')
+  private readonly composeEl = el('div', 'chat-compose')
   private readonly input = el('input', 'field-input chat-input')
   private readonly noticeEl = el('div', 'about')
   private meta: LogMeta | undefined
@@ -87,9 +94,11 @@ export class ChatScreen implements Screen {
         else this.nav.back()
       }
     })
-    const compose = el('div', 'chat-compose')
-    compose.append(this.input, button(t('kst.send'), () => this.send(), 'btn'))
-    this.root.replaceChildren(bar, this.roomsEl, this.statusEl, this.locEl, this.tabsEl, this.toolsEl, this.bodyEl, this.noticeEl, compose)
+    this.kmMax.addEventListener('input', () => this.kst.setView({ maxKm: kmValue(this.kmMax) }))
+    this.kmEl.append(t('kst.kmMax'), this.kmMax, 'km')
+    this.composeEl.append(this.input, button(t('kst.send'), () => this.send(), 'btn'))
+    this.detailTopEl.hidden = true
+    this.root.replaceChildren(bar, this.roomsEl, this.statusEl, this.locEl, this.tabsEl, this.toolsEl, this.detailTopEl, this.bodyEl, this.noticeEl, this.composeEl)
     host.replaceChildren(this.root)
     this.unsubscribe = this.kst.subscribe(() => this.schedule())
     void this.init()
@@ -143,6 +152,8 @@ export class ChatScreen implements Screen {
       this.bodyEl.replaceChildren(kstConsentPanel(k, () => void k.connect(this.meta?.myCall ?? '')))
       return
     }
+    this.input.placeholder = this.detail ? t('kst.placeholderTo', { call: this.detail.call }) : t('kst.placeholder')
+    this.placeCompose()
     if (this.detail) return this.renderDetail(this.detail.call, this.detail.picked)
     const unread = k.unread > 0 ? ` (${k.unread})` : ''
     this.tabsEl.replaceChildren(
@@ -165,6 +176,18 @@ export class ChatScreen implements Screen {
         if (!k.setLocator(want)) this.noticeEl.textContent = notSentWhy(k)
       }, 'btn btn--small'),
     )
+  }
+
+  /** The write line: under the detail's buttons while a station is open, else at the
+   *  bottom. Moved only when that changes (a moved input loses focus). */
+  private placeCompose(): void {
+    this.detailTopEl.hidden = this.detail === undefined
+    if (this.detail) {
+      if (this.composeEl.previousElementSibling !== this.detailTopEl) this.detailTopEl.after(this.composeEl)
+    } else if (this.composeEl.parentNode !== this.root || this.root.lastElementChild !== this.composeEl) {
+      this.root.append(this.composeEl)
+      this.detailTopEl.replaceChildren()
+    }
   }
 
   private toggle(label: string, on: boolean, set: () => void): HTMLButtonElement {
@@ -217,13 +240,20 @@ export class ChatScreen implements Screen {
       this.toggle(v.sort === by ? `${label} ${v.desc ? '▼' : '▲'}` : label, v.sort === by, () =>
         k.setView(v.sort === by ? { desc: !v.desc } : { sort: by, desc: false }),
       )
-    this.toolsEl.replaceChildren(
+    const tools = [
       sortBtn('call', 'CALL'),
       sortBtn('km', 'km'),
       sortBtn('az', 'az°'),
       this.toggle(t('kst.hideWorked'), v.hideWorked, () => k.setView({ hideWorked: !v.hideWorked })),
       this.toggle(t('kst.hideAway'), v.hideAway, () => k.setView({ hideAway: !v.hideAway })),
-    )
+    ]
+    // The buttons go before the km fields without moving them (a moved input loses focus).
+    if (this.kmEl.parentNode !== this.toolsEl) {
+      this.kmMax.value = v.maxKm !== null ? String(v.maxKm) : ''
+      this.toolsEl.replaceChildren(this.kmEl)
+    }
+    while (this.toolsEl.firstChild !== this.kmEl) this.toolsEl.firstChild!.remove()
+    this.kmEl.before(...tools)
     const all = kstStations(k.chat, this.meta?.myGrid ?? '', (c) => this.worked(c))
     const shown = viewStations(all.filter((s) => !k.isMuted(s.call)), v)
     const table = el('table', 'chat-stations')
@@ -276,6 +306,8 @@ export class ChatScreen implements Screen {
 
   private openDetail(call: string, picked?: KstEntry): void {
     this.detail = { call, picked }
+    // "@CALL " left in the line from a tap: the detail addresses it already.
+    if (/^@\S*\s*$/.test(this.input.value)) this.input.value = ''
     this.render()
     this.bodyEl.scrollTop = 0
   }
@@ -309,10 +341,13 @@ export class ChatScreen implements Screen {
       if (s.away) facts.push(t('kst.away'))
     } else facts.push(t('kst.left'))
     if (muted) facts.push(t('kst.mutedNote'))
+    // No Write button: the line at the bottom writes to this station already.
     const acts = el('div', 'segmented')
     acts.append(
-      button(t('kst.write'), () => this.address(s?.call ?? call), 'btn btn--small'),
-      button(t('kst.sked'), () => this.address(s?.call ?? call, this.skedText()), 'btn btn--small'),
+      button(t('kst.sked'), () => {
+        this.input.value = this.skedText()
+        this.input.focus()
+      }, 'btn btn--small'),
     )
     if (s) acts.append(button(t('kst.toLog'), () => this.toLog(s), 'btn btn--small'))
 
@@ -332,10 +367,11 @@ export class ChatScreen implements Screen {
     )
     mod.append(modActs, el('div', 'about', t('kst.modHint')))
 
-    const box = el('div', 'chat-detail')
     const qrv = this.qrvEl(call, 'div')
     if (qrv.childNodes.length) qrv.prepend('QRV ')
-    box.append(head, el('div', 'about', facts.join(' · ')), ...(qrv.childNodes.length ? [qrv] : []), acts, msgs.length ? list : el('div', 'about', t('kst.noMsgs')), mod)
+    this.detailTopEl.replaceChildren(head, el('div', 'about', facts.join(' · ')), ...(qrv.childNodes.length ? [qrv] : []), acts)
+    const box = el('div', 'chat-detail')
+    box.append(msgs.length ? list : el('div', 'about', t('kst.noMsgs')), mod)
     this.bodyEl.replaceChildren(box)
   }
 
@@ -363,10 +399,28 @@ export class ChatScreen implements Screen {
 
   private send(): void {
     const k = this.kst
-    if (!this.input.value.trim()) return
-    if (k.send(this.input.value)) {
+    const typed = this.input.value.trim()
+    if (!typed) return
+    // In a station's detail plain text goes to that station; @… and /commands as typed.
+    const line = this.detail && !/^[@/]/.test(typed) ? `@${this.detail.call} ${typed}` : this.input.value
+    if (k.send(line)) {
       this.input.value = ''
       this.noticeEl.textContent = ''
-    } else this.noticeEl.textContent = notSentWhy(k, this.input.value)
+    } else this.noticeEl.textContent = notSentWhy(k, line)
   }
+}
+
+function kmInput(): HTMLInputElement {
+  const i = el('input', 'field-input chat-km-input')
+  i.type = 'text'
+  i.inputMode = 'numeric'
+  i.autocomplete = 'off'
+  i.placeholder = '∞'
+  return i
+}
+
+/** The field's whole km, null (no limit) when empty or not a number. */
+function kmValue(i: HTMLInputElement): number | null {
+  const n = Number.parseInt(i.value.trim(), 10)
+  return Number.isFinite(n) && n >= 0 ? n : null
 }
