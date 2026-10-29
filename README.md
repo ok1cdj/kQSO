@@ -57,8 +57,8 @@ and the map.
   its Bluetooth, any Icom on a USB cable / CT-17 (Chrome / Edge on a computer) or through
   the keyer: macros, ESM, band / mode / frequency from
   the radio, voice memories, transverters.
-- **CW decoder** (Chrome / Edge on a computer): [DeepCW](https://github.com/e04/web-deep-cw-decoder)
-  decodes the radio's audio (USB sound card) or a WebSDR / KiwiSDR tab; a tap puts a call,
+- **CW decoder** (Android and iOS apps, web in Chrome / Edge on a computer): [DeepCW](https://github.com/e04/web-deep-cw-decoder)
+  decodes the radio's audio (USB sound card, the phone's microphone) or a WebSDR / KiwiSDR tab; a tap puts a call,
   report or locator into the line.
 - **E-ink and standard display**, light and dark theme, English and Czech.
 
@@ -184,8 +184,9 @@ tokens are ignored. See **Settings → How to log** in the app for the full gram
   The radio must be in CW (else kQSO says so); with break-in off only the sidetone sounds.
   Safety: CW is handed over in parts of up to 30 characters; if the link drops while
   sending, the radio still finishes the part it has (the M5 keyer stops at once).
-- **CW decoder** (web in Chrome / Edge on a computer; off by default; Settings → CW
-  decoder, Alt+U): [DeepCW](https://github.com/e04/web-deep-cw-decoder) by e04 (MIT), a
+- **CW decoder** (Android and iOS apps, web in Chrome / Edge on a computer; off by
+  default; Settings → CW decoder, Alt+U; outside Chrome the audio is resampled to 9600 Hz
+  in `core/cw/resample.ts`, as WebKit can't record into a 9600 Hz AudioContext): [DeepCW](https://github.com/e04/web-deep-cw-decoder) by e04 (MIT), a
   CTC neural network over a spectrogram, run by `onnxruntime-web` (WASM, one thread) in a
   worker (`web/src/core/cw/`, `web/src/ui/cw/`). The runtime and the models are not in the
   bundle or the APK: `deploy.yml` puts them under `cw/` (`web/scripts/cwdata.py`: the models

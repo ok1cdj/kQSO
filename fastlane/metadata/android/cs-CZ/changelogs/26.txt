@@ -1,0 +1,1 @@
+CW dekodér i v aplikaci: mikrofon u reproduktoru rádia nebo USB zvuk, dekóduje se jen v telefonu. ON4KST chat: stanice do zvolené vzdálenosti, zpráva přímo z detailu stanice, lokátor z chatu v logu. Scatter a aurora reporty 59S / 59A. Hlavička logu na úzkém telefonu se už neuřezává.

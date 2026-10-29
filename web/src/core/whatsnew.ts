@@ -14,6 +14,21 @@ export interface WhatsNewEntry {
 /** Newest first. */
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    version: '1.17',
+    cs: [
+      'CW dekodér i v aplikacích pro Android a iOS: poslouchá mikrofonem u reproduktoru rádia nebo zvukovým vstupem přes USB. Zvuk se dekóduje jen v telefonu. Nastavení → CW dekodér.',
+      'ON4KST chat: stanice jen do zvolené vzdálenosti (výchozí 900 km), zprávu stanici napíšeš přímo v jejím detailu a lokátor, který si stanice nastavila v chatu, se nabídne v logu.',
+      'Scatter a aurora reporty: 59S, 59A (v CW 599A); ve VKV závodě i s číslem, 59S012.',
+      'Hlavička logu na úzkém telefonu se zalomí do dvou řádků, azimut a čas 6H se už neuříznou.',
+    ],
+    en: [
+      'The CW decoder in the Android and iOS apps too: it listens through the microphone next to the radio\'s speaker or a USB audio input. The audio is decoded on the phone only. Settings → CW decoder.',
+      'ON4KST chat: stations only up to a distance you set (900 km by default), a message to a station right in its details, and the locator a station has set in the chat is offered in the log.',
+      'Scatter and aurora reports: 59S, 59A (599A in CW); in a VHF contest with the serial too, 59S012.',
+      'The log header on a narrow phone wraps to two rows; the azimuth and the 6H time are no longer cut off.',
+    ],
+  },
+  {
     version: '1.16',
     cs: [
       'CW dekodér na webu (Chrome / Edge na počítači; v aplikacích zatím není): neuronová síť DeepCW dekóduje CW ze zvuku rádia (USB zvuková karta) nebo z jiné záložky s WebSDR / KiwiSDR. Text běží v logu při CW, klepnutím na značku, report nebo lokátor ho vložíš do řádku; ladička ukáže, kde signál je. Nastavení → CW dekodér, Alt+U; podrobně v návodu.',

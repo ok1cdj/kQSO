@@ -48,6 +48,7 @@ const EN: readonly Section[] = [
     rows: [
       { code: '59', text: 'A bare number after the call is the received report. Default 59 (SSB/FM) or 599 (CW).' },
       { code: 'T57', text: 'Override the sent report (rarely needed).' },
+      { code: '59S', text: 'Scatter (59S) or aurora (59A, 599A in CW) report after the call; sent with T: T59S.' },
     ],
   },
   {
@@ -65,9 +66,10 @@ const EN: readonly Section[] = [
     rows: [
       { code: '002', text: 'A bare number is the serial (report stays 59).' },
       { code: '58123', text: 'To send another report, join it: first 2 chars (SSB/FM) or 3 (CW) = report, rest = serial → 58 + 123.' },
+      { code: '59S012', text: 'Scatter / aurora report with the serial, joined or spaced (59S 012).' },
       { code: '59 001', text: 'Spaced report + serial works too. Your sent serial auto-increments (the boxed number in the header).' },
       { text: 'A QSO is saved only with the callsign, the received number and the locator; until then the preview marks NR / LOC with — and an empty Enter keeps the QSO open.' },
-      { code: 'JO70VA ⏎ … OK1ABC 007 ⏎', text: 'Locator heard first: a full locator counts even before the call — QRB and azimuth at once, and the strip offers the calls the database knows at that locator. The call (tap or type) completes the QSO later.' },
+      { code: 'JO70VA ⏎ … OK1ABC 007 ⏎', text: 'Locator heard first: a full locator counts even before the call — QRB and azimuth at once, and the strip offers the calls the ON4KST chat (when connected) and the database know at that locator. The call (tap or type) completes the QSO later.' },
       { text: 'Points: 1 per km between locator centres (IARU R1). The preview shows QRB as soon as the locator is typed, the header the azimuth (e.g. 146°), grey while it only comes from the callsign database. Each station counts once per band — a repeat, even in another mode, is a dupe with 0 points.' },
       { text: 'QSO list: points per QSO and a score line per band (QSO · points · WWL · ODX). Log list → EDI: the file for the contest manager, one per band, each band with its own power, antenna and rig (remembered for the next contest); the ADIF keeps all bands. New log picks the contest (IARU R1, VKV PA, FM pohár) and a 6-hour entry; SO / MO / CHECK is chosen at the export, LP / QRP on 145 / 435 MHz follows the power; each band gets its PSect and the ČRK file name (01OK1XXX.edi). A 6-hour entry shows the time left in the header (in brackets during the break of 2 h or more). VKV PA and FM pohár score by large-square rings (own square 2, the next ring 3, …), VKV PA × the squares worked; FM pohár\'s EDI screen shows the summary for its web form, to copy.' },
       { text: 'Landscape (tablet, PC) with the system keyboard or none: the serial to give next in big digits at the top right (as in the header), with the UTC clock, the band\'s QSO count, the rate (last 60 / 10 min), the points, the average and the ODX.' },
@@ -199,6 +201,7 @@ const CS: readonly Section[] = [
     rows: [
       { code: '59', text: 'Holé číslo za volačkou je přijatý report. Výchozí 59 (SSB/FM) nebo 599 (CW).' },
       { code: 'T57', text: 'Přepis vyslaného reportu (zřídka).' },
+      { code: '59S', text: 'Scatter (59S) nebo aurora (59A, v CW 599A) report za volačkou; vyslaný s T: T59S.' },
     ],
   },
   {
@@ -216,9 +219,10 @@ const CS: readonly Section[] = [
     rows: [
       { code: '002', text: 'Holé číslo je pořadové číslo (report zůstane 59).' },
       { code: '58123', text: 'Pro jiný report ho napiš spojeně: první 2 znaky (SSB/FM) nebo 3 (CW) = report, zbytek = číslo → 58 + 123.' },
+      { code: '59S012', text: 'Scatter / aurora report s číslem, spojeně nebo s mezerou (59S 012).' },
       { code: '59 001', text: 'Funguje i s mezerou. Tvé vyslané číslo se počítá samo (číslo v rámečku v hlavičce).' },
       { text: 'QSO se uloží jen se značkou, přijatým číslem a lokátorem; do té doby náhled ukazuje u NR / LOC — a prázdný Enter nechá QSO otevřené.' },
-      { code: 'JO70VA ⏎ … OK1ABC 007 ⏎', text: 'Lokátor slyšíš dřív: celý lokátor platí i před značkou — hned QRB a azimut a lišta nabídne značky, které databáze u toho lokátoru zná. Značka (klepnutím nebo napsaná) pak QSO doplní.' },
+      { code: 'JO70VA ⏎ … OK1ABC 007 ⏎', text: 'Lokátor slyšíš dřív: celý lokátor platí i před značkou — hned QRB a azimut a lišta nabídne značky, které u toho lokátoru zná chat ON4KST (pokud je připojený) a databáze. Značka (klepnutím nebo napsaná) pak QSO doplní.' },
       { text: 'Body: 1 za km mezi středy lokátorů (IARU R1). Náhled ukáže QRB, jakmile napíšeš lokátor, hlavička azimut (např. 146°), šedě, dokud je jen z databáze značek. Každá stanice se počítá jednou na pásmo — opakování, i jiným módem, je duplicita za 0 bodů.' },
       { text: 'Seznam QSO: body u každého QSO a řádek za pásmo (QSO · body · WWL · ODX). Seznam logů → EDI: soubor pro vyhodnocovatele, jeden za pásmo, každé pásmo s vlastním výkonem, anténou a zařízením (zapamatuje se na příští závod); ADIF drží všechna pásma. Nový log volí závod (IARU R1, VKV PA, FM pohár) a účast na 6 hodin; SO / MO / CHECK se volí při exportu, LP / QRP na 145 / 435 MHz podle výkonu; každé pásmo dostane svůj PSect a název souboru podle ČRK (01OK1XXX.edi). U kategorie 6 hodin ukazuje hlavička zbývající čas (v závorce během přestávky 2 h a delší). VKV PA a FM pohár boduje podle pásů velkých čtverců (vlastní čtverec 2, další pás 3, …), VKV PA × pracované čtverce; u FM poháru ukáže obrazovka EDI souhrn pro webový formulář, ke zkopírování.' },
       { text: 'Na šířku (tablet, PC) se systémovou klávesnicí nebo bez klávesnice: vpravo nahoře velké pořadové číslo, které dáváš protistanici (jako v hlavičce), pod ním čas UTC, počet QSO na pásmu, rate (posledních 60 / 10 min), body, průměr a ODX.' },

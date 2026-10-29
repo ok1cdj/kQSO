@@ -1,0 +1,1 @@
+The CW decoder in the app too: the microphone next to the radio's speaker or USB audio, decoded on the phone only. ON4KST chat: stations up to a distance you set, a message right from a station's details, the chat's locator in the log. Scatter and aurora reports 59S / 59A. The log header on a narrow phone is no longer cut off.

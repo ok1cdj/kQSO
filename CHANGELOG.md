@@ -4,6 +4,14 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 
 ## [Unreleased]
 
+### Added
+- **CW decoder in the Android and iOS apps**: the microphone (next to the radio's speaker) or a USB audio input; the app asks for the microphone on the first Turn on, and the audio is decoded on the device only (privacy policy updated). Android: `RECORD_AUDIO`, the WebView's audio request granted (audio only). iOS: the microphone usage text, WebKit's capture request granted for the microphone only. WebKit can't record into a 9600 Hz AudioContext, so outside Chrome the audio is taken at the device rate and resampled in the app (windowed-sinc low-pass, linear interpolation); tested with the real models from 44.1 and 48 kHz.
+- **Scatter and aurora reports**: `59S`, `59A`, `599A` after the call; in a VHF contest joined with the serial (`59S012`) or apart (`59S 012`); `T59S` after the call as the sent report (before the call `T70A` stays a call). Written to EDI and ADIF as they are, as ČRK's EDI logs have them.
+- **ON4KST chat**:
+  - Stations **up to N km** (900 km by default, empty = no limit; stations without a locator stay), also under the contest panel.
+  - A **line for a message** right in a station's details (plain text goes to that station); the Write button is gone.
+  - A call's **locator from the chat** (what the station has set today) is offered in the log before the callsign database's; `DL1ABC/P` finds `DL1ABC`. A locator typed first offers the chat's stations on it first.
+
 ### Changed
 - **iOS app in the App Store**: the web app on iPhone / iPad offers it on the log list (instead of the add-to-home hint) and in Settings → About; README and the manual link it.
 - **Log header on phones**: when the band, serial, keyer, radio, azimuth and 6H don't fit on one row, they wrap to a second one instead of being cut off (the azimuth and the 6H time were lost); on a narrow phone the QSO button shows only the count (`12 ›`).
