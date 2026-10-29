@@ -88,6 +88,28 @@ describe('VKV contest exchange', () => {
     expect(r.partial.reportRcvd).toBeUndefined()
   })
 
+  it('scatter / aurora reports: 59S alone, 59S 002, joined 59S002, 599A in CW', () => {
+    const fm = { band: '3cm', mode: 'FM' } as const
+    const a = parseLine('OK1ABC 59S', fm, {}, PROFILES.vkv)
+    expect([a.partial.call, a.partial.reportRcvd, a.partial.serial]).toEqual(['OK1ABC', '59S', undefined])
+    const b = parseLine('OK1ABC 55S 002', fm, {}, PROFILES.vkv)
+    expect([b.partial.reportRcvd, b.partial.serial]).toEqual(['55S', '002'])
+    const c = parseLine('OK1ABC 57S011 JN58QH', fm, {}, PROFILES.vkv)
+    expect([c.partial.reportRcvd, c.partial.serial, c.partial.grid]).toEqual(['57S', '011', 'JN58QH'])
+    const d = parseLine('OK1ABC 599A123', { band: '2m', mode: 'CW' }, {}, PROFILES.vkv)
+    expect([d.partial.reportRcvd, d.partial.serial]).toEqual(['599A', '123'])
+    const e = parseLine('OK1ABC T59S 59S 004', fm, {}, PROFILES.vkv)
+    expect([e.partial.call, e.partial.reportSent, e.partial.reportRcvd, e.partial.serial]).toEqual(['OK1ABC', '59S', '59S', '004'])
+  })
+
+  it('scatter reports outside a contest; before the call T70A stays a call', () => {
+    const r = parseLine('OK1ABC 59A T57A', { band: '6m', mode: 'SSB' }, {}, PROFILES.obecny)
+    expect([r.partial.call, r.partial.reportRcvd, r.partial.reportSent, r.partial.name]).toEqual(['OK1ABC', '59A', '57A', undefined])
+    expect(parseLine('T70A', { band: '20m', mode: 'SSB' }, {}, PROFILES.obecny).partial.call).toBe('T70A')
+    // Joined with a serial only in a contest.
+    expect(parseLine('OK1ABC 59S002', { band: '6m', mode: 'SSB' }, {}, PROFILES.aktivace).partial.reportRcvd).toBeUndefined()
+  })
+
   it('in a non-contest profile a bare number stays the whole RX report', () => {
     const r = parseLine('OK1ABC 55', { band: '40m', mode: 'SSB' }, {}, PROFILES.aktivace)
     expect(r.partial.reportRcvd).toBe('55')

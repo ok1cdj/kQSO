@@ -63,7 +63,11 @@ export function parseLine(
           // leading zero always means "this is the serial" (reports never start with 0).
           const reportLen = nextSticky.mode === 'CW' ? 3 : 2
           const prev = next.serial
-          if (next.reportRcvd === undefined && prev !== undefined && prev.length === reportLen && !prev.startsWith('0')) {
+          const scatter = /^(\d{2,3}[AS])(\d*)$/.exec(cls.value)
+          if (scatter) {
+            next.reportRcvd = scatter[1]! // 59S (scatter) / 59A (aurora)…
+            if (scatter[2]) next.serial = scatter[2] // …joined with the serial: 59S002
+          } else if (next.reportRcvd === undefined && prev !== undefined && prev.length === reportLen && !prev.startsWith('0')) {
             next.reportRcvd = prev // an earlier report-shaped number was the report…
             next.serial = cls.value //   …and this token is the serial
           } else if (cls.value.startsWith('0')) {

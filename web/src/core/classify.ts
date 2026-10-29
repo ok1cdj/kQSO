@@ -20,6 +20,13 @@ const CALL = /^([A-Z0-9]+\/)?[A-Z0-9]{1,3}\d{1,4}[A-Z]{1,4}(\/[A-Z0-9]+)?$/
 // rarely changes; \d{2,3} covers 59 and 599. The RX report is just a
 // bare number after the call (rule #7) — no prefix, faster to type.
 const REPORT_SENT = /^T\d{2,3}$/
+// Scatter / aurora reports: 59S (rain or aircraft scatter), 59A (aurora), as EDI logs
+// write them; in a VKV contest also joined with the serial (59S002). Shaped like a call
+// (5 · 9 · S), so checked before the call: no callsign is only digits and one letter.
+const REPORT_SCATTER = /^\d{2,3}[AS]$/
+const REPORT_SCATTER_SERIAL = /^\d{2,3}[AS]\d{3,4}$/
+// The TX one (T59S) only after the call: before it, T70A is a San Marino call.
+const REPORT_SENT_SCATTER = /^T\d{2,3}[AS]$/
 const DIGITS = /^\d+$/ // length bound applied per profile (see below)
 const LOCATOR_FULL = /^[A-R]{2}\d{2}([A-X]{2})?$/
 const LOCATOR_SHORT = /^\d{2}[A-X]{2}$/ // shortened form
@@ -60,6 +67,12 @@ export function classifyToken(raw: string, ctx: TokenContext): TokenClass {
   // VHF contest: a full locator is a locator even before the call — the locator is
   // often heard first and the call only at the end of the QSO.
   const locatorFirst = ctx.profile.requiresGrid && isFullLocator(raw)
+  if (ctx.callSeen) {
+    if (REPORT_SCATTER.test(raw) || (ctx.profile.serialAfterCall && REPORT_SCATTER_SERIAL.test(raw))) {
+      return { type: 'number', value: raw }
+    }
+    if (REPORT_SENT_SCATTER.test(raw)) return { type: 'reportSent', value: raw.slice(1) }
+  }
   if (CALL.test(raw) && !(ctx.callSeen && isLocatorShaped(raw)) && !locatorFirst) return { type: 'call', value: raw }
 
   // #6 explicit TX report override (T56)

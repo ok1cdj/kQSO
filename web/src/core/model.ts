@@ -137,8 +137,8 @@ export type TokenClass =
   | { readonly type: 'time'; readonly value: string } // HHMM
   | { readonly type: 'reference'; readonly value: AwardReference }
   | { readonly type: 'call'; readonly value: string }
-  | { readonly type: 'reportSent'; readonly value: string } // T## (TX report)
-  | { readonly type: 'number'; readonly value: string } // after the call — RX report / serial
+  | { readonly type: 'reportSent'; readonly value: string } // T## (TX report; T59S after the call)
+  | { readonly type: 'number'; readonly value: string } // after the call — RX report (59, 59S) / serial
   | { readonly type: 'locator'; readonly value: string }
   | { readonly type: 'name'; readonly value: string }
   | { readonly type: 'unknown'; readonly raw: string } // rendered struck-through
