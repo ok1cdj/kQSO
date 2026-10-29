@@ -371,9 +371,11 @@ describe('locators from the chat', () => {
     expect(chatLocator(chat, 'DL1ABC/P')).toBe('JO62AA')
     expect(chatLocator(chat, 'XX1XX')).toBeUndefined()
     expect(chatLocator(chat, 'OK2ZZ')).toBeUndefined()
+    expect(chatLocator(chat, 'DL1ABC', (c) => c.startsWith('DL1ABC'))).toBeUndefined() // muted
   })
   it('the stations on a locator, without me', () => {
     expect(chatCallsAt(chat, 'jo62aa', 3)).toEqual(['DL1ABC'])
     expect(chatCallsAt(chat, 'JN79US', 3)).toEqual([])
+    expect(chatCallsAt(chat, 'JO62AA', 3, (c) => c === 'DL1ABC-432')).toEqual([]) // muted
   })
 })

@@ -508,20 +508,21 @@ export function viewStations(list: readonly KstStation[], view: KstView): KstSta
 // --- locators for the log ------------------------------------------------------------
 
 /** The locator a station has set in the chat now (ON4KST: what it is on today, newer than
- *  the callsign database), by its base call. */
-export function chatLocator(chat: KstState, call: string): string | undefined {
+ *  the callsign database), by its base call; `skip` = muted stations. */
+export function chatLocator(chat: KstState, call: string, skip: (call: string) => boolean = () => false): string | undefined {
   // The log has DL1ABC/P, the chat DL1ABC: its locator there is where it is today.
   const bc = baseCall(call).replace(/\/(P|M|A|QRP)$/, '')
-  for (const u of chat.users.values()) if (u.loc && baseCall(u.call) === bc) return u.loc
+  for (const u of chat.users.values()) if (u.loc && baseCall(u.call) === bc && !skip(u.call)) return u.loc
   return undefined
 }
 
-/** The chat's stations on this locator (base calls), for a locator typed before the call. */
-export function chatCallsAt(chat: KstState, loc: string, limit: number): string[] {
+/** The chat's stations on this locator (base calls), for a locator typed before the call;
+ *  `skip` = muted stations. */
+export function chatCallsAt(chat: KstState, loc: string, limit: number, skip: (call: string) => boolean = () => false): string[] {
   const l = loc.toUpperCase()
   const calls = new Set<string>()
   for (const u of chat.users.values()) {
-    if (u.loc === l && !chat.isMe(u.call)) calls.add(baseCall(u.call))
+    if (u.loc === l && !chat.isMe(u.call) && !skip(u.call)) calls.add(baseCall(u.call))
     if (calls.size >= limit) break
   }
   return [...calls]

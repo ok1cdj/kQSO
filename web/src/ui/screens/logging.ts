@@ -1306,7 +1306,7 @@ export class LoggingScreen implements Screen {
   /** The call's locator: from this log when worked already (another band), else the one it
    *  has set in the chat (today's), else the database's. */
   private knownLoc(call: string): string | undefined {
-    return this.loggedLoc(call) ?? (this.chatOn() ? chatLocator(this.kst.chat, call) : undefined) ?? this.db.lookup(call)?.loc
+    return this.loggedLoc(call) ?? (this.chatOn() ? chatLocator(this.kst.chat, call, (c) => this.kst.isMuted(c)) : undefined) ?? this.db.lookup(call)?.loc
   }
 
   /** The known locator for the call just entered, while none is typed. */
@@ -1320,7 +1320,7 @@ export class LoggingScreen implements Screen {
   private callsAtLocator(cls: string): HTMLElement[] {
     const { call, grid } = this.state.partial
     if (call !== undefined || grid === undefined || this.line.trim().length >= 2) return []
-    const chat = this.chatOn() ? chatCallsAt(this.kst.chat, grid, 3) : []
+    const chat = this.chatOn() ? chatCallsAt(this.kst.chat, grid, 3, (c) => this.kst.isMuted(c)) : []
     const calls = [...new Set([...chat, ...this.db.byLocator(grid, 3).map((e) => e.call)])].slice(0, 3)
     return calls.map((c) => {
       const worked = isDupe(this.qsos, c, this.state.sticky.band, this.dupeMode())
