@@ -4,6 +4,9 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 
 ## [Unreleased]
 
+### Changed
+- **iOS app in the App Store**: the web app on iPhone / iPad offers it on the log list (instead of the add-to-home hint) and in Settings → About; README and the manual link it.
+
 ## [1.16] – 2026-10-28
 
 ### Added

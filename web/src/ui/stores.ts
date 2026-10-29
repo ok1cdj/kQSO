@@ -1,13 +1,13 @@
 // The kQSO apps in the stores, for people on the web: one quiet line on the log list
-// (Android: Google Play; iPhone / iPad: the App Store once it's there) and the links
+// (Android: Google Play; iPhone / iPad: the App Store) and the links
 // in Settings → About. Nothing inside the apps themselves.
 
 import { inNativeShell } from '../platform/index'
 import type { KQSOPlatform } from '../platform/index'
 
 export const PLAY_URL = 'https://play.google.com/store/apps/details?id=com.ok1cdj.kqso'
-/** Set once Apple has approved the app; until then iOS keeps the add-to-home hint. */
-export const APP_STORE_URL: string | undefined = undefined
+/** Unset, iOS keeps the add-to-home hint (install-hint.ts) instead of the App Store line. */
+export const APP_STORE_URL: string | undefined = 'https://apps.apple.com/app/kqso/id6820009297'
 
 const HIDDEN = 'appPromoHidden' // '1' = the log list line was hidden
 

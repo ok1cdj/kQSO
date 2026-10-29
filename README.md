@@ -12,11 +12,12 @@ on the **Mudita Kompakt**, 480×800).
 
 - **Live web:** <https://kqso.ok1cdj.com/> (web 1.16; the old `ok1cdj.github.io/kQSO/` redirects there)
 - **Android:** [Google Play](https://play.google.com/store/apps/details?id=com.ok1cdj.kqso), or the APK from [GitHub Releases](https://github.com/ok1cdj/kQSO/releases) (1.16) — the same signature, so either updates the other
-- **iOS (iPhone, iPad):** App Store (in review)
+- **iOS (iPhone, iPad):** [App Store](https://apps.apple.com/app/kqso/id6820009297)
 - **Manual** (with screenshots): [English](https://kqso.ok1cdj.com/manual/en.html) · [česky](https://kqso.ok1cdj.com/manual/cs.html), also in the app under Settings → About
 - **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 
 <a href="https://play.google.com/store/apps/details?id=com.ok1cdj.kqso"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80"></a>
+<a href="https://apps.apple.com/app/kqso/id6820009297"><img src="https://tools.applemarketingtools.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" alt="Download on the App Store" height="54"></a>
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/ok1cdj)
 

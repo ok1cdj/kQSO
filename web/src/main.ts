@@ -16,6 +16,6 @@ if (root) {
   void Promise.all([initDisplayMode(platform), initStats(platform)]).finally(() => {
     new App().mount(root)
     registerServiceWorker()
-    showInstallHintIfNeeded()
+    void showInstallHintIfNeeded(platform)
   })
 }
