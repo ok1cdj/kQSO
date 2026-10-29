@@ -1,12 +1,16 @@
 // CW decoder audio: the rig's USB sound card (or a line input) as mono 9600 Hz blocks,
 // or another browser tab's sound (a WebSDR / KiwiSDR) through screen sharing.
-// The AudioContext runs at 9600 Hz, so the browser resamples; no echo cancellation,
+// In Chrome the AudioContext runs at 9600 Hz, so the browser resamples; WebKit (the iOS
+// app) records at the device rate and Resampler brings it down. No echo cancellation,
 // noise suppression or AGC, which would eat a weak CW tone. A ScriptProcessorNode is
 // enough for 2048-sample blocks (~0.2 s) and needs no separate worklet module.
 
 import { SAMPLE_RATE } from '../../core/cw/dsp'
+import { Resampler } from '../../core/cw/resample'
 
 const BLOCK = 2048
+/** At the device rate (44.1 / 48 kHz): about the same 0.2 s as BLOCK at 9600 Hz. */
+const NATIVE_BLOCK = 8192
 
 /** The input "another tab": picked in the browser's share dialog, only on a click. */
 export const TAB_SOURCE = 'tab'
@@ -67,12 +71,18 @@ export class CwCapture {
     })
     // Kept from here on, so stop() releases them if a step below throws.
     this.stream = stream
-    const context = new AudioContext({ sampleRate: SAMPLE_RATE })
+    // Chrome connects a 48 kHz input to a 9600 Hz context; WebKit and Firefox don't (no
+    // sound, or an error), so there the context keeps the device rate.
+    const own = !/Chrome\//.test(navigator.userAgent)
+    const context = own ? new AudioContext() : new AudioContext({ sampleRate: SAMPLE_RATE })
     this.context = context
-    const node = context.createScriptProcessor(BLOCK, 1, 1)
+    const resampler = context.sampleRate !== SAMPLE_RATE ? new Resampler(context.sampleRate, SAMPLE_RATE) : undefined
+    const node = context.createScriptProcessor(resampler ? NATIVE_BLOCK : BLOCK, 1, 1)
     this.node = node
     node.onaudioprocess = (e) => {
-      const block = e.inputBuffer.getChannelData(0).slice()
+      const input = e.inputBuffer.getChannelData(0)
+      const block = resampler ? resampler.process(input) : input.slice()
+      if (block.length === 0) return
       if (onLevel) {
         let peak = 0
         for (const v of block) peak = Math.max(peak, Math.abs(v))
@@ -84,6 +94,8 @@ export class CwCapture {
       context.createMediaStreamSource(stream).connect(node)
       // The node only runs while connected to the output; it writes silence there.
       node.connect(context.destination)
+      // WebKit may create it suspended outside a tap; recording lets it run.
+      if (context.state === 'suspended') void context.resume()
     } catch (err) {
       this.stop()
       throw err

@@ -1,17 +1,20 @@
 // CW decoder, main-thread side: the RPC to the CW worker (models, inference, transcript)
-// and the audio capture that feeds it. Web only for now: the Android and iOS apps need
-// microphone permissions in their shells first (plans/cw-dekoder.md, phase 2).
+// and the audio capture that feeds it. Web (Chrome / Edge) and the Android and iOS apps,
+// whose shells ask for the microphone (MainActivity, WebViewController).
 
 import { platformKind } from '../../platform/index'
 import type { CwModel, CwRequestBody, CwResponse, CwStatus, CwTuning } from './protocol'
 
 export type { CwModel, CwStatus, CwTuning } from './protocol'
 
-/** The browser can store the models (OPFS), run the worker and record audio into a
- *  9600 Hz AudioContext. Chrome / Edge only: Firefox refuses to connect a 48 kHz input
- *  to a context at another rate. */
+/** The host can store the models (OPFS), run the worker and record audio. On the web
+ *  Chrome / Edge only (tested there; Firefox and Safari would take audio.ts's resampling
+ *  path, untried). In the apps the log is native storage, but the WebView still has OPFS
+ *  for the models. */
 export function cwDecoderAvailable(): boolean {
-  return platformKind() === 'opfs' && typeof navigator.mediaDevices?.getUserMedia === 'function' && /Chrome\//.test(navigator.userAgent)
+  const kind = platformKind()
+  const host = kind === 'native' || (kind === 'opfs' && /Chrome\//.test(navigator.userAgent))
+  return host && typeof navigator.storage?.getDirectory === 'function' && typeof navigator.mediaDevices?.getUserMedia === 'function'
 }
 
 interface Pending {

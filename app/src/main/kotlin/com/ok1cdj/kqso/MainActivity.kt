@@ -14,6 +14,7 @@ import android.webkit.ConsoleMessage
 import android.webkit.GeolocationPermissions
 import android.webkit.ValueCallback
 import android.webkit.JsResult
+import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -44,6 +45,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var tcp: TcpLink
     private val pendingPermission = mutableListOf<(Boolean) -> Unit>()
     private val pendingLocation = mutableListOf<(Boolean) -> Unit>()
+    private val pendingMic = mutableListOf<(Boolean) -> Unit>()
     private var pendingExport: String? = null
     private var pendingChooser: ValueCallback<Array<Uri>>? = null
 
@@ -87,6 +89,15 @@ class MainActivity : ComponentActivity() {
         val cbs = pendingLocation.toList()
         pendingLocation.clear()
         val granted = result.values.any { it }
+        cbs.forEach { it(granted) }
+    }
+
+    // Microphone for the CW decoder, asked when the page first opens the audio input.
+    private val requestMic = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val cbs = pendingMic.toList()
+        pendingMic.clear()
         cbs.forEach { it(granted) }
     }
 
@@ -151,6 +162,17 @@ class MainActivity : ComponentActivity() {
                     callback: GeolocationPermissions.Callback,
                 ) {
                     requestLocationPermission { granted -> callback.invoke(origin, granted, false) }
+                }
+
+                // getUserMedia (CW decoder): the WebView asks here, we ask Android. Audio only —
+                // anything else (camera, protected media) is denied.
+                override fun onPermissionRequest(request: PermissionRequest) {
+                    if (PermissionRequest.RESOURCE_AUDIO_CAPTURE !in request.resources) return request.deny()
+                    requestMicPermission { granted ->
+                        runOnUiThread {
+                            if (granted) request.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) else request.deny()
+                        }
+                    }
                 }
 
                 // Without this the WebView ignores <input type=file> entirely.
@@ -256,6 +278,13 @@ class MainActivity : ComponentActivity() {
         if (perms.any { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }) return cb(true)
         pendingLocation.add(cb)
         if (pendingLocation.size == 1) requestLocation.launch(perms)
+    }
+
+    /** Ask for the microphone (or answer at once when already granted). */
+    private fun requestMicPermission(cb: (Boolean) -> Unit) {
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) return cb(true)
+        pendingMic.add(cb)
+        if (pendingMic.size == 1) requestMic.launch(Manifest.permission.RECORD_AUDIO)
     }
 
     fun evalJs(script: String) {

@@ -31,6 +31,8 @@
 	<false/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>kQSO connects to your CW keyer (M5-ESP32-keyer) or Icom IC-705 over Bluetooth, only when you switch that on.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>kQSO decodes CW from your radio's audio (the microphone or a USB audio input) when you turn on the CW decoder. The audio is decoded on your device and never sent anywhere.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>kQSO turns your position into your locator when you tap the locate button in New Log. The position stays on your device.</string>
 	<key>UIFileSharingEnabled</key>

@@ -26,6 +26,8 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
         let config = WKWebViewConfiguration()
         config.setURLSchemeHandler(SchemeHandler(), forURLScheme: SchemeHandler.scheme)
         config.userContentController = content
+        // The CW decoder's AudioContext may start without a tap (opening a CW log).
+        config.mediaTypesRequiringUserActionForPlayback = []
 
         webView = WKWebView(frame: .zero, configuration: config)
         webView.uiDelegate = self
@@ -88,6 +90,18 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
     ) -> WKWebView? {
         if let url = action.request.url { UIApplication.shared.open(url) }
         return nil
+    }
+
+    /// getUserMedia (CW decoder): the microphone only, without WebKit's own per-page prompt;
+    /// iOS still asks once (NSMicrophoneUsageDescription). Camera and the rest: denied.
+    func webView(
+        _ webView: WKWebView,
+        requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+        initiatedByFrame frame: WKFrameInfo,
+        type: WKMediaCaptureType,
+        decisionHandler: @escaping (WKPermissionDecision) -> Void
+    ) {
+        decisionHandler(type == .microphone ? .grant : .deny)
     }
 
     /// The web content process can be killed in the background; start over.

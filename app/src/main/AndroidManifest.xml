@@ -19,6 +19,12 @@
          position stays on the device), and on Android 11 also the BLE scan. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Microphone: the CW decoder (Settings → CW decoder, asked on the first Turn on). The
+         audio is decoded on the device, never sent anywhere. MODIFY_AUDIO_SETTINGS: the
+         WebView needs it for getUserMedia. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
 
     <application

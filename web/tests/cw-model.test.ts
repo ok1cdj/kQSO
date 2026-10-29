@@ -11,6 +11,7 @@ import * as ort from 'onnxruntime-web'
 import { narrowSpectrogram, wideSpectrogram, type Spectrogram } from '../src/core/cw/dsp'
 import { bestPath, decodeCtc } from '../src/core/cw/ctc'
 import { CwStream } from '../src/core/cw/stream'
+import { Resampler } from '../src/core/cw/resample'
 import { synthCw } from './cw-synth'
 
 const dir = process.env.CW_MODEL_DIR ?? ''
@@ -37,6 +38,19 @@ describe.skipIf(!present)('DeepCW models', () => {
     const [narrow, wide] = await Promise.all([load('model_narrow.onnx'), load('model.onnx')])
     const audio = synthCw(text, { wpm, pitchHz, snr, seed: wpm })
     expect(await decode(narrow, narrowSpectrogram(audio, pitchHz))).toBe(text)
+    expect(await decode(wide, wideSpectrogram(audio))).toBe(text)
+  }, 30_000)
+
+  // The iOS app records at the device rate; Resampler (8192-sample blocks, as audio.ts).
+  it.each([48000, 44100])('decodes after resampling from %i Hz', async (sampleRate) => {
+    const [narrow, wide] = await Promise.all([load('model_narrow.onnx'), load('model.onnx')])
+    const raw = synthCw(text, { wpm: 22, pitchHz: 700, snr: 2, sampleRate, seed: 7 })
+    const r = new Resampler(sampleRate, 9600)
+    const parts: Float32Array[] = []
+    for (let i = 0; i < raw.length; i += 8192) parts.push(r.process(raw.subarray(i, i + 8192)))
+    const audio = new Float32Array(parts.reduce((n, p) => n + p.length, 0))
+    parts.reduce((at, p) => (audio.set(p, at), at + p.length), 0)
+    expect(await decode(narrow, narrowSpectrogram(audio, 700))).toBe(text)
     expect(await decode(wide, wideSpectrogram(audio))).toBe(text)
   }, 30_000)
 
