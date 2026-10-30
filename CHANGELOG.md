@@ -4,6 +4,8 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 
 ## [Unreleased]
 
+## [1.17] – 2026-10-30
+
 ### Added
 - **CW decoder in the Android and iOS apps**: the microphone (next to the radio's speaker) or a USB audio input; the app asks for the microphone on the first Turn on, and the audio is decoded on the device only (privacy policy updated). Android: `RECORD_AUDIO`, the WebView's audio request granted (audio only). iOS: the microphone usage text, WebKit's capture request granted for the microphone only. WebKit can't record into a 9600 Hz AudioContext, so outside Chrome the audio is taken at the device rate and resampled in the app (windowed-sinc low-pass, linear interpolation); tested with the real models from 44.1 and 48 kHz.
 - **Scatter and aurora reports**: `59S`, `59A`, `599A` after the call; in a VHF contest joined with the serial (`59S012`) or apart (`59S 012`); `T59S` after the call as the sent report (before the call `T70A` stays a call). Written to EDI and ADIF as they are, as ČRK's EDI logs have them.
