@@ -1025,7 +1025,7 @@ export class LoggingScreen implements Screen {
     const band = this.state.sticky.band
     if (!PROFILES[this.meta.profile].contest || !isSixHours(this.meta.category, band)) return undefined
     return sixHourStatus(
-      this.qsos.filter((q) => q.signal.band === band).map((q) => q.timeOn),
+      this.qsos.filter((q) => q.signal.band === band && !q.error).map((q) => q.timeOn), // a struck-out QSO doesn't start it
       new Date(),
     )
   }
@@ -1314,13 +1314,13 @@ export class LoggingScreen implements Screen {
     return span
   }
 
-  /** The call's locator in this log (the latest QSO with one), if worked already. */
   /** Earlier QSOs the new one repeats (same call and band, not ERROR) — VHF contest dupes. */
   private dupeIndices(q: Qso): number[] {
     const c = q.call.toUpperCase()
     return this.qsos.flatMap((p, i) => (!p.error && p.signal.band === q.signal.band && p.call.toUpperCase() === c ? [i] : []))
   }
 
+  /** The call's locator in this log (the latest QSO with one), if worked already. */
   private loggedLoc(call: string): string | undefined {
     const c = call.toUpperCase()
     for (let i = this.qsos.length - 1; i >= 0; i--) {

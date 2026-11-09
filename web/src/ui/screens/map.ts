@@ -153,7 +153,8 @@ export class MapScreen implements Screen {
   }
 
   private async load(): Promise<void> {
-    const { meta, qsos } = readLogFile(await this.platform.readLog(this.logId))
+    const { meta, qsos: all } = readLogFile(await this.platform.readLog(this.logId))
+    const qsos = all.filter((q) => !q.error) // struck-out QSOs (VKV contest ERROR) aren't worked
     this.meta = meta
     this.labels = switchOn(await this.platform.getSetting(MAP_LABELS_SETTING))
     // One band at a time in a multi-band log (a satellite log has its band fixed).

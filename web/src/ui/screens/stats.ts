@@ -46,7 +46,7 @@ export class StatsScreen implements Screen {
     for (const b of bands) {
       const st = contestStats([b])
       blocks.push(el('div', 'qsosum', summary(b.band, st, b.multipliers)))
-      const window = isSixHours(meta.category, b.band) ? sixHourWindow(b.rows.map((r) => r.qso.timeOn)) : undefined
+      const window = isSixHours(meta.category, b.band) ? sixHourWindow(b.rows.filter((r) => !r.error).map((r) => r.qso.timeOn)) : undefined
       if (window) blocks.push(el('div', 'about stats-note', windowLine(window)))
       blocks.push(...hoursBlock(hourlyStats(b, window), window !== undefined))
       blocks.push(...squaresBlock(squareStats(b, meta.myGrid)))
