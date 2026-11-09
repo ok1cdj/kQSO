@@ -62,6 +62,7 @@ function toQso(r: Record<string, string>): Qso {
   if (satName !== undefined) qso.satName = satName
   const satMode = r[F.SAT_MODE]
   if (satMode !== undefined) qso.satMode = satMode
+  if (r[F.APP_ERROR] === 'Y') qso.error = true
   return qso
 }
 

@@ -94,6 +94,19 @@ describe('writeEdi', () => {
     ])
   })
 
+  it('an ERROR QSO keeps its time and sent serial, 0 points, the rest blank; the repeat counts', () => {
+    const struck = [{ ...log[0]!, error: true }, log[1]!, log[3]!]
+    const lines = writeEdi(meta, struck, '2m', contest, SO, station, eq2m).split('\r\n')
+    expect(lines).toContain('CQSOs=2;1')
+    expect(lines.slice(lines.indexOf('[QSORecords;3]'))).toEqual([
+      '[QSORecords;3]',
+      '260905;1445;ERROR;;;001;;;;;0;;;;',
+      '260905;1446;OY9JD;2;599;002;599;011;;IP62OA;1302;;N;;',
+      '260905;1448;OZ9SIG;2;599;004;599;007;;JO65ER;6;;N;;',
+      '',
+    ])
+  })
+
   it('one file per band: 70cm has its own records, mode code FM = 6', () => {
     const edi = writeEdi(meta, log, '70cm', contest, SO, station, eq70)
     expect(edi).toContain('PBand=435 MHz')

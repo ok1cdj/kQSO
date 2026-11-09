@@ -663,6 +663,10 @@ export class LoggingScreen implements Screen {
       (t) => t.cls.type === 'locator',
     )
     const r = reduce(this.lineState(), { type: 'enter', line: this.line }, this.meta)
+    // VHF contest: a dupe is logged only when confirmed; the earlier QSO then becomes ERROR
+    // (the repeat is the one that counts). Cancel leaves the line and the QSO as they were.
+    const dupeOf = r.committed && PROFILES[this.meta.profile].contest ? this.dupeIndices(r.committed) : []
+    if (dupeOf.length > 0 && !confirm(t('logging.dupeConfirm', { call: r.committed!.call, band: r.committed!.signal.band }))) return
     this.state = r.state
     if (r.clearInput) this.line = ''
     // VHF contest, worked already on another band (going up the bands with a station): its locator
@@ -698,6 +702,10 @@ export class LoggingScreen implements Screen {
       committed = PROFILES[this.meta.profile].serialAfterCall
         ? { ...r.committed, sentSerial: pad3(this.qsos.length + 1) }
         : r.committed
+      if (dupeOf.length > 0) {
+        for (const i of dupeOf) this.qsos[i] = { ...this.qsos[i]!, error: true }
+        await this.platform.rewriteLog(this.logId, writeLogFile(this.meta, this.qsos))
+      }
       await this.platform.appendQso(this.logId, writeQso(committed))
       await this.platform.clearJournal(this.logId)
       this.qsos.push(committed)
@@ -755,6 +763,19 @@ export class LoggingScreen implements Screen {
     const last = this.qsos[this.qsos.length - 1]
     if (!last) {
       this.notice = t('logging.nothingToDelete')
+      return
+    }
+    // VHF contest: never delete — the last QSO is struck out (ERROR), its sent serial stays.
+    if (PROFILES[this.meta.profile].contest) {
+      if (last.error) {
+        this.notice = t('logging.struckLast', { qso: formatQso(last) })
+        return
+      }
+      if (!confirm(t('logging.strikeLastConfirm', { qso: formatQso(last) }))) return
+      this.qsos[this.qsos.length - 1] = { ...last, error: true }
+      await this.platform.rewriteLog(this.logId, writeLogFile(this.meta, this.qsos))
+      this.renderRecent()
+      this.notice = t('logging.struckLast', { qso: formatQso(last) })
       return
     }
     // Deleting a SAVED QSO is the one destructive command → confirm, showing which.
@@ -1294,11 +1315,17 @@ export class LoggingScreen implements Screen {
   }
 
   /** The call's locator in this log (the latest QSO with one), if worked already. */
+  /** Earlier QSOs the new one repeats (same call and band, not ERROR) — VHF contest dupes. */
+  private dupeIndices(q: Qso): number[] {
+    const c = q.call.toUpperCase()
+    return this.qsos.flatMap((p, i) => (!p.error && p.signal.band === q.signal.band && p.call.toUpperCase() === c ? [i] : []))
+  }
+
   private loggedLoc(call: string): string | undefined {
     const c = call.toUpperCase()
     for (let i = this.qsos.length - 1; i >= 0; i--) {
       const q = this.qsos[i]
-      if (q && q.grid && q.call.toUpperCase() === c) return q.grid
+      if (q && q.grid && !q.error && q.call.toUpperCase() === c) return q.grid
     }
     return undefined
   }
@@ -1465,7 +1492,7 @@ export class LoggingScreen implements Screen {
         ...texts.map((text, n) => {
           const li = el('li')
           const index = indices[n]! // edit by the position in the whole log
-          li.append(button(text, () => this.nav.editQso(index), cls))
+          li.append(button(text, () => this.nav.editQso(index), this.qsos[index]!.error ? `${cls} qso--error` : cls))
           return li
         }),
       )

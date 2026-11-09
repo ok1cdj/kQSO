@@ -126,7 +126,11 @@ export class LogListScreen implements Screen {
     open.append(status)
     const exportAll = (): void => {
       trackEvent('export', { format: 'adif', profile: log.profile })
-      void this.fillSatFrequencies(log.id).then(() => this.platform.exportLog(log.id, `${log.id}.adi`))
+      void this.fillSatFrequencies(log.id).then(async () => {
+        const text = await this.outgoingAdif(log.id)
+        if (text === undefined) await this.platform.exportLog(log.id, `${log.id}.adi`)
+        else await this.platform.exportText(text, `${log.id}.adi`)
+      })
     }
     let perRef: Promise<HTMLElement | undefined> | undefined // read once, a second tap waits for it
     const exp = button(t('loglist.export'), () => {
@@ -181,6 +185,13 @@ export class LogListScreen implements Screen {
     if (filled) await this.platform.rewriteLog(logId, writeLogFile(meta, filled))
   }
 
+  /** The log without its struck-out (ERROR) QSOs for export / push; undefined when it has
+   *  none (the file goes out as it is). */
+  private async outgoingAdif(logId: string): Promise<string | undefined> {
+    const { meta, qsos } = readLogFile(await this.platform.readLog(logId))
+    return qsos.some((q) => q.error) ? writeLogFile(meta, qsos.filter((q) => !q.error)) : undefined
+  }
+
   /** URL + token + station from Settings, or null when Wavelog isn't set up. */
   private async wavelogTarget(): Promise<WavelogTarget | null> {
     const K = WAVELOG_SETTINGS
@@ -203,7 +214,8 @@ export class LogListScreen implements Screen {
     let result: PushStatus
     try {
       await this.fillSatFrequencies(log.id)
-      const { imported, skipped } = await pushAdif(wl.base, wl.token, wl.station.id, await this.platform.readLog(log.id))
+      const adif = (await this.outgoingAdif(log.id)) ?? (await this.platform.readLog(log.id))
+      const { imported, skipped } = await pushAdif(wl.base, wl.token, wl.station.id, adif)
       result = { at: new Date().toISOString(), ok: true, imported, skipped }
       trackEvent('wavelog-push', { profile: log.profile })
       status.textContent = pushStatusText(result)

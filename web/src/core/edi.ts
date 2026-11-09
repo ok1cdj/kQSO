@@ -196,6 +196,9 @@ function baseCall(call: string): string {
 
 function record(q: Qso, points: number, newWwl: boolean, dupe: boolean): string {
   const d = q.timeOn
+  // A struck-out QSO keeps its place and sent serial: call "ERROR", 0 points, the rest
+  // blank (REG1TEST, so the sent serials stay in sequence).
+  if (q.error) return [ymd(d).slice(2), `${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}`, 'ERROR', '', '', serial(q.sentSerial), '', '', '', '', '0', '', '', '', ''].join(';')
   return [
     ymd(d).slice(2),
     `${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}`,

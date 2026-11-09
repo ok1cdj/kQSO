@@ -18,6 +18,7 @@ import {
   ediFileName,
   ediSection,
   equipmentFor,
+  isValidRow,
   contestForDate,
   parseEdiSettings,
   powerWatts,
@@ -270,7 +271,7 @@ function fmSummary(call: string, grid: string, band: string, power: string, s: B
   const w = Number(power.replace(/\D/g, ''))
   const cat = power.trim() === '' ? 'QRP / QRO?' : w <= QRP_MAX_W ? 'QRP' : 'QRO'
   const rows = s.rows
-    .filter((r) => !r.dupe)
+    .filter(isValidRow)
     .map((r) => {
       const d = r.qso.timeOn
       return `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())} ${r.qso.call.padEnd(10)} ${(r.qso.grid ?? '').padEnd(6)} ${String(r.points).padStart(3)}`

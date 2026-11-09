@@ -1,5 +1,5 @@
 // DUPE detection: a QSO with the same call + band + mode already exists
-// in the CURRENT log. VHF contest: call + band only (IARU R1: each station once per
+// in the CURRENT log (a struck-out ERROR QSO doesn't count). VHF contest: call + band only (IARU R1: each station once per
 // band) — pass no mode. Pure; the UI decides how to warn (invert the input line).
 
 import type { Qso } from './model'
@@ -11,5 +11,5 @@ export function isDupe(
   mode?: string, // undefined = any mode (VHF contest)
 ): boolean {
   const c = call.toUpperCase()
-  return qsos.some((q) => q.call.toUpperCase() === c && q.signal.band === band && (mode === undefined || q.signal.mode === mode))
+  return qsos.some((q) => !q.error && q.call.toUpperCase() === c && q.signal.band === band && (mode === undefined || q.signal.mode === mode))
 }

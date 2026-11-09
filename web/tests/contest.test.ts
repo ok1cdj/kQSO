@@ -105,6 +105,15 @@ describe('scoreLog', () => {
     expect(b!.wwls).toBe(1)
   })
 
+  it('an ERROR QSO scores 0, counts for nothing, and its repeat is no dupe', () => {
+    const [b] = scoreLog([{ ...q('OZ9SIG', '2m', 'SSB', 'JO65ER'), error: true }, q('OZ9SIG', '2m', 'CW', 'JO65ER')], 'JO65FR')
+    expect(b!.rows.map((r) => [r.error, r.dupe, r.points, r.newWwl])).toEqual([
+      [true, false, 0, false],
+      [false, false, 6, true],
+    ])
+    expect(b).toMatchObject({ qsos: 1, points: 6, wwls: 1 })
+  })
+
   it('a QSO without a locator scores 0 and is not a new WWL', () => {
     const [b] = scoreLog([q('A1AA', '2m', 'SSB')], 'JO65FR')
     expect(b!.rows[0]).toMatchObject({ points: 0, newWwl: false, dupe: false })
@@ -118,6 +127,9 @@ describe('isDupe without a mode (VHF contest)', () => {
     expect(isDupe(log, 'OK1ABC', '2m')).toBe(true)
     expect(isDupe(log, 'OK1ABC', '2m', 'CW')).toBe(false)
     expect(isDupe(log, 'OK1ABC', '70cm')).toBe(false)
+  })
+  it('an ERROR QSO is no dupe', () => {
+    expect(isDupe([{ ...q('OK1ABC', '2m', 'SSB', 'JN79US'), error: true }], 'OK1ABC', '2m')).toBe(false)
   })
 })
 

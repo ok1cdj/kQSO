@@ -107,7 +107,7 @@ export class QsoListScreen implements Screen {
       ...texts.map((text, n) => {
         const index = this.visible[n]! // edit by the position in the whole log
         const li = el('li', 'qsorow')
-        li.append(button(text, () => this.nav.editQso(index), cls))
+        li.append(button(text, () => this.nav.editQso(index), this.qsos[index]!.error ? `${cls} qso--error` : cls))
         return li
       }),
     )
@@ -115,7 +115,11 @@ export class QsoListScreen implements Screen {
 }
 
 function pointsSuffix(s: ScoredQso | undefined): string {
-  return s ? `  ${s.dupe ? t('qsolist.dupe') : s.points}` : ''
+  return s ? `  ${pointsText(s)}` : ''
+}
+
+function pointsText(s: ScoredQso): string {
+  return s.error ? t('qsolist.error') : s.dupe ? t('qsolist.dupe') : String(s.points)
 }
 
 /** A row's columns for the aligned layout; the last one (points) is right-aligned. */
@@ -130,7 +134,7 @@ function rowCells(q: Qso, s: ScoredQso | undefined): string[] {
     q.grid ?? q.name ?? '',
     q.theirRef?.value ?? '',
     q.satName ? `🛰${q.satName}` : '',
-    s ? (s.dupe ? t('qsolist.dupe') : String(s.points)) : '',
+    s ? pointsText(s) : '',
   ]
 }
 

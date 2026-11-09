@@ -988,6 +988,11 @@ body {
   white-space: pre;
   overflow: hidden;
 }
+/* A struck-out QSO (VKV contest ERROR): kept in the log, counts for nothing. */
+.qso--error {
+  text-decoration: line-through;
+  color: var(--muted);
+}
 .recent-row {
   width: 100%;
   text-align: left;

@@ -194,4 +194,10 @@ describe('parse → ADIF → parse roundtrip', () => {
     )
     expect(qsos[0]!.myRefs).toEqual([{ kind: 'WWFF', value: 'OKFF-0002' }])
   })
+
+  it('an ERROR QSO stays struck out', () => {
+    const qso: Qso = { ...BASE, call: 'OK2XYZ', signal: { band: '2m', mode: 'CW' }, sentSerial: '018', error: true }
+    expect(roundtrip(qso)).toEqual(qso)
+    expect(writeAdif([qso])).toContain('<APP_KQSO_ERROR:1>Y')
+  })
 })

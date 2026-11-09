@@ -46,6 +46,7 @@ export interface Qso {
   readonly sentSerial?: string // sent serial (ADIF STX_STRING) — VKV závod, auto-incremented
   readonly satName?: string // ADIF SAT_NAME (+ implied PROP_MODE=SAT) — Satellite
   readonly satMode?: string // ADIF SAT_MODE, e.g. "V/U" — Satellite
+  readonly error?: boolean // APP_KQSO_ERROR — VKV contest: struck out, kept for its sent serial (EDI "ERROR")
 }
 
 export type ProfileId = 'vkv' | 'aktivace' | 'obecny' | 'sat'

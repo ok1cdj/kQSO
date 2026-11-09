@@ -60,6 +60,7 @@ export function writeQso(qso: Qso): string {
     parts.push(writeField(F.PROP_MODE, 'SAT'), writeField(F.SAT_NAME, qso.satName))
     if (qso.satMode !== undefined) parts.push(writeField(F.SAT_MODE, qso.satMode))
   }
+  if (qso.error) parts.push(writeField(F.APP_ERROR, 'Y'))
 
   return parts.join(' ') + ' <EOR>'
 }

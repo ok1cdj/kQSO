@@ -34,6 +34,7 @@ export const F = {
   SAT_MODE: 'SAT_MODE',
   PROGRAMID: 'PROGRAMID',
   APP_MYREF: 'APP_KQSO_MYREF', // all my references, when the ADIF fields can't hold them
+  APP_ERROR: 'APP_KQSO_ERROR', // Y = struck out in a VKV contest (never deleted)
   ADIF_VER: 'ADIF_VER',
 } as const
 

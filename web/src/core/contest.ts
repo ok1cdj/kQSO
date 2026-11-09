@@ -1,5 +1,6 @@
 // VHF contest scoring, each station once per band — a repeat on the same band is a dupe
-// with 0 points, whatever the mode. IARU R1 / ČRK: 1 point per km (locator.ts). VKV
+// with 0 points, whatever the mode. A struck-out ERROR QSO scores nothing and doesn't make the
+// next one a dupe. IARU R1 / ČRK: 1 point per km (locator.ts). VKV
 // Provozní aktiv and FM pohár: large-square rings — own square 2, the ring around it 3,
 // each further ring one more; Provozní aktiv multiplies by the large squares worked on
 // the band (own one always included). The first QSO in a large square (JO60) on a band
@@ -48,8 +49,9 @@ export function contestPoints(myGrid: string, theirGrid: string, s: Scoring): nu
 export interface ScoredQso {
   readonly qso: Qso
   readonly index: number // position in the whole log (for editing)
-  readonly points: number // 0 for a dupe or a QSO without a usable locator
+  readonly points: number // 0 for a dupe, an ERROR or a QSO without a usable locator
   readonly dupe: boolean
+  readonly error: boolean // struck out (EDI "ERROR")
   readonly newWwl: boolean
 }
 
@@ -64,6 +66,9 @@ export interface BandScore {
   readonly odx?: { readonly call: string; readonly grid: string; readonly km: number }
 }
 
+/** A row that isValidRow: neither a dupe nor an ERROR. */
+export const isValidRow = (r: ScoredQso): boolean => !r.dupe && !r.error
+
 /** Score a log per band, in the order bands first appear. */
 export function scoreLog(qsos: readonly Qso[], myGrid: string, scoring: Scoring = KM_SCORING): BandScore[] {
   const bands = new Map<string, { rows: ScoredQso[]; calls: Set<string>; wwls: Set<string> }>()
@@ -71,6 +76,10 @@ export function scoreLog(qsos: readonly Qso[], myGrid: string, scoring: Scoring 
     const band = qso.signal.band
     let b = bands.get(band)
     if (!b) bands.set(band, (b = { rows: [], calls: new Set(), wwls: new Set() }))
+    if (qso.error) {
+      b.rows.push({ qso, index, points: 0, dupe: false, error: true, newWwl: false })
+      return
+    }
     const call = qso.call.toUpperCase()
     const dupe = b.calls.has(call)
     b.calls.add(call)
@@ -78,11 +87,11 @@ export function scoreLog(qsos: readonly Qso[], myGrid: string, scoring: Scoring 
     const wwl = qso.grid?.slice(0, 4).toUpperCase()
     const newWwl = !dupe && pts !== undefined && wwl !== undefined && !b.wwls.has(wwl)
     if (newWwl) b.wwls.add(wwl!)
-    b.rows.push({ qso, index, points: dupe || pts === undefined ? 0 : pts, dupe, newWwl })
+    b.rows.push({ qso, index, points: dupe || pts === undefined ? 0 : pts, dupe, error: false, newWwl })
   })
 
   return [...bands].map(([band, b]) => {
-    const valid = b.rows.filter((r) => !r.dupe)
+    const valid = b.rows.filter(isValidRow)
     // ODX by distance (km + 1, as the EDI wants it), whatever the contest scores by.
     let odx: BandScore['odx']
     for (const r of valid) {
@@ -124,7 +133,7 @@ export function contestStats(bands: readonly BandScore[]): ContestStats {
   const total = bands.reduce((n, b) => n + b.total, 0)
   const top = bands
     .flatMap((b) => b.rows)
-    .filter((r) => !r.dupe && r.points > 0)
+    .filter((r) => isValidRow(r) && r.points > 0)
     .sort((a, b) => b.points - a.points || a.index - b.index)
     .slice(0, TOP_N)
   return { qsos, points, total, avg: qsos === 0 ? 0 : Math.round((points / qsos) * 10) / 10, top }
@@ -197,7 +206,7 @@ export interface HourStats {
  *  so a pause shows. Dupes don't count. With a 6-hour window, QSOs outside it are
  *  counted in `outside` (the points stay: the log is sent whole, the robot strikes them). */
 export function hourlyStats(band: BandScore, window?: SixHourWindow): HourStats[] {
-  const valid = band.rows.filter((r) => !r.dupe)
+  const valid = band.rows.filter(isValidRow)
   if (valid.length === 0) return []
   const hourOf = (r: ScoredQso): number => Math.floor(r.qso.timeOn.getTime() / HOUR)
   const first = Math.min(...valid.map(hourOf))
@@ -223,7 +232,7 @@ export function qsoRate(band: BandScore, now: Date, windowMs: number): number {
   const from = to - windowMs
   return band.rows.filter((r) => {
     const t = r.qso.timeOn.getTime()
-    return !r.dupe && t > from && t <= to
+    return isValidRow(r) && t > from && t <= to
   }).length
 }
 
@@ -239,7 +248,7 @@ export function squareStats(band: BandScore, myGrid: string): SquareStats[] {
   const squares = new Map<string, string[]>()
   for (const r of band.rows) {
     const sq = r.qso.grid?.slice(0, 4).toUpperCase()
-    if (r.dupe || !sq || sq.length < 4) continue
+    if (!isValidRow(r) || !sq || sq.length < 4) continue
     const calls = squares.get(sq) ?? []
     const call = r.qso.call.toUpperCase()
     if (!calls.includes(call)) calls.push(call)

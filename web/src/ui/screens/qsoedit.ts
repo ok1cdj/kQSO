@@ -1,5 +1,6 @@
 // Edit / delete a single QSO. Classic form, not the parser. Saving and
-// deleting rewrite the whole file via rewriteLog() — never append.
+// deleting rewrite the whole file via rewriteLog() — never append. A VKV contest
+// never deletes: the QSO is struck out (ERROR) and keeps its sent serial.
 
 import { BANDS, MODES, PROFILES, matchBand, matchMode, parseReferenceInput, readLogFile, writeLogFile, padSerial } from '../../core/index'
 import type { Qso, Signal } from '../../core/index'
@@ -75,7 +76,11 @@ export class QsoEditScreen implements Screen {
         }
         void this.save(build())
       }, 'btn btn--primary'),
-      button(t('common.delete'), () => void this.remove(), 'btn btn--danger'),
+      PROFILES[meta.profile].contest
+        ? orig.error
+          ? button(t('qsoedit.restore'), () => void this.setError(false), 'btn')
+          : button(t('qsoedit.strike'), () => void this.setError(true), 'btn btn--danger')
+        : button(t('common.delete'), () => void this.remove(), 'btn btn--danger'),
       button(t('common.back'), () => this.nav.done(), 'btn'),
     )
 
@@ -126,6 +131,7 @@ export class QsoEditScreen implements Screen {
       if (orig.sentSerial !== undefined) q.sentSerial = orig.sentSerial // TX serial is auto, not edited
       if (orig.satName !== undefined) q.satName = orig.satName // satellite fields carried, not edited
       if (orig.satMode !== undefined) q.satMode = orig.satMode
+      if (orig.error) q.error = true
       return q
     }
 
@@ -142,6 +148,14 @@ export class QsoEditScreen implements Screen {
   private async save(updated: Qso): Promise<void> {
     await this.commit?.((list) => {
       list[this.index] = updated
+    })
+  }
+
+  private async setError(error: boolean): Promise<void> {
+    if (error && !confirm(t('qsoedit.strikeConfirm'))) return
+    await this.commit?.((list) => {
+      const { error: _drop, ...q } = list[this.index]!
+      list[this.index] = error ? { ...q, error: true } : q
     })
   }
 
