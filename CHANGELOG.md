@@ -16,6 +16,7 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 - **Dupes in a VHF contest are confirmed**: Enter on a dupe asks first; logged, the new QSO counts and the earlier one on the band becomes ERROR.
 - **Cut numbers** in the CW macros: `{RST}` sends 9 as N (599 → 5NN, 559 → 55N), `{NR}` 0 as T (018 → T18). The log, EDI and ADIF keep the digits.
 - **Macro buttons in F-key order** (CQ EX TU ? MY LOC/REF/INF = F5–F8, F11, F12), the macro editor in Settings too; with a hardware keyboard each button shows its F key small in its corner.
+- **Recent QSOs with km and azimuth**: in a VHF contest in landscape with a hardware keyboard, the list of recent QSOs beside the contest panel also shows each QSO's distance and azimuth, when the row fits.
 - **Contest panel rate is live**: QSOs per hour from the band's last 10 (falls while nothing is worked), then the QSOs of the last 60 minutes (`Rate QSO/h · 60′`).
 
 ### Fixed

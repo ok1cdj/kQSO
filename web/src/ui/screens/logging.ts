@@ -1548,8 +1548,13 @@ export class LoggingScreen implements Screen {
       )
     }
     if (!this.platform.nativeVersion && shown.length > 0) {
-      fill(alignColumns(shown.map(recentCells)), 'recent-row recent-row--aligned')
-      if (allFit(this.recentEl.querySelectorAll<HTMLElement>('.recent-row'))) return
+      const aligned = (geo: boolean): boolean => {
+        fill(alignColumns(shown.map((q) => recentCells(q, geo ? this.meta.myGrid : undefined))), 'recent-row recent-row--aligned')
+        return allFit(this.recentEl.querySelectorAll<HTMLElement>('.recent-row'))
+      }
+      // VHF contest, landscape with a hardware keyboard: km and azimuth too, when they fit.
+      const geo = PROFILES[this.meta.profile].contest && keyboardMode === 'none' && WIDE.matches
+      if ((geo && aligned(true)) || aligned(false)) return
     }
     fill(shown.map(formatQso), 'recent-row')
   }
@@ -1836,13 +1841,18 @@ function unknownChip(raw: string): HTMLElement {
 }
 
 /** formatQso() split into columns for the aligned recent-QSO rows. */
-function recentCells(q: Qso): string[] {
+/** `myGrid`: also the distance and azimuth to the QSO's locator (VHF contest, wide). */
+function recentCells(q: Qso, myGrid?: string): string[] {
+  const km = myGrid && q.grid ? qsoPoints(myGrid, q.grid) : undefined // as the preview's QRB
+  const az = myGrid && q.grid ? bearingDeg(myGrid, q.grid) : undefined
   return [
     hhmm(q.timeOn),
     q.call,
     `${q.report.sent}/${q.report.rcvd}`,
     q.sentSerial || q.serial ? `#${q.sentSerial ?? '—'}/${q.serial ?? '—'}` : '',
     q.grid ?? '',
+    // Right-aligned within their column (the columns themselves pad on the right).
+    ...(myGrid ? [km !== undefined ? `${km} km`.padStart(7) : '', az !== undefined ? `${az}°`.padStart(4) : ''] : []),
     q.theirRef?.value ?? '',
   ]
 }
