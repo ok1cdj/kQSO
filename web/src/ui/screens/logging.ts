@@ -860,11 +860,12 @@ export class LoggingScreen implements Screen {
     // An empty macro (INFO in the general profile until filled in) would do nothing silently.
     if (text === '') {
       this.notice = t('logging.macroEmpty', { slot: slot === 'INFO' ? infoLabel(this.meta.profile) : slot })
-      this.renderStrip()
+      this.renderAll() // the strip, or the preview line while the macros hold the strip
       return
     }
-    // CQ with a repeat set (A3): calling round until Esc / STOP or another macro.
-    if (slot === 'CQ' && this.keyer.repeatGap > 0) {
+    // CQ in RUN with a repeat set (A3): calling round until Esc / STOP or another macro.
+    // In S&P the slot is "{CALL} DE {MYCALL}" — never round.
+    if (slot === 'CQ' && this.keyer.mode === 'run' && this.keyer.repeatGap > 0) {
       this.keyer.startRepeat(() => (this.keyerOn() ? this.macroText('CQ') : ''))
       return
     }
@@ -903,7 +904,7 @@ export class LoggingScreen implements Screen {
     const dropped = await this.keyer.send(text)
     if (dropped.length > 0) {
       this.notice = t('logging.keyerDropped', { chars: dropped.join(' ') })
-      this.renderStrip()
+      this.renderAll()
     }
   }
 
@@ -1129,8 +1130,8 @@ export class LoggingScreen implements Screen {
       const wpm = this.keyer.wpm
       const state = link === 'off' ? ' ✕' : link === 'connecting' ? ' …' : wpm !== undefined ? ` ${wpm}` : ''
       // Keyboard mode: TX instead of RUN / S&P, inverted. ·ESM = Enter sends the macros.
-      // ↻3 = CQ repeat set (A3), inverted while calling round.
-      const repeat = this.keyer.repeatGap > 0 ? ` ↻${this.keyer.repeatGap}` : ''
+      // ↻3 = CQ repeat set (A3; RUN only), inverted while calling round.
+      const repeat = this.keyer.mode === 'run' && this.keyer.repeatGap > 0 ? ` ↻${this.keyer.repeatGap}` : ''
       const what = this.txMode ? 'TX' : `${this.keyer.mode === 'run' ? 'RUN' : 'S&P'}${this.keyer.esm ? '·ESM' : ''}${repeat}`
       const label = `${what}${state}`
       const cls = link !== 'on' ? 'hdr-keyer hdr-keyer--off' : this.txMode || this.keyer.repeating ? 'hdr-keyer hdr-keyer--tx' : 'hdr-keyer'

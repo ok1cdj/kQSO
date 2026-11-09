@@ -130,4 +130,13 @@ describe('CQ repeat', () => {
     expect(keyer.repeating).toBe(false)
     expect(tr.sends).toEqual(['CQ', 'CQ', 'CQ'])
   })
+
+  it('a CQ with nothing to key ends it at once (no DONE would come)', async () => {
+    const { keyer, tr } = await setup()
+    await keyer.setRepeatGap(3)
+    keyer.startRepeat(() => 'ČŘ')
+    await vi.advanceTimersByTimeAsync(10)
+    expect(tr.sends).toEqual([])
+    expect(keyer.repeating).toBe(false)
+  })
 })

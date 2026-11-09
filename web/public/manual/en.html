@@ -94,7 +94,7 @@
 </div>
 <p>In a VHF contest the <b>QRV</b> chip shows the other bands the station is usually on (from the database). Bands where you already have a QSO with it are struck out, so you see at once where to move it next.</p>
 <figure class="crop"><img src="img/en/logging-qrv.webp" alt="QRV bands" width="390" height="196" loading="lazy"><figcaption>OK1EM on 2 m: QRV on 70 cm up to 122 GHz, 23 cm and 3 cm already worked.</figcaption></figure>
-<p>A <b>dupe</b> turns the whole line black. A dupe is the same call on the same band and mode; in a VHF contest on the same band (any mode), in a satellite log on the same satellite. It can still be logged; in a VHF contest it scores 0 points.</p>
+<p>A <b>dupe</b> turns the whole line black. A dupe is the same call on the same band and mode; in a VHF contest on the same band (any mode), in a satellite log on the same satellite. It can still be logged; in a VHF contest it scores 0 points. In a VHF contest kQSO asks before logging a dupe; confirmed, the new QSO counts and the earlier one on the band becomes <b>ERROR</b> (see <a href="#contest">VHF contest</a>).</p>
 <figure class="crop"><img src="img/en/logging-dupe.webp" alt="Dupe" width="390" height="170" loading="lazy"><figcaption>OK1OTL is already in the log on 2 m: the line is inverted.</figcaption></figure>
 
 <h3 id="band">Changing band and mode</h3>
@@ -124,7 +124,7 @@
 <p>A single letter alone on the line, then Enter. The preview under the line shows what will happen before you press Enter.</p>
 <table>
 <tr><td><code>W</code></td><td>discard the unfinished QSO</td></tr>
-<tr><td><code>D</code></td><td>delete the last saved QSO (asks first)</td></tr>
+<tr><td><code>D</code></td><td>delete the last saved QSO (asks first); in a VHF contest it only strikes it out (ERROR)</td></tr>
 <tr><td><code>E</code></td><td>edit the last saved QSO</td></tr>
 <tr><td><code>H</code></td><td>help</td></tr>
 <tr><td><code>O</code></td><td>open the <a href="#chat">ON4KST chat</a> (VHF contest log)</td></tr>
@@ -134,7 +134,8 @@
 <p><b>Esc</b> clears the line being typed (e.g. a call you only looked up).</p>
 
 <h3>QSO list and editing</h3>
-<p><b>QSO n ›</b> opens the QSO list, newest first. Tap a QSO to edit or delete it. In a VHF contest the list has a band switch, points per QSO and the band's score line; at the top are <b>Map</b> and <b>Statistics</b>.</p>
+<p><b>QSO n ›</b> opens the QSO list, newest first. Tap a QSO to edit or delete it (in a VHF contest, strike it out). In a VHF contest the list has a band switch, points per QSO and the band's score line; at the top are <b>Map</b> and <b>Statistics</b>.</p>
+<p>The <b>search</b> line above the list filters the QSOs by part of the call, locator or a serial (sent or received): <code>OK1</code>, <code>JN6</code>, <code>018</code>. With a hardware keyboard the cursor is already in it; Enter with one QSO left opens it for editing, Esc clears the search. It stays when you come back from the edit.</p>
 <div class="figs">
 <figure class="phone"><img src="img/en/qsolist.webp" alt="QSO list" width="390" height="844" loading="lazy"><figcaption>QSO list with points and the band score.</figcaption></figure>
 <figure class="phone"><img src="img/en/qsoedit.webp" alt="Edit QSO" width="390" height="844" loading="lazy"><figcaption>Editing a QSO.</figcaption></figure>
@@ -151,6 +152,7 @@
 
 <h2 id="contest">4. VHF contest and ON4KST chat</h2>
 <p>A <b>VHF contest</b> log scores the QSOs (1 point per km between locator centres, IARU R1; VKV PA and FM pohár by large-square rings), checks dupes per band and numbers your QSOs. The next serial to give is boxed in the header; the numbering is shared by all bands.</p>
+<p>A VHF contest <b>never deletes</b> a QSO. The <code>D</code> command or <b>Strike out (ERROR)</b> in the QSO edit crosses it out: it stays in the log with its sent serial and 0 points, is an <code>ERROR</code> row in the EDI (so the sent serials stay in sequence, as REG1TEST wants) and counts for nothing — points, dupes, statistics, map, the 6-hour window, the ADIF export and Wavelog. <b>Restore</b> brings it back. A confirmed dupe does the same to the earlier QSO: the repeat counts.</p>
 <p>In the <b>6 hours</b> entry (on 2 m, 70 cm, 6 m and 4 m) kQSO keeps the six-hour window for each band separately:</p>
 <ul>
 <li>the window starts with the band's first QSO and the header shows the time left (<b>6H 0:29</b>);</li>
@@ -162,7 +164,7 @@
 <figure class="crop"><img src="img/en/logging-6h-header.webp" alt="6-hour header" width="390" height="48" loading="lazy"><figcaption>6 hours: 0:29 left.</figcaption></figure>
 
 <h3>Contest panel</h3>
-<p>On a tablet or computer in landscape, with the system keyboard or none (Settings → Keyboard for logging → None), kQSO shows the <b>contest panel</b> on the right: the number to give in big digits, the UTC clock, the band's QSO count, the rate over the last 60 and 10 minutes, points, the average and the ODX.</p>
+<p>On a tablet or computer in landscape, with the system keyboard or none (Settings → Keyboard for logging → None), kQSO shows the <b>contest panel</b> on the right: the number to give in big digits, the UTC clock, the band's QSO count, the rate, points, the average and the ODX. The <b>rate</b> is live: first the QSOs per hour from the band's last 10 (from the oldest of them to now, so it falls while nothing is worked), then the QSOs of the last 60 minutes.</p>
 <figure class="wide"><img src="img/en/panel-tablet.webp" alt="Contest panel on a tablet" width="1280" height="800" loading="lazy"><figcaption>Tablet in landscape with a hardware keyboard: recent QSOs on the left, the contest panel on the right.</figcaption></figure>
 <figure class="crop small"><img src="img/en/panel.webp" alt="Contest panel" width="352" height="265" loading="lazy"><figcaption>The contest panel.</figcaption></figure>
 
@@ -317,13 +319,14 @@
 <p>Tuning from the line, CW macros through the radio and voice memories work as with the other connections (see above).</p>
 
 <h3>M5 CW keyer</h3>
-<p>The <a href="https://keyer.ok1cdj.com/build.html">M5-ESP32-keyer</a> is a home-built keyer; parts, schematics and the firmware flasher are at <a href="https://keyer.ok1cdj.com/build.html">keyer.ok1cdj.com</a>. It connects over Bluetooth (Android and iOS apps, Chrome / Edge): Settings → M5 keyer → CW keying Yes → Connect. In CW the strip then offers the macros CQ, EX, TU, MY, LOC/REF and ?, and the header shows RUN or S&amp;P and the speed. With a radio that keys CW over CI-V you don't need the M5 keyer (see <a href="#radio">Radio</a>).</p>
+<p>The <a href="https://keyer.ok1cdj.com/build.html">M5-ESP32-keyer</a> is a home-built keyer; parts, schematics and the firmware flasher are at <a href="https://keyer.ok1cdj.com/build.html">keyer.ok1cdj.com</a>. It connects over Bluetooth (Android and iOS apps, Chrome / Edge): Settings → M5 keyer → CW keying Yes → Connect. In CW the strip then offers the macros CQ, EX, TU, ?, MY and LOC/REF (in the order of F5–F8, F11, F12; with a hardware keyboard each button shows its F key in its corner), and the header shows RUN or S&amp;P and the speed. With a radio that keys CW over CI-V you don't need the M5 keyer (see <a href="#radio">Radio</a>).</p>
 <ul>
-<li>Each profile has its own macros for RUN (I call CQ) and S&amp;P (I answer). Variables: <code>{CALL}</code> <code>{MYCALL}</code> <code>{MYLOC}</code> <code>{MYREF}</code> <code>{RST}</code> <code>{NR}</code> <code>{LOC}</code> <code>{REF}</code> <code>{HI}</code> (GM / GA / GE by local time).</li>
+<li>Each profile has its own macros for RUN (I call CQ) and S&amp;P (I answer). Variables: <code>{CALL}</code> <code>{MYCALL}</code> <code>{MYLOC}</code> <code>{MYREF}</code> <code>{RST}</code> <code>{NR}</code> <code>{LOC}</code> <code>{REF}</code> <code>{HI}</code> (GM / GA / GE by local time). The report and serial go out as cut numbers: <code>{RST}</code> 599 → 5NN, 559 → 55N, <code>{NR}</code> 018 → T18; the log and the EDI keep the digits.</li>
+<li><b>CQ repeat</b> (RUN): <code>A3</code> sets a 3 s gap after each CQ ends (A1–A30, remembered); F5 or CQ then calls round until Esc, STOP or another macro. The header shows <b>RUN ↻3</b>, inverted while calling. <code>A0</code> turns it off, <code>A</code> shows it.</li>
 <li><b>ESM</b> (as in N1MM): Enter sends the macros by the state of the QSO. Switch it on in Settings or with the <code>ESM</code> command.</li>
 <li>On the line: <code>R</code> / <code>S</code> RUN / S&amp;P mode, <code>S20</code> speed 20 WPM, <code>C</code> reconnect, <code>K PSE QRS</code> sends the text, <code>K</code> alone starts the CW keyboard (what you type goes on the air). Esc or STOP stops sending.</li>
 </ul>
-<figure class="crop"><img src="img/en/settings-keyer-on.webp" alt="M5 keyer" width="374" height="1540" loading="lazy"><figcaption>M5 keyer: speed, ESM and the VHF contest / RUN macros.</figcaption></figure>
+<figure class="crop"><img src="img/en/settings-keyer-on.webp" alt="M5 keyer" width="374" height="1539" loading="lazy"><figcaption>M5 keyer: speed, ESM and the VHF contest / RUN macros.</figcaption></figure>
 
 <h3 id="cw">CW decoder</h3>
 <p>kQSO decodes CW from the radio's audio with <a href="https://github.com/e04/web-deep-cw-decoder">DeepCW</a>, a neural network (by e04, MIT licence). The decoded text runs under the log's header, and a tap on a call, report, serial or locator puts it into the line. It runs in the <b>Android</b> and <b>iOS</b> apps and on the web in <b>Chrome</b> or <b>Edge</b> on a computer; Firefox and Safari don't have it.</p>
@@ -350,7 +353,7 @@
 <tr><td><kbd>Alt+M</kbd></td><td>mode CW → SSB → FM</td></tr>
 <tr><td><kbd>Alt+N</kbd> / <kbd>Alt+P</kbd></td><td>next / previous band</td></tr>
 <tr><td><kbd>Alt+L</kbd> / <kbd>Alt+Q</kbd></td><td>QSO list / back to the logs</td></tr>
-<tr><td><kbd>F5</kbd> <kbd>F6</kbd> <kbd>F7</kbd> <kbd>F8</kbd> <kbd>F11</kbd> <kbd>F12</kbd></td><td>macros CQ EX TU ? MY INFO; in SSB / FM F5–F8 the voice memories T1–T4</td></tr>
+<tr><td><kbd>F5</kbd> <kbd>F6</kbd> <kbd>F7</kbd> <kbd>F8</kbd> <kbd>F11</kbd> <kbd>F12</kbd></td><td>macros CQ EX TU ? MY INFO; in SSB / FM F5–F8 the voice memories T1–T4. They also work in the chat, map, QSO list, statistics and help; Esc stops sending there</td></tr>
 <tr><td><kbd>PgUp</kbd> / <kbd>PgDn</kbd></td><td>CW speed ±2 WPM</td></tr>
 <tr><td><kbd>Alt+R</kbd> <kbd>Alt+S</kbd> <kbd>Alt+C</kbd> <kbd>Alt+K</kbd></td><td>RUN / S&amp;P / connect the keyer / CW keyboard</td></tr>
 <tr><td><kbd>Ctrl+M</kbd></td><td>ESM on / off</td></tr>

@@ -94,7 +94,7 @@
 </div>
 <p>Ve VKV závodě ukáže štítek <b>QRV</b> další pásma, na kterých stanice bývá (z databáze). Pásma, kde už s ní spojení máš, jsou přeškrtnutá, takže hned vidíš, kam ji ještě přetáhnout.</p>
 <figure class="crop"><img src="img/cs/logging-qrv.webp" alt="QRV pásma" width="390" height="196" loading="lazy"><figcaption>OK1EM na 2 m: QRV i na 70 cm až 122 GHz, 23 cm a 3 cm už uděláno.</figcaption></figure>
-<p><b>Duplicita</b> zčerná celý řádek. Duplicita je stejná značka na stejném pásmu a módu; ve VKV závodě na stejném pásmu (na módu nezáleží), v satelitním logu na stejné družici. Zapsat ji jde, ve VKV závodě má 0 bodů.</p>
+<p><b>Duplicita</b> zčerná celý řádek. Duplicita je stejná značka na stejném pásmu a módu; ve VKV závodě na stejném pásmu (na módu nezáleží), v satelitním logu na stejné družici. Zapsat ji jde, ve VKV závodě má 0 bodů. Ve VKV závodě se kQSO před zapsáním duplicity zeptá; po potvrzení platí nové spojení a to předchozí na pásmu se označí jako <b>ERROR</b> (viz <a href="#contest">VKV závod</a>).</p>
 <figure class="crop"><img src="img/cs/logging-dupe.webp" alt="Duplicita" width="390" height="170" loading="lazy"><figcaption>OK1OTL už v logu na 2 m je: řádek je inverzní.</figcaption></figure>
 
 <h3 id="band">Přepnutí pásma a módu</h3>
@@ -124,7 +124,7 @@
 <p>Jedno písmeno samotné na řádku a Enter. Náhled pod řádkem ukáže, co se stane, ještě před Enterem.</p>
 <table>
 <tr><td><code>W</code></td><td>zahodí rozepsané spojení</td></tr>
-<tr><td><code>D</code></td><td>smaže poslední zapsané spojení (nejdřív se zeptá)</td></tr>
+<tr><td><code>D</code></td><td>smaže poslední zapsané spojení (nejdřív se zeptá); ve VKV závodě ho jen zneplatní (ERROR)</td></tr>
 <tr><td><code>E</code></td><td>upraví poslední zapsané spojení</td></tr>
 <tr><td><code>H</code></td><td>nápověda</td></tr>
 <tr><td><code>O</code></td><td>otevře <a href="#chat">ON4KST chat</a> (log VKV závodu)</td></tr>
@@ -134,7 +134,8 @@
 <p><b>Esc</b> smaže rozepsaný řádek (třeba značku, kterou si jen ověřuješ v logu).</p>
 
 <h3>Seznam QSO a úprava</h3>
-<p><b>QSO n ›</b> otevře seznam spojení, nejnovější nahoře. Klepnutím na spojení ho upravíš nebo smažeš. Ve VKV závodě má seznam přepínač pásem, body u každého spojení a řádek se skóre pásma; nahoře jsou tlačítka <b>Mapa</b> a <b>Statistika</b>.</p>
+<p><b>QSO n ›</b> otevře seznam spojení, nejnovější nahoře. Klepnutím na spojení ho upravíš nebo smažeš (ve VKV závodě zneplatníš). Ve VKV závodě má seznam přepínač pásem, body u každého spojení a řádek se skóre pásma; nahoře jsou tlačítka <b>Mapa</b> a <b>Statistika</b>.</p>
+<p>Řádek <b>hledání</b> nad seznamem filtruje spojení podle části značky, lokátoru nebo čísla (odeslaného i přijatého): <code>OK1</code>, <code>JN6</code>, <code>018</code>. S hardwarovou klávesnicí v něm je kurzor hned; Enter, když zbude jediné spojení, ho otevře k úpravě, Esc hledání smaže. Po návratu z úpravy hledání zůstane.</p>
 <div class="figs">
 <figure class="phone"><img src="img/cs/qsolist.webp" alt="Seznam QSO" width="390" height="844" loading="lazy"><figcaption>Seznam QSO s body a skóre pásma.</figcaption></figure>
 <figure class="phone"><img src="img/cs/qsoedit.webp" alt="Úprava QSO" width="390" height="844" loading="lazy"><figcaption>Úprava spojení.</figcaption></figure>
@@ -151,6 +152,7 @@
 
 <h2 id="contest">4. VKV závod a ON4KST chat</h2>
 <p>Log s profilem <b>VKV závod</b> počítá body (1 bod za km mezi středy lokátorů podle IARU R1; VKV PA a FM pohár po prstencích velkých čtverců), hlídá duplicity po pásmech a čísluje tvoje spojení. Další odesílané číslo je v hlavičce v rámečku; číslování je společné pro všechna pásma.</p>
+<p>Ve VKV závodě se spojení <b>nikdy nemaže</b>. Příkaz <code>D</code> nebo <b>Zneplatnit (ERROR)</b> v úpravě spojení ho přeškrtne: zůstane v logu se svým odeslaným číslem a 0 body, v EDI je jako řádek <code>ERROR</code> (aby odeslaná čísla šla po sobě, jak chce REG1TEST) a nepočítá se do bodů, duplicit, statistiky, mapy, okna 6 hodin ani do exportu ADIF a Wavelogu. <b>Obnovit</b> ho vrátí. Stejně dopadne předchozí spojení, když potvrdíš duplicitu: platí to opakované.</p>
 <p>V kategorii <b>6 hodin</b> (na 2 m, 70 cm, 6 m a 4 m) hlídá kQSO šestihodinové okno pro každé pásmo zvlášť:</p>
 <ul>
 <li>okno začíná prvním spojením na pásmu a hlavička ukazuje zbývající čas (<b>6H 0:29</b>);</li>
@@ -162,7 +164,7 @@
 <figure class="crop"><img src="img/cs/logging-6h-header.webp" alt="Hlavička 6h" width="390" height="48" loading="lazy"><figcaption>6 hodin: zbývá 0:29.</figcaption></figure>
 
 <h3>Závodní panel</h3>
-<p>Na tabletu nebo počítači na šířku, se systémovou klávesnicí nebo bez klávesnice (Nastavení → Klávesnice pro logování → Žádná), ukáže kQSO vpravo <b>závodní panel</b>: velké číslo, které dáváš protistanici, hodiny UTC, počet QSO na pásmu, rate za posledních 60 a 10 minut, body, průměr a ODX.</p>
+<p>Na tabletu nebo počítači na šířku, se systémovou klávesnicí nebo bez klávesnice (Nastavení → Klávesnice pro logování → Žádná), ukáže kQSO vpravo <b>závodní panel</b>: velké číslo, které dáváš protistanici, hodiny UTC, počet QSO na pásmu, rate, body, průměr a ODX. <b>Rate</b> je živý: první číslo je QSO za hodinu z posledních 10 spojení na pásmu (od nejstaršího z nich do teď, takže bez spojení klesá), druhé počet QSO za posledních 60 minut.</p>
 <figure class="wide"><img src="img/cs/panel-tablet.webp" alt="Závodní panel na tabletu" width="1280" height="800" loading="lazy"><figcaption>Tablet na šířku s hardwarovou klávesnicí: poslední spojení vlevo, závodní panel vpravo.</figcaption></figure>
 <figure class="crop small"><img src="img/cs/panel.webp" alt="Závodní panel" width="352" height="265" loading="lazy"><figcaption>Závodní panel.</figcaption></figure>
 
@@ -317,9 +319,10 @@
 <p>Ladění z řádku, CW makra přes rádio a hlasové paměti fungují stejně jako u ostatních připojení (viz výše).</p>
 
 <h3>CW klíčovač M5</h3>
-<p>Klíčovač <a href="https://keyer.ok1cdj.com/build.html">M5-ESP32-keyer</a> je klíčovač na stavbu; díly, schémata a nahrání firmwaru najdeš na <a href="https://keyer.ok1cdj.com/build.html">keyer.ok1cdj.com</a>. Připojuje se přes Bluetooth (aplikace pro Android a iOS, Chrome / Edge): Nastavení → Klíčovač M5 → CW klíčování Ano → Připojit. V CW pak lišta nabízí makra CQ, EX, TU, MY, LOC/REF a ?, hlavička ukazuje RUN nebo S&amp;P a rychlost. S rádiem, které klíčuje CW přes CI-V, klíčovač M5 nepotřebuješ (viz <a href="#radio">Rádio</a>).</p>
+<p>Klíčovač <a href="https://keyer.ok1cdj.com/build.html">M5-ESP32-keyer</a> je klíčovač na stavbu; díly, schémata a nahrání firmwaru najdeš na <a href="https://keyer.ok1cdj.com/build.html">keyer.ok1cdj.com</a>. Připojuje se přes Bluetooth (aplikace pro Android a iOS, Chrome / Edge): Nastavení → Klíčovač M5 → CW klíčování Ano → Připojit. V CW pak lišta nabízí makra CQ, EX, TU, ?, MY a LOC/REF (v pořadí F5–F8, F11, F12; s hardwarovou klávesnicí má každé tlačítko svou F klávesu v rohu), hlavička ukazuje RUN nebo S&amp;P a rychlost. S rádiem, které klíčuje CW přes CI-V, klíčovač M5 nepotřebuješ (viz <a href="#radio">Rádio</a>).</p>
 <ul>
-<li>Makra má každý profil zvlášť pro RUN (dávám CQ) a S&amp;P (odpovídám). Proměnné: <code>{CALL}</code> <code>{MYCALL}</code> <code>{MYLOC}</code> <code>{MYREF}</code> <code>{RST}</code> <code>{NR}</code> <code>{LOC}</code> <code>{REF}</code> <code>{HI}</code> (GM / GA / GE podle místního času).</li>
+<li>Makra má každý profil zvlášť pro RUN (dávám CQ) a S&amp;P (odpovídám). Proměnné: <code>{CALL}</code> <code>{MYCALL}</code> <code>{MYLOC}</code> <code>{MYREF}</code> <code>{RST}</code> <code>{NR}</code> <code>{LOC}</code> <code>{REF}</code> <code>{HI}</code> (GM / GA / GE podle místního času). Report a číslo jdou zkráceně: <code>{RST}</code> 599 → 5NN, 559 → 55N, <code>{NR}</code> 018 → T18; v logu i v EDI zůstanou číslice.</li>
+<li><b>Opakování výzvy</b> (RUN): <code>A3</code> nastaví 3 s pauzu po konci výzvy (A1–A30, zapamatuje se), pak F5 nebo CQ volá dokola, dokud nedáš Esc, STOP nebo jiné makro. Hlavička ukazuje <b>RUN ↻3</b>, při volání inverzně. <code>A0</code> vypne, <code>A</code> ukáže nastavení.</li>
 <li><b>ESM</b> (jako v N1MM): Enter posílá makra podle stavu spojení. Zapíná se v Nastavení nebo příkazem <code>ESM</code>.</li>
 <li>Na řádku: <code>R</code> / <code>S</code> režim RUN / S&amp;P, <code>S20</code> rychlost 20 WPM, <code>C</code> znovu připojit, <code>K PSE QRS</code> odešle text, samotné <code>K</code> zapne CW klávesnici (co píšeš, jde do éteru). Esc nebo STOP vysílání zastaví.</li>
 </ul>
@@ -350,7 +353,7 @@
 <tr><td><kbd>Alt+M</kbd></td><td>mód CW → SSB → FM</td></tr>
 <tr><td><kbd>Alt+N</kbd> / <kbd>Alt+P</kbd></td><td>další / předchozí pásmo</td></tr>
 <tr><td><kbd>Alt+L</kbd> / <kbd>Alt+Q</kbd></td><td>seznam QSO / zpět na logy</td></tr>
-<tr><td><kbd>F5</kbd> <kbd>F6</kbd> <kbd>F7</kbd> <kbd>F8</kbd> <kbd>F11</kbd> <kbd>F12</kbd></td><td>makra CQ EX TU ? MY INFO; v SSB / FM F5–F8 hlasové paměti T1–T4</td></tr>
+<tr><td><kbd>F5</kbd> <kbd>F6</kbd> <kbd>F7</kbd> <kbd>F8</kbd> <kbd>F11</kbd> <kbd>F12</kbd></td><td>makra CQ EX TU ? MY INFO; v SSB / FM F5–F8 hlasové paměti T1–T4. Fungují i v chatu, na mapě, v seznamu QSO, statistice a nápovědě; Esc tam vysílání zastaví</td></tr>
 <tr><td><kbd>PgUp</kbd> / <kbd>PgDn</kbd></td><td>rychlost CW ±2 WPM</td></tr>
 <tr><td><kbd>Alt+R</kbd> <kbd>Alt+S</kbd> <kbd>Alt+C</kbd> <kbd>Alt+K</kbd></td><td>RUN / S&amp;P / připojit klíčovač / CW klávesnice</td></tr>
 <tr><td><kbd>Ctrl+M</kbd></td><td>ESM zapnout / vypnout</td></tr>

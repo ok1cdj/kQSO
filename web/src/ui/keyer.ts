@@ -313,6 +313,9 @@ export class KeyerController implements KeyerCivHost {
     const text = this.repeatText?.() ?? ''
     if (text === '' || !this.connected) return this.stopRepeat()
     await this.sendOut(text)
+    // Nothing went out (no keyable character, the send failed): no DONE will come to go
+    // round — end it. A DONE that came already has set the timer.
+    if (!this.sending && this.repeatTimer === undefined) this.stopRepeat()
   }
 
   async setMode(mode: RunMode): Promise<void> {

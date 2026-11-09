@@ -27,8 +27,9 @@ import { KstController } from './kst'
 import { RigController } from './rig'
 import { CwDecoderController } from './cw/decoder'
 
-// The open log's screens around the logging one: F5–F12 and Esc (STOP) work there too.
-const LOG_SCREENS: ReadonlySet<string> = new Set(['chat', 'map', 'qsolist', 'stats', 'qsoedit'])
+// The open log's screens around the logging one: F5–F12 and Esc (STOP) work there too
+// (help / manual: a CQ repeat goes on there, so Esc must stop it).
+const LOG_SCREENS: ReadonlySet<string> = new Set(['chat', 'map', 'qsolist', 'stats', 'qsoedit', 'help', 'manual'])
 
 export interface Screen {
   mount(root: HTMLElement): void | Promise<void>
@@ -80,10 +81,17 @@ export class App {
   }
 
   /** Chat, map, QSO list …: the log's macros on F5–F12 (the logging screen handles its
-   *  own); Esc stops the keyer while it sends or calls round. */
+   *  own); Esc stops the keyer while it sends or calls round, or the radio's voice memory. */
   private onLogScreenKey(e: KeyboardEvent): void {
     if (!LOG_SCREENS.has(this.currentName)) return
-    if (e.key === 'Escape' && !e.altKey && !e.ctrlKey && !e.metaKey && (this.keyer.sending || this.keyer.repeating)) {
+    const plainEsc = e.key === 'Escape' && !e.altKey && !e.ctrlKey && !e.metaKey
+    if (plainEsc && this.rig.voicePlaying) {
+      e.preventDefault()
+      e.stopPropagation()
+      void this.rig.stopVoice()
+      return
+    }
+    if (plainEsc && (this.keyer.sending || this.keyer.repeating)) {
       e.preventDefault()
       e.stopPropagation()
       void this.keyer.stop()

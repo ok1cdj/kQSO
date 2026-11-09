@@ -250,7 +250,7 @@ export function sanitize(text: string): { text: string; dropped: string[] } {
 // NR? / LOC? / NRLOC?: ESM only — asked when an empty Enter can't save a VHF contest QSO
 // for the missing number / locator; not in the strip.
 export type MacroSlot = 'CQ' | 'EXCH' | 'TU' | 'MYCALL' | 'INFO' | '?' | 'NR?' | 'LOC?' | 'NRLOC?'
-export const MACRO_SLOTS: readonly MacroSlot[] = ['CQ', 'EXCH', 'TU', 'MYCALL', 'INFO', '?', 'NR?', 'LOC?', 'NRLOC?']
+export const MACRO_SLOTS: readonly MacroSlot[] = ['CQ', 'EXCH', 'TU', '?', 'MYCALL', 'INFO', 'NR?', 'LOC?', 'NRLOC?'] // the strip's order: F5–F8, F11, F12
 export const ESM_ONLY_SLOTS: readonly MacroSlot[] = ['NR?', 'LOC?', 'NRLOC?']
 export type RunMode = 'run' | 'sp'
 export type MacroSet = Readonly<Record<MacroSlot, string>>

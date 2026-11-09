@@ -4,6 +4,21 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 
 ## [Unreleased]
 
+### Added
+- **CQ repeat** for the CW keyer: `A3 ⏎` sets a 3 s gap after each CQ ends (A1–A30, remembered), `A0 ⏎` turns it off, `A ⏎` shows it. In RUN the CQ (F5, the CQ button or an ESM CQ) then calls round until Esc, STOP or another macro; the header shows `RUN ↻3`, inverted while calling, and STOP stays in the strip in the gap too.
+- **F5–F12 on every screen of the open log**: the chat, map, QSO list, statistics, QSO edit and help send the macros (or the radio's voice memories in SSB / FM) as the logging screen does; Esc stops the keyer / voice memory there.
+- **QSO list search**: a line on top filters by part of the call, locator or a serial (sent or received) — `OK1`, `JN6`, `018`; with the band filter; Enter with one QSO left opens it, Esc clears; kept on the way back from the edit.
+
+### Changed
+- **VHF contest: QSOs are never deleted.** `D` and the QSO edit strike the QSO out as **ERROR**: it stays in the log crossed out with its sent serial and 0 points, goes into the EDI as an `ERROR` row (REG1TEST, so the sent serials stay in sequence) and is left out of the ADIF export, the Wavelog push, the dupe check, the score, the statistics, the map and the 6-hour window; **Restore** brings it back. Other log types delete as before.
+- **Dupes in a VHF contest are confirmed**: Enter on a dupe asks first; logged, the new QSO counts and the earlier one on the band becomes ERROR.
+- **Cut numbers** in the CW macros: `{RST}` sends 9 as N (599 → 5NN, 559 → 55N), `{NR}` 0 as T (018 → T18). The log, EDI and ADIF keep the digits.
+- **Macro buttons in F-key order** (CQ EX TU ? MY LOC/REF/INF = F5–F8, F11, F12), the macro editor in Settings too; with a hardware keyboard each button shows its F key small in its corner.
+- **Contest panel rate is live**: QSOs per hour from the band's last 10 (falls while nothing is worked), then the QSOs of the last 60 minutes (`Rate QSO/h · 60′`).
+
+### Fixed
+- A notice (QSO discarded with Alt+W, ERROR …) no longer hides the keyer's macros or the voice memories until the next key: it shows on the preview line and the macros stay.
+
 ## [1.17] – 2026-10-30
 
 ### Added
