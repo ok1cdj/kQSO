@@ -14,6 +14,23 @@ export interface WhatsNewEntry {
 /** Newest first. */
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    version: '1.18',
+    cs: [
+      'VKV závod spojení nikdy nemaže: D a Zneplatnit v úpravě QSO ho přeškrtnou jako ERROR. Zůstane v logu se svým číslem a 0 body a v EDI je jako ERROR, aby odeslaná čísla šla po sobě. Duplicitu kQSO zaloguje až po potvrzení a předchozí QSO na pásmu se pak stane ERROR.',
+      'Opakování výzvy: A3 ⏎ a pak F5 volá CQ dokola 3 s po konci výzvy, dokud nedáš Esc nebo jiné makro (v hlavičce RUN ↻3). A0 ⏎ vypne.',
+      'F5–F12 fungují i v chatu, na mapě a v seznamu QSO, Esc tam zastaví vysílání. Makra jsou seřazená podle F kláves a s HW klávesnicí mají F klávesu v rohu.',
+      'Report a číslo jdou v CW zkráceně: 5NN, 55N, T18. V logu i v EDI zůstanou číslice.',
+      'Seznam QSO má hledání podle značky, čísla nebo lokátoru (OK1, JN6, 018). Rate v závodním panelu je živý: QSO za hodinu z posledních 10 spojení.',
+    ],
+    en: [
+      'A VHF contest never deletes a QSO: D and Strike out in the QSO edit cross it out as ERROR. It stays in the log with its serial and 0 points and is an ERROR row in the EDI, so the sent serials stay in sequence. A dupe is logged only when you confirm it, and the earlier QSO on the band then becomes ERROR.',
+      'CQ repeat: A3 ⏎, then F5 calls CQ round, 3 s after each one ends, until Esc or another macro (RUN ↻3 in the header). A0 ⏎ turns it off.',
+      'F5–F12 also work in the chat, map and QSO list, and Esc stops sending there. The macros are in F-key order and with a hardware keyboard show their F key in the corner.',
+      'The report and serial go out as cut numbers in CW: 5NN, 55N, T18. The log and the EDI keep the digits.',
+      'The QSO list has a search by call, serial or locator (OK1, JN6, 018). The contest panel\'s rate is live: QSOs per hour from the last 10.',
+    ],
+  },
+  {
     version: '1.17',
     cs: [
       'CW dekodér i v aplikacích pro Android a iOS: poslouchá mikrofonem u reproduktoru rádia nebo zvukovým vstupem přes USB. Zvuk se dekóduje jen v telefonu. Nastavení → CW dekodér.',

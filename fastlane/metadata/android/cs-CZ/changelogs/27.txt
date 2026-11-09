@@ -1,0 +1,1 @@
+VKV závod spojení nemaže: D je přeškrtne jako ERROR (číslo zůstane, v EDI ERROR), duplicita se zaloguje po potvrzení. Opakování výzvy A3 + F5. F5–F12 i v chatu, na mapě a v seznamu QSO. CW reporty a čísla zkráceně (5NN, T18). Hledání v seznamu QSO. Živý rate v závodním panelu.

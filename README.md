@@ -130,13 +130,17 @@ tokens are ignored. See **Settings → How to log** in the app for the full gram
   profile (VHF contest / chasers / satellites) plus your own worked stations, kept
   apart from the logs; export / import (merge) / delete in Settings.
 - **DUPE warning:** same call + band + mode; VHF contest same call + band (any
-  mode); satellite same call + bird. It only warns, never blocks.
-- **Line commands:** `W` discards the unfinished QSO, `D` deletes the last saved one,
-  `E` edits it. **Hardware keyboard shortcuts:** Ctrl+Enter saves, Alt+W / D / H / E / X / M / L / Q,
+  mode); satellite same call + bird. It warns; in a VHF contest logging a dupe asks
+  first, and the earlier QSO then becomes ERROR.
+- **Line commands:** `W` discards the unfinished QSO, `D` deletes the last saved one
+  (a VHF contest never deletes: it strikes the QSO out as ERROR — kept with its serial,
+  0 points, an `ERROR` row in the EDI), `E` edits it. **Hardware keyboard shortcuts:** Ctrl+Enter saves, Alt+W / D / H / E / X / M / L / Q,
   F5–F8 F11 F12 the macros, PgUp / PgDn the CW speed (all in the in-app help).
 - **VHF contest scoring:** 1 point per km between locator centres (111.2 km/°,
   truncated + 1), each station once per band. QRB shows in the preview; the QSO
-  list has points per QSO and a score line per band (QSO · points · WWL · ODX).
+  list has points per QSO, a score line per band (QSO · points · WWL · ODX) and a
+  search (call, serial, locator); the contest panel's rate is live (QSOs per hour
+  from the last 10).
 - **QSO map** (VHF contest, satellite): a dot per worked locator with the call, the
   Maidenhead grid and your QTH over bundled Natural Earth coastlines and borders
   (1:10m Europe, 1:50m world) — works offline; calls can be switched off. Tap the
@@ -156,10 +160,13 @@ tokens are ignored. See **Settings → How to log** in the app for the full gram
   Web: OPFS (persistent storage requested); APK: `.adi` files in app storage.
 - **CW keyer over Bluetooth (beta)** (APK, or web in Chrome / Edge; off by default): the
   [M5-ESP32-keyer](https://github.com/ok1cdj/M5-ESP32-keyer) — in CW the strip
-  offers the macros CQ (DE in S&P) EX TU MY REF/LOC/INF ?, STOP while sending (also Esc), RUN / S&P
+  offers the macros CQ (DE in S&P) EX TU ? MY REF/LOC/INF (F5–F8 F11 F12, also on the
+  chat / map / QSO list screens), STOP while sending (also Esc), RUN / S&P
   (`R` / `S`) with own macros per log profile (editable in Settings), `S20` = 20 WPM
   until disconnect, default speed in Settings, `C` = connect again, `K text` = send
-  text, `K` = CW keyboard mode, ESM (Enter sends the macros, as in N1MM; `ESM`).
+  text, `K` = CW keyboard mode, ESM (Enter sends the macros, as in N1MM; `ESM`), `A3` =
+  CQ repeat 3 s after each CQ (RUN; Esc / another macro ends it); `{RST}` / `{NR}` go out
+  as cut numbers (5NN, T18).
   Tested with the M5-ESP32-keyer v2; please report bugs on
   [GitHub Issues](https://github.com/ok1cdj/kQSO/issues).
 - **Icom radios over CI-V (beta)** (off by default; Settings → Radio): the **IC-705 over

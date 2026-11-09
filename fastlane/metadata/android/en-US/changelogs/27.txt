@@ -1,0 +1,1 @@
+A VHF contest never deletes a QSO: D strikes it out as ERROR (the serial stays, ERROR in the EDI); a dupe is logged when confirmed. CQ repeat: A3 + F5. F5–F12 in the chat, map and QSO list too. Cut numbers in CW (5NN, T18). Search in the QSO list. Live rate in the contest panel.

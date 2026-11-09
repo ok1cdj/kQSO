@@ -4,6 +4,8 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 
 ## [Unreleased]
 
+## [1.18] – 2026-11-09
+
 ### Added
 - **CQ repeat** for the CW keyer: `A3 ⏎` sets a 3 s gap after each CQ ends (A1–A30, remembered), `A0 ⏎` turns it off, `A ⏎` shows it. In RUN the CQ (F5, the CQ button or an ESM CQ) then calls round until Esc, STOP or another macro; the header shows `RUN ↻3`, inverted while calling, and STOP stays in the strip in the gap too.
 - **F5–F12 on every screen of the open log**: the chat, map, QSO list, statistics, QSO edit and help send the macros (or the radio's voice memories in SSB / FM) as the logging screen does; Esc stops the keyer / voice memory there.
