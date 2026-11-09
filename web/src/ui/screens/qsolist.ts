@@ -4,6 +4,8 @@
 // A multi-band log shows one band at a time (All | 2m | 70cm …, shared with the map).
 // On the web (tablets, phones) the rows are aligned in columns when they fit the
 // width; the APK (the narrow Kompakt) and any narrower screen keep the compact row.
+// A search line on top filters the rows by call, serial (sent or received) or locator
+// (OK1 → the OK1 stations) — to find the QSO to edit; it stays while editing.
 
 import { PROFILES, readLogFile, scoreLog, scoringFor } from '../../core/index'
 import type { BandScore, Qso, ScoredQso } from '../../core/index'
@@ -21,6 +23,16 @@ export interface QsoListNav {
   toStats(): void
 }
 
+// The search per log, kept for the way back from the QSO edit.
+const searches = new Map<string, string>()
+
+/** A QSO matches the search: part of its call, locator or a serial (018 / 18). */
+export function matchesSearch(q: Qso, search: string): boolean {
+  const s = search.trim().toUpperCase()
+  if (s === '') return true
+  return [q.call, q.grid, q.sentSerial, q.serial].some((v) => v !== undefined && v.toUpperCase().includes(s))
+}
+
 const pad2 = (n: number): string => (n < 10 ? '0' + n : String(n))
 const stamp = (d: Date): string =>
   `${pad2(d.getUTCDate())}.${pad2(d.getUTCMonth() + 1)}. ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`
@@ -32,6 +44,7 @@ export class QsoListScreen implements Screen {
   private visible: number[] = [] // indices into qsos of the shown band
   private readonly title = el('b', 'title')
   private readonly scores = el('div')
+  private readonly search = el('input', 'field-input qsosearch')
   private scored = new Map<number, ScoredQso>()
   private resize: ResizeObserver | undefined
   private width = 0
@@ -64,16 +77,41 @@ export class QsoListScreen implements Screen {
     for (const b of bands) for (const r of b.rows) this.scored.set(r.index, r)
     this.qsos = qsos
 
-    // One band at a time in a multi-band log (a satellite log has its band fixed).
-    const show = (band: string): void => {
-      this.visible = qsos.flatMap((q, i) => (band === ALL_BANDS || q.signal.band === band ? [i] : []))
+    // One band at a time in a multi-band log (a satellite log has its band fixed); the
+    // search narrows it further.
+    let band = profile.fixedBand ? ALL_BANDS : shownBand(this.logId, qsos)
+    const show = (b: string): void => {
+      band = b
+      const search = this.search.value
+      this.visible = qsos.flatMap((q, i) => ((band === ALL_BANDS || q.signal.band === band) && matchesSearch(q, search) ? [i] : []))
       this.title.textContent = `${meta.name} · ${band === ALL_BANDS ? '' : `${band} · `}${this.visible.length} QSO`
       this.scores.replaceChildren(...bands.filter((b) => band === ALL_BANDS || b.band === band).map((b) => el('div', 'qsosum', scoreLine(b))))
       this.renderRows()
     }
+    this.search.enterKeyHint = 'search'
+    this.search.autocomplete = 'off'
+    this.search.spellcheck = false
+    this.search.placeholder = t('qsolist.search')
+    this.search.value = searches.get(this.logId) ?? ''
+    this.search.addEventListener('input', () => {
+      searches.set(this.logId, this.search.value)
+      show(band)
+    })
+    this.search.addEventListener('keydown', (e) => {
+      // Enter with one QSO left opens it; Esc clears the search.
+      if (e.key === 'Enter' && this.visible.length === 1) this.nav.editQso(this.visible[0]!)
+      else if (e.key === 'Escape' && this.search.value !== '') {
+        e.preventDefault()
+        this.search.value = ''
+        searches.delete(this.logId)
+        show(band)
+      }
+    })
     const filter = profile.fixedBand ? undefined : bandFilter(this.logId, qsos, show)
-    this.root.replaceChildren(bar, ...(filter ? [filter] : []), this.scores, this.list)
-    show(profile.fixedBand ? ALL_BANDS : shownBand(this.logId, qsos))
+    this.root.replaceChildren(bar, ...(filter ? [filter] : []), this.search, this.scores, this.list)
+    show(band)
+    // A hardware keyboard types straight into the search; a touch screen opens it by a tap.
+    if (matchMedia('(hover: hover) and (pointer: fine)').matches) this.search.focus({ preventScroll: true })
     if (!this.platform.nativeVersion && qsos.length > 0) {
       // Re-check the fit when the width changes (tablet rotated, window resized).
       this.resize = new ResizeObserver(() => {
@@ -88,6 +126,10 @@ export class QsoListScreen implements Screen {
     this.width = this.list.clientWidth
     if (this.qsos.length === 0) {
       this.list.replaceChildren(el('li', 'empty', t('qsolist.empty')))
+      return
+    }
+    if (this.visible.length === 0) {
+      this.list.replaceChildren(el('li', 'empty', t('qsolist.noMatch')))
       return
     }
     const cells = this.visible.map((i) => rowCells(this.qsos[i]!, this.scored.get(i)))

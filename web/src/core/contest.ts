@@ -236,6 +236,24 @@ export function qsoRate(band: BandScore, now: Date, windowMs: number): number {
   }).length
 }
 
+const LAST_N = 10
+const MIN_SPAN = 60_000
+
+/** The live rate in QSOs per hour, as N1MM's "Last 10": the band's last 10 valid QSOs (fewer
+ *  early on) over the time from the oldest of them to `now` — it drops with every minute
+ *  without a QSO. At least a minute's span, so the first QSO isn't 3600 / h. */
+export function lastRate(band: BandScore, now: Date): number {
+  const to = now.getTime()
+  const times = band.rows
+    .filter(isValidRow)
+    .map((r) => r.qso.timeOn.getTime())
+    .filter((t) => t <= to)
+    .sort((a, b) => a - b)
+    .slice(-LAST_N)
+  if (times.length === 0) return 0
+  return Math.round((times.length * HOUR) / Math.max(to - times[0]!, MIN_SPAN))
+}
+
 export interface SquareStats {
   readonly square: string // large square, e.g. JO70
   readonly calls: readonly string[] // distinct stations worked there, in log order

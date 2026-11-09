@@ -143,15 +143,24 @@ describe('macros', () => {
   const ctx: MacroContext = { call: 'OK1ABC', myCall: 'OK1CDJ', myLoc: 'JO70NC', myRef: 'OK/ZC-001', rst: '599', nr: '007', loc: 'JN79US' }
 
   it('expands each profile × RUN/S&P default', () => {
-    expect(expandMacro(DEFAULT_MACROS.vkv.run.EXCH, ctx)).toBe('OK1ABC 599 007 JO70NC K')
-    expect(expandMacro(DEFAULT_MACROS.vkv.sp.EXCH, ctx)).toBe('TU 599 007 JO70NC K')
+    expect(expandMacro(DEFAULT_MACROS.vkv.run.EXCH, ctx)).toBe('OK1ABC 5NN TT7 JO70NC K')
+    expect(expandMacro(DEFAULT_MACROS.vkv.sp.EXCH, ctx)).toBe('TU 5NN TT7 JO70NC K')
     expect(expandMacro(DEFAULT_MACROS.vkv.run.CQ, ctx)).toBe('CQ TEST OK1CDJ OK1CDJ TEST')
     expect(expandMacro(DEFAULT_MACROS.aktivace.run.CQ, ctx)).toBe('CQ CQ DE OK1CDJ OK1CDJ OK/ZC-001 K')
-    expect(expandMacro(DEFAULT_MACROS.aktivace.run.EXCH, ctx)).toBe('OK1ABC 599')
-    expect(expandMacro(DEFAULT_MACROS.sat.run.EXCH, ctx)).toBe('OK1ABC UR 599 JO70NC')
-    expect(expandMacro(DEFAULT_MACROS.sat.sp.EXCH, ctx)).toBe('TU UR 599 JO70NC')
+    expect(expandMacro(DEFAULT_MACROS.aktivace.run.EXCH, ctx)).toBe('OK1ABC 5NN')
+    expect(expandMacro(DEFAULT_MACROS.sat.run.EXCH, ctx)).toBe('OK1ABC UR 5NN JO70NC')
+    expect(expandMacro(DEFAULT_MACROS.sat.sp.EXCH, ctx)).toBe('TU UR 5NN JO70NC')
     expect(expandMacro(DEFAULT_MACROS.obecny.sp.CQ, ctx)).toBe('OK1ABC DE OK1CDJ') // DE in S&P
     expect(expandMacro(DEFAULT_MACROS.obecny.sp.TU, ctx)).toBe('TU 73')
+  })
+
+  it('{RST} and {NR} go out as cut numbers: 9 → N in the report, 0 → T in the serial', () => {
+    const exch = (rst: string, nr: string) => expandMacro('{RST} {NR}', { ...ctx, rst, nr })
+    expect(exch('599', '018')).toBe('5NN T18')
+    expect(exch('559', '100')).toBe('55N 1TT')
+    expect(exch('579', '199')).toBe('57N 199') // a serial's 9 stays
+    expect(exch('59S', '002')).toBe('5NS TT2') // scatter
+    expect(exch('59', '001')).toBe('5N TT1')
   })
 
   it('{HI} greets by the local time', () => {
@@ -161,7 +170,7 @@ describe('macros', () => {
   })
 
   it('missing values vanish, unknown placeholders stay', () => {
-    expect(expandMacro('{CALL} {RST} {MYREF}', { ...ctx, call: undefined, myRef: undefined })).toBe('599')
+    expect(expandMacro('{CALL} {RST} {MYREF}', { ...ctx, call: undefined, myRef: undefined })).toBe('5NN')
     expect(expandMacro('{call} {FOO}', ctx)).toBe('OK1ABC {FOO}')
   })
 
@@ -186,6 +195,15 @@ describe('macros', () => {
 })
 
 describe('keyer line commands', () => {
+  it('A<n>: the CQ repeat gap, A0 off, A alone shows it', () => {
+    expect(matchKeyerCommand('A')).toEqual({ type: 'repeat', inRange: true })
+    expect(matchKeyerCommand('a3')).toEqual({ type: 'repeat', gap: 3, inRange: true })
+    expect(matchKeyerCommand('A0')).toEqual({ type: 'repeat', gap: 0, inRange: true })
+    expect(matchKeyerCommand('A30')).toEqual({ type: 'repeat', gap: 30, inRange: true })
+    expect(matchKeyerCommand('A31')).toEqual({ type: 'repeat', gap: 31, inRange: false })
+    expect(matchKeyerCommand('A123')).toBeUndefined()
+  })
+
   it('R, S and S<n>', () => {
     expect(matchKeyerCommand('R')).toEqual({ type: 'run' })
     expect(matchKeyerCommand(' s ')).toEqual({ type: 'sp' })

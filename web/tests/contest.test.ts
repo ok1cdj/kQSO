@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { bearingDeg, gridCenter, qrbKm, qsoPoints } from '../src/core/locator'
-import { contestStats, hourlyStats, qsoRate, ringPoints, scoreLog, scoringFor, sixHourPart, sixHourStatus, sixHourWindow, squareStats } from '../src/core/contest'
+import { contestStats, hourlyStats, lastRate, qsoRate, ringPoints, scoreLog, scoringFor, sixHourPart, sixHourStatus, sixHourWindow, squareStats } from '../src/core/contest'
 import { isDupe } from '../src/core/dupe'
 import type { Qso } from '../src/core/model'
 
@@ -265,6 +265,25 @@ describe('rate for the contest board', () => {
     expect(qsoRate(band!, at(15, 0), 10 * 60000)).toBe(1) // (14:50, 15:00]: only 15:00
     expect(qsoRate(band!, at(15, 1), 60 * 60000)).toBe(2)
     expect(qsoRate(band!, at(16, 30), 60 * 60000)).toBe(0)
+  })
+})
+
+describe('live rate (QSOs per hour from the last 10)', () => {
+  const qa = (call: string, d: Date): Qso => ({ ...q(call, '2m', 'SSB', 'JO65ER'), timeOn: d })
+  it('the last 10 over the time from the oldest of them to now; falls with time', () => {
+    // 12 QSOs, one every 3 minutes from 14:00 to 14:33: the last 10 start at 14:06.
+    const qsos = Array.from({ length: 12 }, (_, i) => qa(`OK1A${String.fromCharCode(65 + i)}`, at(14, i * 3)))
+    const [band] = scoreLog(qsos, 'JO65FR')
+    expect(lastRate(band!, at(14, 36))).toBe(20) // 10 QSOs in 30 min
+    expect(lastRate(band!, at(14, 56))).toBe(12) // 20 more minutes of nothing: 10 in 50 min
+  })
+  it('fewer than 10 early on, at least a minute; dupes left out; none = 0', () => {
+    const [one] = scoreLog([qa('OK1AA', at(14, 0))], 'JO65FR')
+    expect(lastRate(one!, at(14, 0))).toBe(60) // not 3600 / h
+    const [two] = scoreLog([qa('OK1AA', at(14, 0)), qa('OK1AA', at(14, 5)), qa('OK1BB', at(14, 10))], 'JO65FR')
+    expect(lastRate(two!, at(14, 20))).toBe(6) // 2 valid in 20 min
+    const [none] = scoreLog([], 'JO65FR')
+    expect(none === undefined ? 0 : lastRate(none, at(14, 0))).toBe(0)
   })
 })
 

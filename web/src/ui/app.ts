@@ -21,10 +21,14 @@ import { takeUnseenNotes } from './whatsnew'
 import { WHATS_NEW } from '../core/index'
 import type { WhatsNewEntry } from '../core/index'
 import { trackScreen } from './stats'
+import { matchShortcut } from './shortcuts'
 import { KeyerController } from './keyer'
 import { KstController } from './kst'
 import { RigController } from './rig'
 import { CwDecoderController } from './cw/decoder'
+
+// The open log's screens around the logging one: F5–F12 and Esc (STOP) work there too.
+const LOG_SCREENS: ReadonlySet<string> = new Set(['chat', 'map', 'qsolist', 'stats', 'qsoedit'])
 
 export interface Screen {
   mount(root: HTMLElement): void | Promise<void>
@@ -44,6 +48,7 @@ export class App {
   private readonly cw = new CwDecoderController(this.platform)
   private root!: HTMLElement
   private current: Screen | null = null
+  private currentName = ''
   // System Back (Android button / gesture, the browser's Back, the iOS edge swipe) does
   // what the screen's own "‹" does. Away from the log list one extra history entry stands
   // for "in the app": Back pops it and calls the screen's back, and the next screen puts
@@ -55,6 +60,8 @@ export class App {
   mount(root: HTMLElement): void {
     this.root = root
     window.addEventListener('popstate', () => this.onPopState())
+    // Before the screen's own keys (capture): Esc stops the keyer instead of going back.
+    window.addEventListener('keydown', (e) => this.onLogScreenKey(e), true)
     // The Android app asks here first on Back (MainActivity): true = the screen went back.
     // Its WebView skips history entries pushed before any tap (What's new at start), so
     // history alone would close the app there.
@@ -70,6 +77,23 @@ export class App {
     this.kst.init()
     void this.cw.init()
     void this.start()
+  }
+
+  /** Chat, map, QSO list …: the log's macros on F5–F12 (the logging screen handles its
+   *  own); Esc stops the keyer while it sends or calls round. */
+  private onLogScreenKey(e: KeyboardEvent): void {
+    if (!LOG_SCREENS.has(this.currentName)) return
+    if (e.key === 'Escape' && !e.altKey && !e.ctrlKey && !e.metaKey && (this.keyer.sending || this.keyer.repeating)) {
+      e.preventDefault()
+      e.stopPropagation()
+      void this.keyer.stop()
+      return
+    }
+    const sc = matchShortcut(e)
+    if (sc?.type === 'memory' && this.keyer.macroKeys?.(sc.index)) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
   }
 
   /** After an update: the new version's notes once, then the log list. */
@@ -89,6 +113,7 @@ export class App {
     trackScreen(name)
     this.current?.unmount()
     this.current = screen
+    this.currentName = name
     this.back = back
     this.syncHistory()
     void screen.mount(this.root)
@@ -120,6 +145,9 @@ export class App {
     // No log open: the chat goes offline (in ON4KST too); the chat screen connects it again.
     if (this.kst.wanted || this.kst.link !== 'off') this.kst.disconnect()
     this.cw.setActive(false)
+    // No log open: no macros to send, no CQ calling round.
+    this.keyer.macroKeys = undefined
+    this.keyer.stopRepeat()
     this.show(
       new LogListScreen(this.platform, {
         openLog: (id) => this.showLogging(id),

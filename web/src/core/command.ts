@@ -6,6 +6,9 @@
 import type { PartialQso } from './model'
 import { WPM_MAX, WPM_MIN } from './keyer'
 
+/** The longest CQ repeat gap (A30), in seconds. */
+export const REPEAT_MAX_S = 30
+
 export type LineCommand =
   | 'wipe' // W — discard the unfinished QSO
   | 'deleteLast' // D — delete the last saved QSO
@@ -35,8 +38,9 @@ export function matchTuneCommand(line: string): number | undefined {
 /** Keyer line commands (only while CW keying is on — otherwise R / S stay a name):
  *  R = RUN, S = S&P, S<n> = speed n WPM until disconnect, C = connect the keyer again,
  *  K = keyboard mode (typed words go out as CW), K <text> = send that text once,
- *  ESM = ESM on / off. `inRange` is false for
- *  S4 / S51 so the preview can say why nothing will be sent. */
+ *  ESM = ESM on / off, A<n> = repeat the CQ n seconds after it ends (A0 off, A alone
+ *  shows it). `inRange` is false for S4 / S51 / A99 so the preview can say why nothing
+ *  will be done. */
 export type KeyerCommand =
   | { readonly type: 'run' }
   | { readonly type: 'sp' }
@@ -45,6 +49,7 @@ export type KeyerCommand =
   | { readonly type: 'esm' }
   | { readonly type: 'text'; readonly text: string }
   | { readonly type: 'speed'; readonly wpm: number; readonly inRange: boolean }
+  | { readonly type: 'repeat'; readonly gap?: number; readonly inRange: boolean } // gap undefined = show
 
 export function matchKeyerCommand(line: string): KeyerCommand | undefined {
   const l = line.trim().toUpperCase()
@@ -55,6 +60,12 @@ export function matchKeyerCommand(line: string): KeyerCommand | undefined {
   if (l === 'ESM') return { type: 'esm' }
   const text = /^K\s+(.+)$/.exec(l)
   if (text) return { type: 'text', text: text[1]! }
+  const a = /^A(\d{1,2})?$/.exec(l)
+  if (a) {
+    if (a[1] === undefined) return { type: 'repeat', inRange: true }
+    const gap = Number(a[1])
+    return { type: 'repeat', gap, inRange: gap <= REPEAT_MAX_S }
+  }
   const m = /^S(\d{1,2})$/.exec(l)
   if (m) {
     const wpm = Number(m[1])

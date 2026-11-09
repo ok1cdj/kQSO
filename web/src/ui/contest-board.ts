@@ -3,7 +3,7 @@
 // the wide layout without our keyboard, where the log has room on the right. Text is
 // written only when it changes (e-ink repaints).
 
-import { contestStats, qsoRate, scoreLog } from '../core/index'
+import { contestStats, lastRate, qsoRate, scoreLog } from '../core/index'
 import type { BandScore, Qso, Scoring } from '../core/index'
 import { currentDisplayMode } from '../theme/mode'
 import { el } from './dom'
@@ -71,7 +71,8 @@ export class ContestBoard {
     const hm = `${pad2(now.getUTCHours())}:${pad2(now.getUTCMinutes())}`
     set(this.clockEl, currentDisplayMode() === 'eink' ? hm : `${hm}:${pad2(now.getUTCSeconds())}`)
     const b = this.band
-    set(this.rateEl, b ? `${qsoRate(b, now, 60 * MINUTE)} / ${qsoRate(b, now, 10 * MINUTE)}` : '0 / 0')
+    // Live: QSOs per hour from the last 10 (falls while nothing is worked), then the QSOs of the last hour.
+    set(this.rateEl, b ? `${lastRate(b, now)} · ${qsoRate(b, now, 60 * MINUTE)}` : '0 · 0')
   }
 }
 

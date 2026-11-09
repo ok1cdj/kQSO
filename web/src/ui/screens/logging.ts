@@ -71,7 +71,7 @@ import type { KeyboardMode } from '../keyboard'
 import type { KeyAction } from '../keys'
 import type { KeyerController } from '../keyer'
 import { VOICE_MEMORIES } from '../rig'
-import { matchShortcut, nextBand, nextMode } from '../shortcuts'
+import { F_KEYS, matchShortcut, nextBand, nextMode } from '../shortcuts'
 import type { Shortcut } from '../shortcuts'
 import { ContestBoard } from '../contest-board'
 import type { RigController } from '../rig'
@@ -110,14 +110,14 @@ const TX_SHOWN = 40 // keyboard mode: how much of the sent text the preview keep
 const hhmm = (d: Date): string => `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`
 // Keyer macro buttons in the strip: slot + its short label (EXCH → EX, MYCALL → MY: with
 // STOP it is seven buttons on a 360 px phone). CQ is labelled by the mode (CQ / DE), INFO
-// by the profile (REF / LOC / INFO).
+// by the profile (REF / LOC / INFO). In the order of their F keys (F_SLOTS).
 const MACRO_BUTTONS: ReadonlyArray<readonly [MacroSlot, string | undefined]> = [
   ['CQ', undefined],
   ['EXCH', 'EX'],
   ['TU', 'TU'],
+  ['?', '?'],
   ['MYCALL', 'MY'],
   ['INFO', undefined],
-  ['?', '?'],
 ]
 // Hardware keyboard F5 F6 F7 F8 F11 F12 (shortcuts.ts F_KEYS) → these macros, as in Tučňák.
 const F_SLOTS: readonly MacroSlot[] = ['CQ', 'EXCH', 'TU', '?', 'MYCALL', 'INFO']
@@ -224,6 +224,7 @@ export class LoggingScreen implements Screen {
     window.addEventListener('resize', this.onResize)
     WIDE.addEventListener('change', this.onWideChange)
     this.unsubscribeKeyer = this.keyer.subscribe(() => this.onKeyerChange())
+    this.keyer.macroKeys = (i) => this.memoryKey(i) // stays for the chat, map and QSO list
     this.unsubscribeRig = this.rig.subscribe(() => this.onRigChange())
     this.unsubscribeKst = this.kst.subscribe(() => this.onKstChange())
     this.unsubscribeCw = this.cw.subscribe(() => this.renderCw())
@@ -423,7 +424,7 @@ export class LoggingScreen implements Screen {
     }
     // Esc = STOP first; with nothing on the air it leaves keyboard mode. A typed line
     // with nothing on the air goes instead (below).
-    if (k === 'Escape' && this.keyerOn() && (this.txMode || this.keyer.sending || this.line.trim() === '')) {
+    if (k === 'Escape' && this.keyerOn() && (this.txMode || this.keyer.sending || this.keyer.repeating || this.line.trim() === '')) {
       e.preventDefault()
       if (this.txMode && !this.keyer.sending) this.exitTx()
       else void this.keyer.stop()
@@ -459,24 +460,29 @@ export class LoggingScreen implements Screen {
     this.renderAll()
   }
 
+  /** F5–F12: the keyer's macro, or the radio's voice memory in SSB / FM; false when
+   *  neither is there (the key goes on). Also the keys of the chat, map and QSO list. */
+  private memoryKey(index: number): boolean {
+    const slot = F_SLOTS[index]
+    if (slot && this.macrosShown()) {
+      void this.sendMacro(slot)
+      return true
+    }
+    const voice = VOICE_MEMORIES[index]
+    if (voice !== undefined && this.voiceShown()) {
+      void this.rig.playVoice(voice)
+      return true
+    }
+    return false
+  }
+
   /** Run a hardware-keyboard shortcut; false when it doesn't apply now (the key goes on). */
   private runShortcut(sc: Shortcut): boolean {
     // CW keyboard mode: only the macros, the speed and Alt+K (leave it).
     if (this.txMode && sc.type !== 'memory' && sc.type !== 'speed' && !(sc.type === 'keyer' && sc.letter === 'K')) return false
     switch (sc.type) {
-      case 'memory': {
-        const slot = F_SLOTS[sc.index]
-        if (slot && this.macrosShown()) {
-          void this.sendMacro(slot)
-          return true
-        }
-        const voice = VOICE_MEMORIES[sc.index]
-        if (voice !== undefined && this.voiceShown()) {
-          void this.rig.playVoice(voice)
-          return true
-        }
-        return false
-      }
+      case 'memory':
+        return this.memoryKey(sc.index)
       case 'speed': {
         const wpm = this.keyer.wpm
         if (!this.keyerOn() || !this.keyer.connected || wpm === undefined) return false
@@ -819,6 +825,13 @@ export class LoggingScreen implements Screen {
         this.notice = ''
         await this.sendKeyed(kc.text)
       }
+    } else if (kc.type === 'repeat') {
+      if (kc.gap === undefined) this.notice = this.repeatNow()
+      else if (!kc.inRange) this.notice = t('logging.cmdRepeatRange')
+      else {
+        await this.keyer.setRepeatGap(kc.gap)
+        this.notice = this.repeatNow()
+      }
     } else if (!kc.inRange) {
       this.notice = t('logging.cmdSpeedRange')
     } else if (!this.keyer.connected) {
@@ -830,17 +843,40 @@ export class LoggingScreen implements Screen {
     }
   }
 
+  /** A ⏎: the CQ repeat as it is now. */
+  private repeatNow(): string {
+    const gap = this.keyer.repeatGap
+    if (gap === 0) return t('logging.repeatOff')
+    return t(this.keyer.repeating ? 'logging.repeatRunning' : 'logging.repeatSet', { s: gap })
+  }
+
   /** Expand a slot of the current profile × RUN / S&P and send it. Values come from
    *  what Enter would save now (typed line included). With no new call typed they all
    *  come from the last saved QSO — a repeat (AGN?) gets the same call, report and
    *  number again, not the next number; likewise `saved`, the QSO an ESM Enter has just
    *  saved (S&P sends its exchange with that QSO's number). */
   private async sendMacro(slot: MacroSlot, saved?: Qso): Promise<void> {
+    const text = this.macroText(slot, saved)
+    // An empty macro (INFO in the general profile until filled in) would do nothing silently.
+    if (text === '') {
+      this.notice = t('logging.macroEmpty', { slot: slot === 'INFO' ? infoLabel(this.meta.profile) : slot })
+      this.renderStrip()
+      return
+    }
+    // CQ with a repeat set (A3): calling round until Esc / STOP or another macro.
+    if (slot === 'CQ' && this.keyer.repeatGap > 0) {
+      this.keyer.startRepeat(() => (this.keyerOn() ? this.macroText('CQ') : ''))
+      return
+    }
+    await this.sendKeyed(text)
+  }
+
+  private macroText(slot: MacroSlot, saved?: Qso): string {
     const dry = parseLine(this.line, this.state.sticky, this.lineState().partial, PROFILES[this.meta.profile]).partial
     const last = this.qsos.length > 0 ? this.qsos[this.qsos.length - 1] : undefined
     const from = saved ?? (dry.call === undefined ? last : undefined)
     const common = { myCall: this.meta.myCall, myLoc: this.meta.myGrid, myRef: this.meta.myRefs?.map((r) => r.value).join(' '), hi: greeting(new Date()) }
-    const text = expandMacro(
+    return expandMacro(
       this.keyer.macroText(this.meta.profile, slot),
       from
         ? {
@@ -860,13 +896,6 @@ export class LoggingScreen implements Screen {
             ref: dry.theirRef?.value,
           },
     )
-    // An empty macro (INFO in the general profile until filled in) would do nothing silently.
-    if (text === '') {
-      this.notice = t('logging.macroEmpty', { slot: slot === 'INFO' ? infoLabel(this.meta.profile) : slot })
-      this.renderStrip()
-      return
-    }
-    await this.sendKeyed(text)
   }
 
   /** Send text as is; characters the keyer can't send are named in the strip. */
@@ -989,7 +1018,8 @@ export class LoggingScreen implements Screen {
   /** STOP while the keyer is sending — always first in the strip, even before suggestions. */
   private stopButtons(): HTMLElement[] {
     if (this.rig.voicePlaying) return [this.suggestButton('STOP', () => void this.rig.stopVoice(), 'suggest suggest--stop')]
-    if (!this.keyerOn() || !this.keyer.connected || !this.keyer.sending) return []
+    // Calling round: STOP also in the gap between the CQs.
+    if (!this.keyerOn() || !this.keyer.connected || !(this.keyer.sending || this.keyer.repeating)) return []
     return [this.suggestButton('STOP', () => void this.keyer.stop(), 'suggest suggest--stop')]
   }
 
@@ -1099,9 +1129,11 @@ export class LoggingScreen implements Screen {
       const wpm = this.keyer.wpm
       const state = link === 'off' ? ' ✕' : link === 'connecting' ? ' …' : wpm !== undefined ? ` ${wpm}` : ''
       // Keyboard mode: TX instead of RUN / S&P, inverted. ·ESM = Enter sends the macros.
-      const what = this.txMode ? 'TX' : `${this.keyer.mode === 'run' ? 'RUN' : 'S&P'}${this.keyer.esm ? '·ESM' : ''}`
+      // ↻3 = CQ repeat set (A3), inverted while calling round.
+      const repeat = this.keyer.repeatGap > 0 ? ` ↻${this.keyer.repeatGap}` : ''
+      const what = this.txMode ? 'TX' : `${this.keyer.mode === 'run' ? 'RUN' : 'S&P'}${this.keyer.esm ? '·ESM' : ''}${repeat}`
       const label = `${what}${state}`
-      const cls = link !== 'on' ? 'hdr-keyer hdr-keyer--off' : this.txMode ? 'hdr-keyer hdr-keyer--tx' : 'hdr-keyer'
+      const cls = link !== 'on' ? 'hdr-keyer hdr-keyer--off' : this.txMode || this.keyer.repeating ? 'hdr-keyer hdr-keyer--tx' : 'hdr-keyer'
       mid.append(button(label, () => void this.keyer.reconnect(), cls))
     }
     // Radio (705, 7300 …): up (band / mode from the radio), connecting, or ✕ (tap = connect).
@@ -1277,6 +1309,7 @@ export class LoggingScreen implements Screen {
     const loc = inline ? this.locSuggestion() : undefined
     if (loc) chips.push(this.suggestButton(`+ ${loc}`, () => this.fillGrid(loc), 'suggest suggest--ghost suggest--inline'))
     if (inline) for (const b of this.callsAtLocator('suggest suggest--inline')) chips.push(b)
+    if (inline && this.notice) chips.push(el('span', 'preview-notice', this.notice))
     this.previewEl.replaceChildren(...chips)
   }
 
@@ -1384,10 +1417,21 @@ export class LoggingScreen implements Screen {
         return off ? { what: t('logging.cmdSpeedOff'), bad: true } : { what: t('logging.cmdKeyboard'), bad: false }
       case 'text':
         return off ? { what: t('logging.cmdSpeedOff'), bad: true } : { what: t('logging.cmdText', { text: kc.text }), bad: false }
+      case 'repeat':
+        if (kc.gap === undefined) return { what: t('logging.cmdRepeatShow'), bad: false }
+        if (!kc.inRange) return { what: t('logging.cmdRepeatRange'), bad: true }
+        return { what: kc.gap === 0 ? t('logging.cmdRepeatOff') : t('logging.cmdRepeat', { s: kc.gap }), bad: false }
       case 'speed':
         if (!kc.inRange) return { what: t('logging.cmdSpeedRange'), bad: true }
         return off ? { what: t('logging.cmdSpeedOff'), bad: true } : { what: t('logging.cmdSpeed', { wpm: kc.wpm }), bad: false }
     }
+  }
+
+  /** Hardware keyboard (no on-screen one): the F key in the macro button's top left corner. */
+  private fKeyed(b: HTMLButtonElement, index: number): HTMLButtonElement {
+    const key = F_KEYS[index]
+    if (keyboardMode === 'none' && key) b.prepend(el('small', 'fkey', key))
+    return b
   }
 
   private renderStrip(): void {
@@ -1402,7 +1446,9 @@ export class LoggingScreen implements Screen {
       this.stripEl.replaceChildren(...stop, end, ...(this.notice ? [document.createTextNode(this.notice)] : []))
       return
     }
-    if (this.notice) {
+    // A notice takes the strip — unless the macros / voice memories own it: they stay and
+    // the notice goes to the preview line (renderPreview).
+    if (this.notice && !this.macrosShown() && !this.voiceShown()) {
       this.stripEl.replaceChildren(...stop, document.createTextNode(this.notice))
       return
     }
@@ -1447,10 +1493,13 @@ export class LoggingScreen implements Screen {
       this.stripEl.replaceChildren(
         ...stop,
         ...MACRO_BUTTONS.map(([slot, label]) =>
-          this.suggestButton(
-            label ?? (slot === 'CQ' ? cqLabel(this.keyer.mode) : infoLabel(this.meta.profile)),
-            () => void this.sendMacro(slot),
-            'suggest suggest--macro',
+          this.fKeyed(
+            this.suggestButton(
+              label ?? (slot === 'CQ' ? cqLabel(this.keyer.mode) : infoLabel(this.meta.profile)),
+              () => void this.sendMacro(slot),
+              'suggest suggest--macro',
+            ),
+            F_SLOTS.indexOf(slot),
           ),
         ),
       )
@@ -1460,7 +1509,7 @@ export class LoggingScreen implements Screen {
     if (this.voiceShown()) {
       this.stripEl.replaceChildren(
         ...stop,
-        ...VOICE_MEMORIES.map((n) => this.suggestButton(`T${n}`, () => void this.rig.playVoice(n), 'suggest suggest--macro')),
+        ...VOICE_MEMORIES.map((n, i) => this.fKeyed(this.suggestButton(`T${n}`, () => void this.rig.playVoice(n), 'suggest suggest--macro'), i)),
       )
       return
     }

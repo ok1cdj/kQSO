@@ -32,6 +32,7 @@ export const KEYER_SETTINGS = {
   mode: 'keyerRunMode', // 'run' | 'sp'
   macros: 'keyerMacros', // JSON, only the edited slots (core/keyer.ts SavedMacros)
   esm: 'keyerEsm', // '1' / '0', default off — Enter sends the macros (ESM)
+  repeat: 'keyerRepeat', // CQ repeat gap in seconds (A3 ⏎), '0' / unset = off
 } as const
 
 /** Something the screens should tell the operator once (strip notice). */
@@ -52,8 +53,14 @@ export class KeyerController implements KeyerCivHost {
   defaultWpm = WPM_DEFAULT
   macros: SavedMacros = {}
   esm = false
+  /** CQ repeat (A3 ⏎): seconds between the end of a CQ and the next, 0 = off. The CQ
+   *  macro (F5) then starts calling round; Esc / STOP or another send ends it. */
+  repeatGap = 0
   /** Last thing to report; screens show it and call clearNotice(). */
   notice: KeyerNotice | undefined
+  /** The open log's F5–F12 for the screens around it (chat, map, QSO list): true when the
+   *  key did something. Set by the logging screen, cleared when the log closes. */
+  macroKeys: ((index: number) => boolean) | undefined
 
   private readonly transport: KeyerTransport | undefined
   private readonly proto: KeyerProtocol | undefined
@@ -64,6 +71,8 @@ export class KeyerController implements KeyerCivHost {
   private wantLink = false // the operator wants to be connected (not after Odpojit / off)
   private retried = false // one quiet reconnect after an unexpected drop
   private civWanted = false // the radio via the keyer wants the link (even with CW keying off)
+  private repeatText: (() => string) | undefined // the CQ, expanded anew each round; set = calling round
+  private repeatTimer: number | undefined
 
   constructor(
     private readonly platform: KQSOPlatform,
@@ -110,6 +119,7 @@ export class KeyerController implements KeyerCivHost {
     this.mode = (await p.getSetting(KEYER_SETTINGS.mode)) === 'sp' ? 'sp' : 'run'
     this.macros = parseMacros(await p.getSetting(KEYER_SETTINGS.macros))
     this.esm = switchOn(await p.getSetting(KEYER_SETTINGS.esm), false)
+    this.repeatGap = Number(await p.getSetting(KEYER_SETTINGS.repeat)) || 0
     document.addEventListener('visibilitychange', () => {
       // Back from sleep / another app: the link may have dropped meanwhile.
       if (!document.hidden && this.wanted && this.wantLink && this.link === 'off') void this.connect(false)
@@ -271,6 +281,40 @@ export class KeyerController implements KeyerCivHost {
     this.emit()
   }
 
+  /** A3 ⏎ / A0 ⏎: the CQ repeat gap; 0 also ends a repeat under way. */
+  async setRepeatGap(s: number): Promise<void> {
+    this.repeatGap = s
+    if (s === 0) this.stopRepeat()
+    await this.platform.setSetting(KEYER_SETTINGS.repeat, String(s))
+    this.emit()
+  }
+
+  /** Calling round: the CQ now, again `repeatGap` s after each one ends. `cq` gives the
+   *  text each round; '' ends it (the log left CW). */
+  startRepeat(cq: () => string): void {
+    this.stopRepeat()
+    this.repeatText = cq
+    void this.sendRepeat()
+  }
+
+  get repeating(): boolean {
+    return this.repeatText !== undefined
+  }
+
+  stopRepeat(): void {
+    window.clearTimeout(this.repeatTimer)
+    this.repeatTimer = undefined
+    if (!this.repeatText) return
+    this.repeatText = undefined
+    this.emit()
+  }
+
+  private async sendRepeat(): Promise<void> {
+    const text = this.repeatText?.() ?? ''
+    if (text === '' || !this.connected) return this.stopRepeat()
+    await this.sendOut(text)
+  }
+
   async setMode(mode: RunMode): Promise<void> {
     this.mode = mode
     await this.platform.setSetting(KEYER_SETTINGS.mode, mode)
@@ -286,8 +330,14 @@ export class KeyerController implements KeyerCivHost {
     await this.platform.setSetting(KEYER_SETTINGS.macros, JSON.stringify(m))
   }
 
-  /** Send already-expanded text; returns the characters dropped by the conversion. */
+  /** Send already-expanded text; returns the characters dropped by the conversion. Any
+   *  send (another macro, typed CW) ends calling round. */
   async send(text: string): Promise<string[]> {
+    this.stopRepeat()
+    return this.sendOut(text)
+  }
+
+  private async sendOut(text: string): Promise<string[]> {
     const { text: clean, dropped } = sanitize(text)
     if (!this.connected || clean.length === 0 || (!this.viaRig && this.wireBlocked)) return dropped
     const out = this.out!
@@ -299,6 +349,7 @@ export class KeyerController implements KeyerCivHost {
   }
 
   async stop(): Promise<void> {
+    this.stopRepeat()
     if (!this.connected) return
     await this.safe(() => this.out!.stop())
     this.emit()
@@ -337,6 +388,7 @@ export class KeyerController implements KeyerCivHost {
     } else if (s === 'connecting') {
       this.civLink?.keyerConnecting()
     } else if (s === 'off') {
+      if (!this.viaRig) this.stopRepeat()
       this.proto?.reset()
       this.civLink?.keyerDown()
       // Dropped while wanted: one quiet retry (out of range for a moment, keyer reset).
@@ -355,6 +407,14 @@ export class KeyerController implements KeyerCivHost {
     if (ev.type === 'civ') return this.civLink?.onCiv(ev.bytes)
     if (ev.type === 'freq') return this.civLink?.onFreq(ev.hz)
     if (ev.type === 'error') this.notice = { type: 'error', what: ev.what }
+    // Calling round: the next CQ a gap after this one; STOP on the keyer or an error ends it.
+    if (ev.type === 'done' && this.repeatText) {
+      window.clearTimeout(this.repeatTimer)
+      this.repeatTimer = window.setTimeout(() => {
+        this.repeatTimer = undefined
+        void this.sendRepeat()
+      }, this.repeatGap * 1000)
+    } else if (ev.type === 'stopped' || ev.type === 'error') this.stopRepeat()
     this.emit()
   }
 

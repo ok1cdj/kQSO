@@ -349,15 +349,22 @@ export function resetMacros(saved: SavedMacros, profile: ProfileId, mode: RunMod
   return { ...saved, [profile]: p }
 }
 
-/** Fill the {…} placeholders (case-insensitive); unknown ones are left as typed. */
+/** Cut numbers, as contest operators send them: the report's 9 as N (599 → 5NN,
+ *  559 → 55N, 59S → 5NS), the serial's 0 as T (018 → T18, 001 → TT1). The log keeps
+ *  the digits — only the CW goes short. */
+export const cutRst = (rst: string): string => rst.replace(/9/g, 'N')
+export const cutNr = (nr: string): string => nr.replace(/0/g, 'T')
+
+/** Fill the {…} placeholders (case-insensitive); unknown ones are left as typed. {RST}
+ *  and {NR} go out as cut numbers. */
 export function expandMacro(template: string, ctx: MacroContext): string {
   const vars: Record<string, string | undefined> = {
     CALL: ctx.call,
     MYCALL: ctx.myCall,
     MYLOC: ctx.myLoc,
     MYREF: ctx.myRef,
-    RST: ctx.rst,
-    NR: ctx.nr,
+    RST: cutRst(ctx.rst),
+    NR: cutNr(ctx.nr),
     LOC: ctx.loc,
     REF: ctx.ref,
     HI: ctx.hi,
