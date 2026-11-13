@@ -53,7 +53,7 @@ description: kQSO in a VHF contest: a full multi-band log up to the microwaves, 
       <ul class="ticks">
         <li>QSOs and points per hour, so you see when it went well and when it stalled.</li>
         <li>Large squares with distance and bearing, the top 10 longest QSOs.</li>
-        <li>A map of worked locators, optionally with a rain radar for rain scatter on 3 cm.</li>
+        <li>A map of worked locators, with a <a href="#radar">rain radar</a> for rain scatter.</li>
         <li>The 6-hour entry: the window is kept per band, breaks included.</li>
       </ul>
       <p>IARU R1, VKV PA and FM pohár contests. A QSO is never deleted: a wrong one is struck out as ERROR, so the sent serials stay in sequence.</p>
@@ -62,7 +62,24 @@ description: kQSO in a VHF contest: a full multi-band log up to the microwaves, 
   </div>
 </section>
 
-<section class="band band-grey" id="kst">
+<section class="band band-grey" id="radar">
+  <div class="wrap split">
+    <div class="text">
+      <p class="eyebrow">Map · rain radar</p>
+      <h2>Where to point the antenna for rain scatter</h2>
+      <p>On the VHF contest map you can switch on a rain radar (Settings → Rain radar on the VHF contest map, off by default). The current RainViewer precipitation frame shows under the map, so you see where the rain cells are.</p>
+      <p><b>Tap or click into a cell</b> and the top left shows that spot's locator, distance and <b>bearing from you</b>: where to turn the antenna for rain scatter on 3 cm. It works the same for a station you haven't worked yet.</p>
+      <div class="example">
+        <div class="typed">JN88IN · 153 km · 151°</div>
+        <p>A cell 153 km away, antenna to 151°.</p>
+      </div>
+      <p>The frame refreshes while the map is open; its UTC time is at the bottom left. The radar is the only time the map uses the network; no log data is sent.</p>
+    </div>
+    <figure class="shot"><img src="/img/en/map-radar-tablet.webp" alt="The VHF contest map with the rain radar; a click into a cell showed JN88IN, 153 km, 151°" width="1280" height="800" loading="lazy"><figcaption>The map with the rain radar: a click into a cell showed JN88IN · 153 km · 151°.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band" id="kst">
   <div class="wrap">
     <div class="text">
       <p class="eyebrow">ON4KST chat</p>
@@ -98,7 +115,7 @@ description: kQSO in a VHF contest: a full multi-band log up to the microwaves, 
   </div>
 </section>
 
-<section class="band">
+<section class="band band-grey">
   <div class="wrap split flip">
     <div class="text">
       <h2>EDI for the contest manager</h2>
@@ -109,7 +126,7 @@ description: kQSO in a VHF contest: a full multi-band log up to the microwaves, 
   </div>
 </section>
 
-<section class="band band-grey">
+<section class="band">
   <div class="wrap text">
     <p>A <a href="{{app}}manual/start-en.html#contest">VHF contest step by step</a> is in the First steps; the details are in the <a href="{{app}}manual/en.html#contest">manual</a>.</p>
   </div>

@@ -587,9 +587,9 @@ p {
 }
 .shots-nav {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
+  justify-content: center;
+  gap: 4rem;
+  margin-top: 0.5rem;
 }
 .shots-nav button {
   font: 600 1.1rem var(--mono);

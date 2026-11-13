@@ -53,7 +53,7 @@ description: kQSO ve VKV závodě: plnohodnotný deník pro více pásem až po 
       <ul class="ticks">
         <li>QSO a body po hodinách, takže vidíš, kdy to šlo a kdy stálo.</li>
         <li>Velké čtverce se vzdáleností a azimutem, top 10 nejdelších spojení.</li>
-        <li>Mapa udělaných lokátorů, na 3 cm volitelně srážkový radar pro rain scatter na 3 cm.</li>
+        <li>Mapa udělaných lokátorů, se <a href="#radar">srážkovým radarem</a> pro rain scatter.</li>
         <li>Kategorie 6 hodin: okno se hlídá pro každé pásmo zvlášť i s přestávkou.</li>
       </ul>
       <p>Závody IARU R1, VKV PA a FM pohár. Spojení se nikdy nemaže: chybné se přeškrtne jako ERROR, aby odeslaná čísla šla po sobě.</p>
@@ -62,7 +62,24 @@ description: kQSO ve VKV závodě: plnohodnotný deník pro více pásem až po 
   </div>
 </section>
 
-<section class="band band-grey" id="kst">
+<section class="band band-grey" id="radar">
+  <div class="wrap split">
+    <div class="text">
+      <p class="eyebrow">Mapa · srážkový radar</p>
+      <h2>Kam natočit anténu na rain scatter</h2>
+      <p>Na mapě VKV závodu můžeš zapnout srážkový radar (Nastavení → Srážkový radar na mapě VKV závodu, výchozí vypnuto). Pod mapou se ukáže aktuální snímek srážek z RainViewer, takže vidíš, kde jsou dešťové buňky.</p>
+      <p><b>Ťukni nebo klikni myší do buňky</b> a vlevo nahoře se ukáže lokátor toho místa, vzdálenost a <b>azimut od tebe</b>: kam natočit anténu pro rain scatter na 3 cm. Stejně funguje i pro stanici, kterou ještě nemáš.</p>
+      <div class="example">
+        <div class="typed">JN88IN · 153 km · 151°</div>
+        <p>Buňka 153 km daleko, anténa na 151°.</p>
+      </div>
+      <p>Snímek se obnovuje, dokud je mapa otevřená, a jeho čas UTC je vlevo dole. Radar je jediná chvíle, kdy mapa používá síť; z logu se nic neposílá.</p>
+    </div>
+    <figure class="shot"><img src="/img/cs/map-radar-tablet.webp" alt="Mapa VKV závodu se srážkovým radarem; klik do buňky ukázal JN88IN, 153 km, 151°" width="1280" height="800" loading="lazy"><figcaption>Mapa se srážkovým radarem: klik do buňky ukázal JN88IN · 153 km · 151°.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band" id="kst">
   <div class="wrap">
     <div class="text">
       <p class="eyebrow">ON4KST chat</p>
@@ -98,7 +115,7 @@ description: kQSO ve VKV závodě: plnohodnotný deník pro více pásem až po 
   </div>
 </section>
 
-<section class="band">
+<section class="band band-grey">
   <div class="wrap split flip">
     <div class="text">
       <h2>EDI pro vyhodnocovatele</h2>
@@ -109,7 +126,7 @@ description: kQSO ve VKV závodě: plnohodnotný deník pro více pásem až po 
   </div>
 </section>
 
-<section class="band band-grey">
+<section class="band">
   <div class="wrap text">
     <p><a href="{{app}}manual/start-cs.html#contest">VKV závod krok za krokem</a> je v Prvních krocích, podrobnosti v <a href="{{app}}manual/cs.html#contest">návodu</a>.</p>
   </div>
