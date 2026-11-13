@@ -1,0 +1,86 @@
+<!--
+title: Rádia, CW klíčovač a dekodér
+description: kQSO a Icom přes CI-V (IC-705 přes Bluetooth, ostatní kabelem), CW klíčovač M5-ESP32 s makry a ESM, CW dekodér a hardwarová klávesnice.
+-->
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">Rádia · CW · klávesnice</p>
+    <h1>Ovládání rádia a CW</h1>
+    <p class="lead">Pásmo, mód a kmitočet z rádia, CW makra na F klávesách a dekodér, který z poslechu dá značku do řádku. S vlastnoručně postaveným klíčovačem M5 i na iPadu. Obě části jsou zatím beta.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap split">
+    <div class="text">
+      <p class="eyebrow">Klíčovač M5 · stavba</p>
+      <h2>Klíčovač si postavíš sám, z pár součástek</h2>
+      <p>Klíčovač kQSO je malá kostička <b>M5Stack Atom</b> s Bluetooth. Nepotřebuje plošný spoj ani krabičku: pár součástek se zapájí přímo do kabelu pod smršťovací bužírku. Firmware nahraješ z prohlížeče, bez vývojového prostředí a ovladačů.</p>
+      <p>Jeden klíčovač pak umí dvě věci najednou:</p>
+      <ul class="ticks">
+        <li><b>klíčuje CW</b> z maker kQSO (konektor KEY),</li>
+        <li><b>připojí rádio přes CI-V</b> (konektor REMOTE): pásmo, mód a kmitočet z rádia, přeladění z logu. Jde to s jakýmkoli Icomem s CI-V.</li>
+      </ul>
+      <p><b>Funguje i na iPadu a iPhonu.</b> Aplikace kQSO pro iOS se ke klíčovači připojí přes Bluetooth, takže máš CW i ovládání rádia na tabletu od Applu, kam rádio kabelem připojit nejde. Stejně tak na Androidu a v Chrome nebo Edge na počítači.</p>
+      <p class="btns"><a class="btn btn-ink" href="https://keyer.ok1cdj.com/build.html?lang=cs&amp;app=kqso">Návod na stavbu klíčovače</a></p>
+    </div>
+    <div class="callout" style="margin-top:0">
+      <h3 style="margin-top:0">Co budeš potřebovat</h3>
+      <ul class="ticks">
+        <li>M5Stack <b>AtomS3 Lite</b> (doporučený), Atom Lite, nebo AtomS3 s displejem, který ukazuje kmitočet</li>
+        <li>kabel Grove a dva kabely s jackem 3,5 mm (KEY a CI-V)</li>
+        <li>klíčování: optočlen PC817, nebo N-MOSFET, a dva rezistory</li>
+        <li>CI-V: MOSFET BSS138 nebo 2N7000 a dva rezistory</li>
+        <li>smršťovací bužírka; volitelně baterie Atomic Battery Base</li>
+        <li>na nahrání firmwaru: počítač s Chrome nebo Edge a datový kabel USB-C</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="band band-grey">
+  <div class="wrap split">
+    <div class="text">
+      <h2>Icom přes CI-V</h2>
+      <ul class="ticks">
+        <li><b>IC-705 přes Bluetooth</b> v aplikaci pro Android a iOS.</li>
+        <li><b>Jakýkoli Icom kabelem</b>: USB nebo CT-17 v Chrome či Edge na počítači (Windows, Linux, macOS). Rychlost i adresu najde kQSO samo.</li>
+        <li><b>Přes klíčovač M5</b> na konektoru CI-V rádia, i na iPadu a iPhonu.</li>
+      </ul>
+      <p>Pásmo, mód a přesný kmitočet pak jdou z rádia. Napsané pásmo nebo mód rádio přeladí:</p>
+      <div class="example">
+        <div class="typed">F14030 cw</div>
+        <p>Rádio na 14,030 MHz v CW.</p>
+      </div>
+      <p>IC-705, 9700, 7300 a 7610 vysílají CW makra vlastním klíčovačem, v SSB a FM nabídne kQSO hlasové paměti T1–T4. Pro mikrovlny má tabulku transvertorů: rádio se naladí na mezifrekvenci a do logu jde kmitočet na pásmu. Známé modely: IC-705, 706, 910, 9700, 7300, 7610, 7100.</p>
+    </div>
+    <figure class="shot"><img src="/media/tablet-vhf-logging.webp" alt="Tablet ve VKV závodě v CW s makry klíčovače" width="1340" height="690" loading="lazy"><figcaption>VKV závod v CW: makra klíčovače, poslední spojení, lokátor z databáze.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap split flip">
+    <div class="text">
+      <h2>CW klíčovač a makra</h2>
+      <p>S klíčovačem M5 přes Bluetooth (nebo s klíčovačem rádia) má každý profil logu svoje makra: CQ, výměna, TU, opakování, značka, lokátor nebo reference.</p>
+      <ul class="ticks">
+        <li>RUN a S&amp;P, ESM jako v N1MM: Enter pošle, co je v tu chvíli na řadě.</li>
+        <li>Opakování výzvy: <code>A3</code> a CQ volá dokola s 3s mezerou.</li>
+        <li>Zkrácená čísla: 5NN, T18. V logu i v EDI zůstanou číslice.</li>
+        <li>Makra na <kbd>F5</kbd>–<kbd>F12</kbd> na každé obrazovce logu.</li>
+      </ul>
+      <h2>CW dekodér</h2>
+      <p>Dekodér <a href="https://github.com/e04/web-deep-cw-decoder">DeepCW</a> poslouchá zvuk rádia (USB zvukovka, mikrofon telefonu, záložka WebSDR) a ťuknutím dá značku, report nebo lokátor do řádku. Zvuk se zpracuje jen v zařízení. V aplikaci pro Android a iOS, na webu v Chrome a Edge na počítači.</p>
+    </div>
+    <figure class="shot"><img src="/img/cs/cw-tap.webp" alt="Řádek dekodéru CW nad logem, ťuknutím se značka dá do řádku" width="780" height="412" loading="lazy"><figcaption>Dekodér nad řádkem: ťuknutí na značku ji zapíše.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band band-grey">
+  <div class="wrap">
+    <div class="text">
+      <h2>Hardwarová klávesnice</h2>
+      <p>Na počítači nebo tabletu s klávesnicí jde všechno bez myši: <kbd>Ctrl</kbd>+<kbd>Enter</kbd> uloží, <kbd>Alt</kbd>+<kbd>N</kbd> / <kbd>P</kbd> přepne pásmo, <kbd>Alt</kbd>+<kbd>M</kbd> mód, <kbd>PgUp</kbd> / <kbd>PgDn</kbd> rychlost klíčování, <kbd>F5</kbd>–<kbd>F12</kbd> makra, <kbd>Esc</kbd> zastaví vysílání.</p>
+    </div>
+  </div>
+</section>

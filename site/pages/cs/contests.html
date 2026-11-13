@@ -1,0 +1,116 @@
+<!--
+title: VKV závody
+description: kQSO ve VKV závodě: plnohodnotný deník pro více pásem až po mikrovlny, čísla a lokátory na jeden řádek, body IARU R1, duplicity po pásmech, závodní panel, statistiky, mapa, ON4KST chat a EDI po pásmech.
+-->
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">Profil VKV závod</p>
+    <h1>VKV závod od prvního spojení po EDI</h1>
+    <p class="lead">Plnohodnotný závodní deník: všechna pásma v jednom logu, od 6 m až po mikrovlnná pásma do 76 GHz, body za kilometry, hlídání duplicit po pásmech, plně integrovaný ON4KST chat a na konci soubory pro vyhodnocovatele. Na telefonu na kopci i na tabletu s klávesnicí.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <figure class="shot">
+      <video src="/media/demo-vhf.mp4" poster="/media/demo-vhf-poster.webp" width="960" height="494" autoplay muted loop playsinline aria-label="Tablet v IARU R1 VKV závodě: QSO s QRB, lokátor z databáze, CW makra, QSO po částech, duplicita, seznam a mapa"></video>
+      <figcaption>IARU R1 jako OL0M na tabletu: QSO s QRB a body, lokátor z databáze, <code>cw</code> s makry klíčovače, spojení po částech, duplicita, seznam a mapa.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="band band-grey">
+  <div class="wrap split">
+    <div class="text">
+      <h2>Jak to slyšíš, tak to píšeš</h2>
+      <div class="example">
+        <div class="typed">OK2KZR 59123 JN99AF</div>
+        <p>Celé QSO naráz: značka, report s číslem, lokátor. QRB a body hned.</p>
+      </div>
+      <div class="example">
+        <div class="typed">OK2KZR 123</div>
+        <p>Report netřeba: holé číslo za značkou je přijaté číslo, report zůstane 59.</p>
+      </div>
+      <div class="example">
+        <div class="typed">OK2KZR ⏎ 123 ⏎ JN99AF ⏎ ⏎</div>
+        <p>Po částech, jak to protistanice dává. Čipy ukazují, co ještě chybí.</p>
+      </div>
+      <div class="example">
+        <div class="typed">70cm OK1EM</div>
+        <p>Změna pásma i uprostřed spojení. Čísla jdou dál, duplicity a body se počítají po pásmech.</p>
+      </div>
+      <p>Lokátor nabídne kQSO z tvého logu, z ON4KST chatu nebo z databáze asi 3 000 stanic sestavené z veřejných EDI logů. Databáze zná i pásma, na kterých stanice vysílá, takže hned vidíš, kam ji přetáhnout.</p>
+    </div>
+    <figure class="shot"><img src="/img/cs/logging-qrv.webp" alt="Čip QRV s pásmy stanice, udělaná pásma přeškrtnutá" width="780" height="392" loading="lazy"><figcaption>OK1EM na 2 m: QRV od 70 cm po 122 GHz, 23 cm a 3 cm už jsou v logu.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap split flip">
+    <div class="text">
+      <h2>Závodní panel a statistiky</h2>
+      <p>Na tabletu nebo počítači na šířku ukazuje závodní panel číslo k předání velkými číslicemi, hodiny UTC, počet QSO, živý rate, body, průměr a ODX.</p>
+      <ul class="ticks">
+        <li>QSO a body po hodinách, takže vidíš, kdy to šlo a kdy stálo.</li>
+        <li>Velké čtverce se vzdáleností a azimutem, top 10 nejdelších spojení.</li>
+        <li>Mapa udělaných lokátorů, na 3 cm volitelně srážkový radar pro rain scatter na 3 cm.</li>
+        <li>Kategorie 6 hodin: okno se hlídá pro každé pásmo zvlášť i s přestávkou.</li>
+      </ul>
+      <p>Závody IARU R1, VKV PA a FM pohár. Spojení se nikdy nemaže: chybné se přeškrtne jako ERROR, aby odeslaná čísla šla po sobě.</p>
+    </div>
+    <figure class="shot"><img src="/img/cs/panel-tablet.webp" alt="Tablet: poslední QSO vlevo, závodní panel vpravo" width="1280" height="800" loading="lazy"><figcaption>Tablet s hardwarovou klávesnicí: poslední spojení s km a azimutem, vpravo závodní panel.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band band-grey" id="kst">
+  <div class="wrap">
+    <div class="text">
+      <p class="eyebrow">ON4KST chat</p>
+      <h2>Skedy bez přepínání oken</h2>
+      <p>Ve VKV závodě se skedy domlouvají v chatu ON4KST. V kQSO je chat součástí závodního logu (od 6 m výš): místnost 50/70 MHz, 144/432 MHz nebo Mikrovlny vybere sám podle pásma, na kterém právě jsi. Nepotřebuješ druhý program ani druhé okno.</p>
+    </div>
+    <div class="split" style="margin-top:1.5rem">
+      <ul class="ticks">
+        <li><b>Stanice</b> s lokátorem, vzdáleností a azimutem od tebe. Řadíš podle značky, km nebo azimutu, skryješ udělané a stanice away, omezíš vzdálenost (výchozí 900 km).</li>
+        <li><b>Pásma QRV</b> u každé stanice: kQSO je vyčte ze jména (<code>Bert 2/70/23</code>), ze zpráv (<code>qrv 1296.150</code>) a doplní z databáze. Pásma, kde už stanici máš, jsou přeškrtnutá.</li>
+        <li><b>Sked</b> jedním ťuknutím podle tvé šablony (<code>pse sked {QRG} {MODE}?</code>). Sked kmitočet si nastavíš pro každé pásmo: <code>G 144.290</code>.</li>
+        <li><b>Log</b> tě vrátí do deníku se značkou a lokátorem stanice už v řádku.</li>
+      </ul>
+      <ul class="ticks">
+        <li><b>Zprávy pro tebe</b> jsou tučně a poslední se ukáže i pod hlavičkou logu. Ťukneš a odpovídáš.</li>
+        <li><b>Psaní přímo z řádku logu</b>: <code>@OL0M pse sked 144.290</code> odejde stanici, žádné QSO se neuloží.</li>
+        <li><b>Lokátor z chatu</b>, který si stanice dnes nastavila, kQSO nabídne při logování dřív než lokátor z databáze.</li>
+        <li><b>Na tabletu</b> jsou aktivní stanice z chatu i pod závodním panelem. Když jsi portable s jiným lokátorem, nabídne kQSO <code>/SETLOC</code>.</li>
+      </ul>
+    </div>
+    <div class="shot-row">
+      <figure class="shot"><img src="/img/cs/chat-stations.webp" alt="Seznam stanic v ON4KST chatu se vzdáleností, azimutem a pásmy QRV" width="780" height="1688" loading="lazy"><figcaption>Stanice podle vzdálenosti, s azimutem a pásmy QRV.</figcaption></figure>
+      <figure class="shot"><img src="/img/cs/chat-messages.webp" alt="Zprávy v ON4KST chatu, poslední pro mě je zvýrazněná" width="780" height="1688" loading="lazy"><figcaption>Zprávy: ta pro mě je tučně s čárou vlevo.</figcaption></figure>
+      <div>
+        <figure class="shot"><img src="/img/cs/chat-logging.webp" alt="Zpráva pro mě pod hlavičkou logu" width="780" height="220" loading="lazy"><figcaption>Zpráva pro mě pod hlavičkou logu.</figcaption></figure>
+        <figure class="shot" style="margin-top:1.25rem"><img src="/img/cs/chat-line.webp" alt="Řádek logu se zprávou @OL0M pse sked 144.290 a čipem → OL0M KST" width="780" height="340" loading="lazy"><figcaption>Odpověď rovnou z řádku logu.</figcaption></figure>
+      </div>
+    </div>
+    <figure class="shot" style="margin-top:2rem"><img src="/img/cs/chat-tablet.webp" alt="Tablet: zpráva pod hlavičkou a aktivní stanice z chatu pod závodním panelem" width="1280" height="800" loading="lazy"><figcaption>Tablet v závodě: zpráva pro mě pod hlavičkou, aktivní stanice z chatu pod závodním panelem.</figcaption></figure>
+    <div class="text" style="margin-top:2rem">
+      <p>Potřebuješ vlastní účet ON4KST (jen pro koncesionáře). Bez něj si chat vyzkoušíš se značkou <code>DEMO</code>: kQSO se nikam nepřipojí a spustí cvičný chat se stanicemi a odpověďmi. Aplikace pro Android a iOS se k ON4KST připojují napřímo, web přes relay kQSO, který data jen předává a nic neukládá. Stanici můžeš ztlumit nebo nahlásit.</p>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap split flip">
+    <div class="text">
+      <h2>EDI pro vyhodnocovatele</h2>
+      <p>Jeden soubor na pásmo ve formátu REG1TEST s názvy, jaké chce ČRK. Kategorie SO, MO i CHECK, výkon, anténa a zařízení pro každé pásmo; kQSO si je pamatuje na příští závod. Do 100 W na 145 a 435 MHz je to LP.</p>
+      <p>VKV PA nabídne odeslání robotovi, FM pohár souhrn do webového formuláře. ADIF se všemi pásmy pak jde do <a href="https://www.wavelog.org/">Wavelogu</a>.</p>
+    </div>
+    <figure class="shot phone"><img src="/img/cs/edi-band.webp" alt="EDI export: výkon, anténa a zařízení pro pásmo 435 MHz" width="780" height="992" loading="lazy"><figcaption>Pásmo 435 MHz: výkon, anténa, vysílač, export.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band band-grey">
+  <div class="wrap text">
+    <p><a href="{{app}}manual/start-cs.html#contest">VKV závod krok za krokem</a> je v Prvních krocích, podrobnosti v <a href="{{app}}manual/cs.html#contest">návodu</a>.</p>
+  </div>
+</section>

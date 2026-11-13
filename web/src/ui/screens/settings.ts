@@ -1108,13 +1108,16 @@ export class SettingsScreen implements Screen {
     }
     stores.append(`${t('settings.aboutApps')} `, link('Google Play', PLAY_URL))
     if (APP_STORE_URL) stores.append(' · ', link('App Store', APP_STORE_URL))
+    // The website for people who haven't got kQSO yet; handy to pass on.
+    const site = el('div')
+    site.append(link('kqso.eu', 'https://kqso.eu/'))
     const links = el('div', 'segmented')
     links.append(
       button(`${t('settings.manual')} ›`, () => this.nav.openManual(), 'btn btn--small'),
       button(`${t('settings.help')} ›`, () => this.nav.openHelp(), 'btn btn--small'),
       button(`${t('settings.whatsNew')} ›`, () => this.nav.openWhatsNew(), 'btn btn--small'),
     )
-    wrap.append(stores, links)
+    wrap.append(site, stores, links)
     return wrap
   }
 }

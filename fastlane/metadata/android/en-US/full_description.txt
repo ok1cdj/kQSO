@@ -28,3 +28,5 @@ kQSO is a ham radio logger with a single, smart input line. Type a whole QSO on 
 Own alphabetical keyboard (a hardware keyboard works too), standard and e-ink display modes, light and dark theme, English and Czech.
 
 No ads, no tracking, no account. Free software under GPL-3.0.
+
+Website: https://kqso.eu/

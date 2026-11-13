@@ -1,0 +1,163 @@
+<!--
+title: kQSO — radioamatérský deník s jedním chytrým řádkem
+description: Deník pro SOTA, POTA, WWFF a další aktivace, VKV závody, satelity i běžný provoz. Celé QSO napíšeš na jeden řádek. Web, Android a iOS, funguje offline, zdarma.
+-->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">Radioamatérský deník · web · Android · iOS</p>
+      <h1>Celé QSO na jeden řádek.</h1>
+      <p class="lead">Napíšeš, co slyšíš, a kQSO pozná značku, report, číslo, lokátor i referenci podle tvaru. Žádné kolonky, žádné přepínání polí. Na kopci, v závodě i přes družici.</p>
+      <div class="btns">
+        <a class="btn btn-ink" href="{{app}}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Otevřít v prohlížeči</a>
+        <a class="btn" href="https://play.google.com/store/apps/details?id=com.ok1cdj.kqso">Google Play</a>
+        <a class="btn" href="https://apps.apple.com/app/kqso/id6820009297">App Store</a>
+      </div>
+      <p class="hero-note">Zdarma, bez reklam a bez účtu. Logy zůstávají v tvém zařízení.</p>
+    </div>
+    <div class="logline" aria-label="Ukázka: co napíšeš a co kQSO pozná">
+      <div class="logline-ctx"><b data-ctx-l>SOTA OE/SB-257</b><span data-ctx-r>20m SSB</span></div>
+      <div class="logline-input">DD2TC 55 T57<span class="caret"></span></div>
+      <div class="chips">
+        <span class="chip">DD2TC <small>CALL</small></span>
+        <span class="chip">55 <small>RST</small></span>
+        <span class="chip">57 <small>TX-RST</small></span>
+      </div>
+      <div class="logline-saved">⏎ uloženo · QSO 12</div>
+      <div class="logline-dots"></div>
+    </div>
+    <script type="application/json" id="demos">
+[
+  { "tab": "SOTA", "ctx": ["SOTA OE/SB-257", "20m SSB"], "line": "DD2TC 55 T57",
+    "chips": [[0, "DD2TC", "CALL"], [1, "55", "RST"], [2, "57", "TX-RST"]],
+    "saved": "⏎ uloženo · přijato 55, dáno 57" },
+  { "tab": "VKV závod", "ctx": ["IARU R1 · OL0M", "2m SSB · Nr 124"], "line": "OK2KZR 59123 JN99AF",
+    "chips": [[0, "OK2KZR", "CALL"], [1, "59", "RST"], [1, "123", "NR", true], [2, "JN99AF", "LOC", true], [2, "179 km", "QRB"]],
+    "saved": "⏎ uloženo · 179 bodů · další číslo 125" },
+  { "tab": "S2S", "ctx": ["SOTA OK/ZC-001", "40m CW"], "line": "OK1ABC/P 559 OK/ZC/012",
+    "chips": [[0, "OK1ABC/P", "CALL"], [1, "559", "RST"], [2, "OK/ZC-012", "REF"]],
+    "saved": "⏎ uloženo · summit-to-summit" },
+  { "tab": "Satelit", "ctx": ["FO-29 · přelet 18:42", "2m/70cm SSB"], "line": "9A2U 59 JN75RO",
+    "chips": [[0, "9A2U", "CALL"], [1, "59", "RST"], [2, "JN75RO", "LOC"]],
+    "saved": "⏎ uloženo · uplink a downlink z družice" }
+]
+    </script>
+  </div>
+</section>
+
+<section class="band band-grey">
+  <div class="wrap">
+    <h2>K čemu ho použiješ</h2>
+    <p class="lead">Při zakládání logu zvolíš, co jdeš dělat. Podle toho kQSO ví, co se předává a jak log vyexportovat.</p>
+    <div class="uses">
+      <a class="use" href="/cs/aktivace.html">
+        <div class="typed">DD2TC 55 T57</div>
+        <h3>Aktivace</h3>
+        <p>SOTA, POTA, WWFF, GMA, rozhledny TOTA a bunkry BOTA. Reference v okolí i bez signálu, S2S a P2P, ADIF pro každý program zvlášť.</p>
+        <span class="more">Aktivace ›</span>
+      </a>
+      <a class="use" href="/cs/zavody.html">
+        <div class="typed">OK2KZR 123 JN99AF</div>
+        <h3>VKV závody</h3>
+        <p>Čísla, lokátory, body za km, hlídání duplicit, závodní panel, statistiky, mapa, ON4KST chat a EDI po pásmech.</p>
+        <span class="more">VKV závody ›</span>
+      </a>
+      <a class="use" href="/cs/satelity.html">
+        <div class="typed">9A2U 59 JN75RO</div>
+        <h3>Satelity</h3>
+        <p>Co přelet, to log. Družice nastaví uplink a downlink, databáze zná přes 5 000 satelitních značek s lokátory.</p>
+        <span class="more">Satelity ›</span>
+      </a>
+      <a class="use" href="/cs/radia.html">
+        <div class="typed">F14030 cw</div>
+        <h3>Rádia a CW</h3>
+        <p>Icom přes CI-V, CW makra a dekodér. Klíčovač na M5Stack Atom si postavíš z pár součástek a rádio s CW přes něj ovládáš i z iPadu.</p>
+        <span class="more">Rádia a CW ›</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <h2>Co kQSO umí</h2>
+    <div class="features">
+      <div class="feature">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>Vlastní klávesnice</h3>
+        <p>Abecední, s velkými klávesami, které se trefí i v rukavicích. Funguje i systémová a hardwarová klávesnice s F klávesami pro makra.</p>
+      </div>
+      <div class="feature">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M8.5 8.5A4 4 0 0 0 6 16h10M17.5 11.5A4 4 0 0 1 20 16M10 5.5A6 6 0 0 1 17.5 9"/></svg>Bez signálu</h3>
+        <p>Logování, mapa, statistiky, databáze značek i reference v okolí fungují offline. Síť je potřeba jen pro odeslání do <a href="https://www.wavelog.org/">Wavelogu</a> a chat.</p>
+      </div>
+      <div class="feature">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg>Nic se neztratí</h3>
+        <p>Každé QSO se zapíše hned. Když telefon spadne nebo se restartuje, rozepsané spojení se nabídne zpátky.</p>
+      </div>
+      <div class="feature">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>Databáze značek</h3>
+        <p>Po dvou znacích nabídne značky a lokátor. VKV část zná pásma, na kterých stanice běžně vysílá, a duplicitu hned ukáže.</p>
+      </div>
+      <div class="feature">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>Mapa a statistiky</h3>
+        <p>Udělané lokátory na mapě, QSO a body po hodinách, velké čtverce, top 10 spojení. Volitelně srážkový radar pro rain scatter.</p>
+      </div>
+      <div class="feature">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>Export a Wavelog</h3>
+        <p>ADIF pro SOTA, POTA, WWFF a další, EDI pro VKV závody (jeden soubor na pásmo) a odeslání do vlastního <a href="https://www.wavelog.org/">Wavelogu</a>.</p>
+      </div>
+      <div class="feature">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 6h6M9 10h6M9 14h3"/></svg>E-ink a tmavý režim</h3>
+        <p>Zobrazení pro e-ink displeje (laděné na Mudita Kompakt), světlý i tmavý vzhled. Čeština a angličtina podle systému.</p>
+      </div>
+      <div class="feature">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg>Tvoje data</h3>
+        <p>Žádný účet, žádný server s tvými logy, žádné sledování. Svobodný software pod licencí GPL-3.0, zdrojáky na GitHubu.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band band-grey">
+  <div class="wrap">
+    <h2>Jak to vypadá</h2>
+  </div>
+  <div class="shots">
+    <figure><img src="/img/cs/logging.webp" alt="Logování ve VKV závodě s klávesnicí kQSO" width="780" height="1688" loading="lazy"><figcaption>Logování: nahoře řádek, pod ním co kQSO poznalo, dole klávesnice.</figcaption></figure>
+    <figure><img src="/img/cs/panel-tablet.webp" alt="Tablet na šířku s hardwarovou klávesnicí a závodním panelem" width="1280" height="800" loading="lazy"><figcaption>Tablet v závodě: poslední spojení a závodní panel s číslem, rate a ODX.</figcaption></figure>
+    <figure><img src="/img/cs/loglist.webp" alt="Seznam logů" width="780" height="1688" loading="lazy"><figcaption>Seznam logů: závody, aktivace, satelitní přelet.</figcaption></figure>
+    <figure><img src="/img/cs/map-tablet.webp" alt="Mapa udělaných lokátorů" width="1280" height="800" loading="lazy"><figcaption>Mapa lokátorů z Polního dne, offline.</figcaption></figure>
+    <figure><img src="/img/cs/chat-tablet.webp" alt="ON4KST chat v závodním logu" width="1280" height="800" loading="lazy"><figcaption>ON4KST chat přímo v závodním logu.</figcaption></figure>
+    <figure><img src="/img/cs/qsolist.webp" alt="Seznam QSO s body" width="780" height="1688" loading="lazy"><figcaption>Seznam QSO s body a hledáním.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band" id="stahnout">
+  <div class="wrap">
+    <h2>Kde ho spustíš</h2>
+    <p class="lead">Všude stejná aplikace a stejná verze ({{version}}). Vyber si podle zařízení.</p>
+    <div class="platforms">
+      <div class="platform">
+        <h3>Prohlížeč</h3>
+        <p>Počítač, tablet i telefon. Po prvním otevření funguje i offline. Na počítači v Chrome nebo Edge připojíš rádio kabelem.</p>
+        <a class="btn btn-ink" href="{{app}}">Otevřít kqso.ok1cdj.com</a>
+      </div>
+      <div class="platform">
+        <h3>Android</h3>
+        <p>Z Google Play, nebo APK z GitHubu pro zařízení bez obchodu (třeba Mudita Kompakt). Obojí se navzájem aktualizuje.</p>
+        <div class="btns">
+          <a class="btn btn-ink" href="https://play.google.com/store/apps/details?id=com.ok1cdj.kqso">Google Play</a>
+          <a class="btn" href="https://github.com/ok1cdj/kQSO/releases/latest">APK</a>
+        </div>
+      </div>
+      <div class="platform">
+        <h3>iPhone a iPad</h3>
+        <p>Z App Store. Aplikace umí IC-705 přes Bluetooth, mikrofon pro CW dekodér a ON4KST chat napřímo.</p>
+        <a class="btn btn-ink" href="https://apps.apple.com/app/kqso/id6820009297">App Store</a>
+      </div>
+    </div>
+    <div class="callout">
+      <p><b>Poprvé?</b> <a href="{{app}}manual/start-cs.html">První kroky</a> projdou VKV závod a SOTA aktivaci krok za krokem. Celý <a href="{{app}}manual/cs.html">návod</a> s obrázky je i v aplikaci (Nastavení → O aplikaci).</p>
+    </div>
+  </div>
+</section>

@@ -4,6 +4,9 @@ What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android ap
 
 ## [Unreleased]
 
+### Added
+- **Website [kqso.eu](https://kqso.eu/)** (English and Czech): what kQSO does for activations, VHF contests, satellites and radios, news, FAQ. Settings → About and the manual link it; the app stays at kqso.ok1cdj.com.
+
 ## [1.18] – 2026-11-09
 
 ### Added

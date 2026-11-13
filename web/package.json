@@ -9,6 +9,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "vite build",
+    "site": "vite-node ../site/build.ts",
+    "site:dev": "vite-node ../site/build.ts && python3 -m http.server 8765 -b 127.0.0.1 -d ../site/dist",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json && tsc -p tsconfig.worker.json && tsc -p tsconfig.cw-worker.json && tsc -p tsconfig.sw.json"
   },
   "devDependencies": {

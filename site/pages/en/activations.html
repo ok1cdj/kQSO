@@ -1,0 +1,84 @@
+<!--
+title: SOTA, POTA, WWFF, GMA, TOTA and BOTA activations
+description: kQSO on a summit or in a park: report and reference on one line, nearby references without a signal, S2S and P2P, an ADIF per program.
+-->
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">Activation profile</p>
+    <h1>Activations without paper</h1>
+    <p class="lead">It's cold on the summit, the pile-up is calling and the phone is in one hand. kQSO needs only the call; it fills in the report itself.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap split">
+    <div class="text">
+      <h2>A QSO in a few keys</h2>
+      <div class="example">
+        <div class="typed">DD2TC 55</div>
+        <p>The call and the received report. The sent one stays 59 (599 in CW).</p>
+      </div>
+      <div class="example">
+        <div class="typed">DD2TC 55 T57</div>
+        <p>Another sent report goes with a T in front.</p>
+      </div>
+      <div class="example">
+        <div class="typed">20m</div>
+        <p>A band change. Modes the same way: <code>cw</code>, <code>ssb</code>, <code>fm</code>.</p>
+      </div>
+      <div class="example">
+        <div class="typed">1832 OK1ABC</div>
+        <p>The time by hand, e.g. copying from paper. Otherwise UTC is taken at the first key.</p>
+      </div>
+      <p>An empty Enter saves. After two characters kQSO offers the calls of stations that often chase activations, and your own earlier QSOs.</p>
+    </div>
+    <figure class="shot phone">
+      <video src="/media/demo-sota.mp4" poster="/media/demo-sota-poster.webp" width="390" height="781" autoplay muted loop playsinline aria-label="An activation of OE/SB-257 on a phone: four QSOs, a band change, a call suggestion, the QSO list"></video>
+      <figcaption>Activating OE/SB-257 on a phone: a QSO on one line, <code>20m</code> to change band, a call from the suggestions.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="band band-grey">
+  <div class="wrap split flip">
+    <div class="text">
+      <h2>Summit-to-summit and park-to-park</h2>
+      <p>Type the other station's reference after its call. The keyboard has no dash, so it is typed with a slash and the last slash becomes a dash. kQSO tells the kind of reference by its shape:</p>
+      <table class="refs">
+        <tr><th>SOTA</th><td>OK/ZC/001</td></tr>
+        <tr><th>GMA</th><td>OL/LI/001</td></tr>
+        <tr><th>POTA</th><td>CZ/0123</td></tr>
+        <tr><th>WWFF</th><td>OKFF/0001</td></tr>
+        <tr><th>TOTA</th><td>OKR/1001</td></tr>
+        <tr><th>BOTA</th><td>B/OK/0123</td></tr>
+      </table>
+      <p>In the ADIF each reference goes into the field its program reads, so an S2S counts after the upload to sotadata.org.uk.</p>
+    </div>
+    <figure class="shot"><img src="/img/en/logging-s2s.webp" alt="The line OK1ABC/P 55 T57 OK/ZC/001 and the chips CALL, RST, TX-RST, REF" width="780" height="340" loading="lazy"><figcaption>Received 55, sent 57, the other station on OK/ZC-001.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap split">
+    <div class="text">
+      <h2>Nearby references, even without a signal</h2>
+      <p>When you create the log, the locate button offers the references within 25 km. kQSO keeps the SOTA, POTA, WWFF, GMA, TOTA and BOTA lists on the device. The area around you downloads by itself when online; before a trip download an area by locator (e.g. <code>JN69</code>).</p>
+      <p>You can have several own references, such as a summit and a park at once: <code>OK/ZC-001 CZ-0123</code>.</p>
+      <h2>Export</h2>
+      <ul class="ticks">
+        <li>An ADIF of the whole activation plus one file per own reference, as each program wants its own upload.</li>
+        <li>In the apps the file is shared or saved; on the web it downloads.</li>
+        <li>BOTA as wwbota.net asks; WWFF, GMA and TOTA in SIG / SIG_INFO.</li>
+      </ul>
+    </div>
+    <figure class="shot phone"><img src="/img/en/newlog-activation.webp" alt="A new activation log: own references and the locate button" width="780" height="1688" loading="lazy"><figcaption>A new log: own references and the nearby ones on offer.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band band-grey">
+  <div class="wrap text">
+    <h2>And everyday operating?</h2>
+    <p>The General profile is for portable operation without an award program, an outing, or a Field Day outside a contest. You exchange a report, a locator and a name: <code>OK1ABC 57 JN79US PETR</code>. A General log can be pushed to <a href="https://www.wavelog.org/">Wavelog</a>.</p>
+    <p>A <a href="{{app}}manual/start-en.html#activation">SOTA activation step by step</a> is in the First steps.</p>
+  </div>
+</section>

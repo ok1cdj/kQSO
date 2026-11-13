@@ -1,0 +1,163 @@
+<!--
+title: kQSO — a ham radio log with one smart input line
+description: A log for SOTA, POTA, WWFF and other activations, VHF contests, satellites and everyday operating. Type the whole QSO on one line. Web, Android and iOS, works offline, free.
+-->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">Ham radio log · web · Android · iOS</p>
+      <h1>The whole QSO on one line.</h1>
+      <p class="lead">Type what you hear, and kQSO tells the call, report, serial, locator and reference apart by their shape. No fields to tab through. On a summit, in a contest or through a satellite.</p>
+      <div class="btns">
+        <a class="btn btn-ink" href="{{app}}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Open in the browser</a>
+        <a class="btn" href="https://play.google.com/store/apps/details?id=com.ok1cdj.kqso">Google Play</a>
+        <a class="btn" href="https://apps.apple.com/app/kqso/id6820009297">App Store</a>
+      </div>
+      <p class="hero-note">Free, no ads, no account. Your logs stay on your device.</p>
+    </div>
+    <div class="logline" aria-label="Example: what you type and what kQSO recognizes">
+      <div class="logline-ctx"><b data-ctx-l>SOTA OE/SB-257</b><span data-ctx-r>20m SSB</span></div>
+      <div class="logline-input">DD2TC 55 T57<span class="caret"></span></div>
+      <div class="chips">
+        <span class="chip">DD2TC <small>CALL</small></span>
+        <span class="chip">55 <small>RST</small></span>
+        <span class="chip">57 <small>TX-RST</small></span>
+      </div>
+      <div class="logline-saved">⏎ saved · QSO 12</div>
+      <div class="logline-dots"></div>
+    </div>
+    <script type="application/json" id="demos">
+[
+  { "tab": "SOTA", "ctx": ["SOTA OE/SB-257", "20m SSB"], "line": "DD2TC 55 T57",
+    "chips": [[0, "DD2TC", "CALL"], [1, "55", "RST"], [2, "57", "TX-RST"]],
+    "saved": "⏎ saved · received 55, sent 57" },
+  { "tab": "VHF contest", "ctx": ["IARU R1 · OL0M", "2m SSB · Nr 124"], "line": "OK2KZR 59123 JN99AF",
+    "chips": [[0, "OK2KZR", "CALL"], [1, "59", "RST"], [1, "123", "NR", true], [2, "JN99AF", "LOC", true], [2, "179 km", "QRB"]],
+    "saved": "⏎ saved · 179 points · next serial 125" },
+  { "tab": "S2S", "ctx": ["SOTA OK/ZC-001", "40m CW"], "line": "OK1ABC/P 559 OK/ZC/012",
+    "chips": [[0, "OK1ABC/P", "CALL"], [1, "559", "RST"], [2, "OK/ZC-012", "REF"]],
+    "saved": "⏎ saved · summit-to-summit" },
+  { "tab": "Satellite", "ctx": ["FO-29 · pass 18:42", "2m/70cm SSB"], "line": "9A2U 59 JN75RO",
+    "chips": [[0, "9A2U", "CALL"], [1, "59", "RST"], [2, "JN75RO", "LOC"]],
+    "saved": "⏎ saved · uplink and downlink from the satellite" }
+]
+    </script>
+  </div>
+</section>
+
+<section class="band band-grey">
+  <div class="wrap">
+    <h2>What it's for</h2>
+    <p class="lead">When you create a log you pick what you're going to do. That tells kQSO what is exchanged and how the log is exported.</p>
+    <div class="uses">
+      <a class="use" href="/en/activations.html">
+        <div class="typed">DD2TC 55 T57</div>
+        <h3>Activations</h3>
+        <p>SOTA, POTA, WWFF, GMA, TOTA lookout towers and BOTA bunkers. Nearby references without a signal, S2S and P2P, an ADIF per program.</p>
+        <span class="more">Activations ›</span>
+      </a>
+      <a class="use" href="/en/contests.html">
+        <div class="typed">OK2KZR 123 JN99AF</div>
+        <h3>VHF contests</h3>
+        <p>Serials, locators, points per km, dupe checks, the contest panel, statistics, a map, the ON4KST chat and EDI per band.</p>
+        <span class="more">VHF contests ›</span>
+      </a>
+      <a class="use" href="/en/satellites.html">
+        <div class="typed">9A2U 59 JN75RO</div>
+        <h3>Satellites</h3>
+        <p>One log per pass. The satellite sets the uplink and downlink; the database knows over 5,000 satellite calls with locators.</p>
+        <span class="more">Satellites ›</span>
+      </a>
+      <a class="use" href="/en/radios.html">
+        <div class="typed">F14030 cw</div>
+        <h3>Radios and CW</h3>
+        <p>Icom over CI-V, CW macros and a decoder. Build the M5Stack Atom keyer from a handful of parts and control the radio and CW through it, even from an iPad.</p>
+        <span class="more">Radios and CW ›</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <h2>What kQSO does</h2>
+    <div class="features">
+      <div class="feature">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>Its own keyboard</h3>
+        <p>Alphabetical, with big keys that work with gloves. The system keyboard and a hardware keyboard work too, with F keys for the macros.</p>
+      </div>
+      <div class="feature">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M8.5 8.5A4 4 0 0 0 6 16h10M17.5 11.5A4 4 0 0 1 20 16M10 5.5A6 6 0 0 1 17.5 9"/></svg>No signal needed</h3>
+        <p>Logging, the map, statistics, the callsign database and nearby references all work offline. The network is only for <a href="https://www.wavelog.org/">Wavelog</a> and the chat.</p>
+      </div>
+      <div class="feature">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg>Nothing gets lost</h3>
+        <p>Every QSO is written at once. If the phone crashes or restarts, the QSO you were typing comes back.</p>
+      </div>
+      <div class="feature">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>Callsign database</h3>
+        <p>After two characters it offers calls and their locator. The VHF part knows the bands a station is usually on, and a dupe shows at once.</p>
+      </div>
+      <div class="feature">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>Map and statistics</h3>
+        <p>Worked locators on a map, QSOs and points per hour, large squares, the top 10. Optionally a rain radar for rain scatter.</p>
+      </div>
+      <div class="feature">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>Export and Wavelog</h3>
+        <p>ADIF for SOTA, POTA, WWFF and the others, EDI for VHF contests (a file per band), and a push to your own <a href="https://www.wavelog.org/">Wavelog</a>.</p>
+      </div>
+      <div class="feature">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 6h6M9 10h6M9 14h3"/></svg>E-ink and dark mode</h3>
+        <p>A display mode for e-ink screens (tuned on the Mudita Kompakt), light and dark themes. English and Czech by the system language.</p>
+      </div>
+      <div class="feature">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg>Your data</h3>
+        <p>No account, no server holding your logs, no tracking. Free software under GPL-3.0, the source is on GitHub.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band band-grey">
+  <div class="wrap">
+    <h2>What it looks like</h2>
+  </div>
+  <div class="shots">
+    <figure><img src="/img/en/logging.webp" alt="Logging in a VHF contest with the kQSO keyboard" width="780" height="1688" loading="lazy"><figcaption>Logging: the line on top, what kQSO recognized below it, the keyboard at the bottom.</figcaption></figure>
+    <figure><img src="/img/en/panel-tablet.webp" alt="A tablet in landscape with a hardware keyboard and the contest panel" width="1280" height="800" loading="lazy"><figcaption>A tablet in a contest: recent QSOs and the contest panel with the serial, rate and ODX.</figcaption></figure>
+    <figure><img src="/img/en/loglist.webp" alt="The log list" width="780" height="1688" loading="lazy"><figcaption>The log list: contests, an activation, a satellite pass.</figcaption></figure>
+    <figure><img src="/img/en/map-tablet.webp" alt="The map of worked locators" width="1280" height="800" loading="lazy"><figcaption>Worked locators from a Field Day, offline.</figcaption></figure>
+    <figure><img src="/img/en/chat-tablet.webp" alt="The ON4KST chat in a contest log" width="1280" height="800" loading="lazy"><figcaption>The ON4KST chat right in the contest log.</figcaption></figure>
+    <figure><img src="/img/en/qsolist.webp" alt="The QSO list with points" width="780" height="1688" loading="lazy"><figcaption>The QSO list with points and a search.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band" id="get">
+  <div class="wrap">
+    <h2>Where it runs</h2>
+    <p class="lead">The same app and the same version ({{version}}) everywhere. Pick by your device.</p>
+    <div class="platforms">
+      <div class="platform">
+        <h3>Browser</h3>
+        <p>Computer, tablet or phone. After the first visit it works offline. On a computer, Chrome or Edge connect a radio by cable.</p>
+        <a class="btn btn-ink" href="{{app}}">Open kqso.ok1cdj.com</a>
+      </div>
+      <div class="platform">
+        <h3>Android</h3>
+        <p>From Google Play, or the APK from GitHub for devices without the store (such as the Mudita Kompakt). Either updates the other.</p>
+        <div class="btns">
+          <a class="btn btn-ink" href="https://play.google.com/store/apps/details?id=com.ok1cdj.kqso">Google Play</a>
+          <a class="btn" href="https://github.com/ok1cdj/kQSO/releases/latest">APK</a>
+        </div>
+      </div>
+      <div class="platform">
+        <h3>iPhone and iPad</h3>
+        <p>From the App Store. The app does the IC-705 over Bluetooth, the microphone for the CW decoder and the ON4KST chat directly.</p>
+        <a class="btn btn-ink" href="https://apps.apple.com/app/kqso/id6820009297">App Store</a>
+      </div>
+    </div>
+    <div class="callout">
+      <p><b>New to kQSO?</b> The <a href="{{app}}manual/start-en.html">First steps</a> walk through a VHF contest and a SOTA activation. The whole <a href="{{app}}manual/en.html">manual</a> with pictures is in the app too (Settings → About).</p>
+    </div>
+  </div>
+</section>

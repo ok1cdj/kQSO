@@ -28,3 +28,5 @@ kQSO je radioamatérský deník s jedním chytrým řádkem. Celé QSO napíše�
 Vlastní abecední klávesnice (funguje i hardwarová), standardní a e-ink zobrazení, světlý i tmavý vzhled, čeština a angličtina.
 
 Bez reklam, bez sledování, bez účtu. Svobodný software pod licencí GPL-3.0.
+
+Web: https://kqso.eu/

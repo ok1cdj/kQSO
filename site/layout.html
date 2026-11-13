@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}}</title>
+<meta name="description" content="{{description}}">
+<link rel="canonical" href="{{url}}">
+<link rel="alternate" hreflang="cs" href="{{cs}}">
+<link rel="alternate" hreflang="en" href="{{en}}">
+<link rel="alternate" hreflang="x-default" href="{{en}}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="kQSO">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{description}}">
+<meta property="og:url" content="{{url}}">
+<meta property="og:locale" content="{{ogLocale}}">
+<meta property="og:image" content="https://kqso.eu/media/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131313" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/site.css">
+<script src="/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">{{skip}}</a>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="{{home}}"><img src="/favicon.svg" alt="" width="28" height="28"><span>kQSO</span></a>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">{{menu}}</button>
+    <nav id="nav" class="nav">
+{{nav}}
+    </nav>
+    <a class="btn btn-ink top-open" href="{{app}}">{{open}}</a>
+    {{langSwitch}}
+  </div>
+</header>
+<main id="main">
+{{content}}
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p><img src="/favicon.svg" alt="" width="20" height="20"> {{foot}}</p>
+    <p class="foot-links">
+      <a href="{{app}}">kqso.ok1cdj.com</a>
+      <a href="{{manual}}">{{manualLabel}}</a>
+      <a href="{{newsHref}}">{{versionLabel}} <span class="mono">{{version}}</span></a>
+      <a href="https://github.com/ok1cdj/kQSO">GitHub</a>
+      <a href="{{privacyHref}}">{{privacy}}</a>
+    </p>
+  </div>
+</footer>
+</body>
+</html>

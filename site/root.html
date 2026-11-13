@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kQSO — ham radio logger</title>
+<meta name="description" content="kQSO: a ham radio log with one smart input line, for activations, VHF contests and satellites. Web, Android and iOS, offline. · Radioamatérský deník s jedním chytrým řádkem.">
+<link rel="alternate" hreflang="cs" href="https://kqso.eu/cs/">
+<link rel="alternate" hreflang="en" href="https://kqso.eu/en/">
+<link rel="alternate" hreflang="x-default" href="https://kqso.eu/en/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/site.css">
+<!-- Czech for a Czech or Slovak browser, English otherwise; links below without JS. -->
+<script>
+  ;(function () {
+    var l = (navigator.languages && navigator.languages[0]) || navigator.language || ''
+    // Where the visitor came from, for the language page's statistics (site.js).
+    try {
+      if (document.referrer) sessionStorage.setItem('kqso-ref', document.referrer)
+    } catch (e) {}
+    location.replace(/^(cs|sk)\b/i.test(l) ? '/cs/' : '/en/')
+  })()
+</script>
+</head>
+<body>
+<main class="wrap page-head">
+  <p class="brand"><img src="/favicon.svg" alt="" width="40" height="40"><span>kQSO</span></p>
+  <p class="btns" style="margin-top:1.5rem">
+    <a class="btn btn-ink" href="/en/" hreflang="en">English</a>
+    <a class="btn" href="/cs/" hreflang="cs" lang="cs">Česky</a>
+  </p>
+</main>
+</body>
+</html>

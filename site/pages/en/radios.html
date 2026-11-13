@@ -1,0 +1,86 @@
+<!--
+title: Radios, CW keyer and decoder
+description: kQSO with Icom radios over CI-V (the IC-705 over Bluetooth, others by cable), the M5-ESP32 CW keyer with macros and ESM, a CW decoder and hardware keyboards.
+-->
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">Radios · CW · keyboard</p>
+    <h1>Radio control and CW</h1>
+    <p class="lead">Band, mode and frequency from the radio, CW macros on the F keys and a decoder that puts a call it hears into the line. With a home-built M5 keyer, on the iPad too. Both parts are still beta.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap split">
+    <div class="text">
+      <p class="eyebrow">M5 keyer · build</p>
+      <h2>Build the keyer yourself, from a handful of parts</h2>
+      <p>The kQSO keyer is a tiny <b>M5Stack Atom</b> cube with Bluetooth. It needs no PCB and no box: a few parts are soldered straight into the cable under heat-shrink. You flash the firmware from the browser, with no IDE and no drivers.</p>
+      <p>One keyer then does two things at once:</p>
+      <ul class="ticks">
+        <li><b>keys CW</b> from kQSO's macros (the KEY jack),</li>
+        <li><b>connects the radio over CI-V</b> (the REMOTE jack): band, mode and frequency from the radio, tuning from the log. Any Icom with CI-V.</li>
+      </ul>
+      <p><b>It works on the iPad and iPhone too.</b> The kQSO iOS app connects to the keyer over Bluetooth, so you get CW and radio control on an Apple tablet, where a radio can't be connected by cable. The same on Android and in Chrome or Edge on a computer.</p>
+      <p class="btns"><a class="btn btn-ink" href="https://keyer.ok1cdj.com/build.html?lang=en&amp;app=kqso">How to build the keyer</a></p>
+    </div>
+    <div class="callout" style="margin-top:0">
+      <h3 style="margin-top:0">What you need</h3>
+      <ul class="ticks">
+        <li>an M5Stack <b>AtomS3 Lite</b> (recommended), Atom Lite, or an AtomS3 with a display that shows the frequency</li>
+        <li>a Grove cable and two 3.5 mm jack cables (KEY and CI-V)</li>
+        <li>keying: a PC817 optocoupler or an N-MOSFET, and two resistors</li>
+        <li>CI-V: a BSS138 or 2N7000 MOSFET and two resistors</li>
+        <li>heat-shrink; optionally the Atomic Battery Base</li>
+        <li>to flash the firmware: a computer with Chrome or Edge and a USB-C data cable</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="band band-grey">
+  <div class="wrap split">
+    <div class="text">
+      <h2>Icom over CI-V</h2>
+      <ul class="ticks">
+        <li><b>The IC-705 over Bluetooth</b> in the Android and iOS apps.</li>
+        <li><b>Any Icom by cable</b>: USB or a CT-17 in Chrome or Edge on a computer (Windows, Linux, macOS). kQSO finds the rate and address itself.</li>
+        <li><b>Through the M5 keyer</b> on the radio's CI-V jack, on the iPad and iPhone too.</li>
+      </ul>
+      <p>Band, mode and the exact frequency then come from the radio. A typed band or mode tunes the radio:</p>
+      <div class="example">
+        <div class="typed">F14030 cw</div>
+        <p>The radio to 14.030 MHz in CW.</p>
+      </div>
+      <p>The IC-705, 9700, 7300 and 7610 send the CW macros with their own keyer; in SSB and FM kQSO offers the voice memories T1–T4. For microwaves there is a transverter table: the radio tunes to the IF and the log gets the frequency on the band. Known models: IC-705, 706, 910, 9700, 7300, 7610, 7100.</p>
+    </div>
+    <figure class="shot"><img src="/media/tablet-vhf-logging.webp" alt="A tablet in a VHF contest in CW with the keyer's macros" width="1340" height="690" loading="lazy"><figcaption>A VHF contest in CW: the keyer's macros, recent QSOs, a locator from the database.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap split flip">
+    <div class="text">
+      <h2>CW keyer and macros</h2>
+      <p>With the M5 keyer over Bluetooth (or the radio's own keyer) each log profile has its macros: CQ, exchange, TU, repeat, my call, locator or reference.</p>
+      <ul class="ticks">
+        <li>RUN and S&amp;P, ESM as in N1MM: Enter sends what comes next.</li>
+        <li>CQ repeat: <code>A3</code> and the CQ calls round with a 3 s gap.</li>
+        <li>Cut numbers: 5NN, T18. The log and the EDI keep the digits.</li>
+        <li>Macros on <kbd>F5</kbd>–<kbd>F12</kbd> on every screen of the log.</li>
+      </ul>
+      <h2>CW decoder</h2>
+      <p>The <a href="https://github.com/e04/web-deep-cw-decoder">DeepCW</a> decoder listens to the radio's audio (a USB sound card, the phone's microphone, a WebSDR tab), and a tap puts a call, report or locator into the line. The audio is processed on the device only. In the Android and iOS apps; on the web in Chrome and Edge on a computer.</p>
+    </div>
+    <figure class="shot"><img src="/img/en/cw-tap.webp" alt="The CW decoder's line above the log; a tap puts the call into the line" width="780" height="412" loading="lazy"><figcaption>The decoder above the line: tap a call to write it.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band band-grey">
+  <div class="wrap">
+    <div class="text">
+      <h2>Hardware keyboard</h2>
+      <p>On a computer or a tablet with a keyboard everything works without a mouse: <kbd>Ctrl</kbd>+<kbd>Enter</kbd> saves, <kbd>Alt</kbd>+<kbd>N</kbd> / <kbd>P</kbd> switches the band, <kbd>Alt</kbd>+<kbd>M</kbd> the mode, <kbd>PgUp</kbd> / <kbd>PgDn</kbd> the keying speed, <kbd>F5</kbd>–<kbd>F12</kbd> the macros, <kbd>Esc</kbd> stops sending.</p>
+    </div>
+  </div>
+</section>

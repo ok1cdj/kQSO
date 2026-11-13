@@ -1,0 +1,84 @@
+<!--
+title: Aktivace SOTA, POTA, WWFF, GMA, TOTA a BOTA
+description: kQSO na kopci a v parku: report a reference na jeden řádek, reference v okolí bez signálu, S2S a P2P, ADIF pro každý program zvlášť.
+-->
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">Profil Aktivace</p>
+    <h1>Aktivace bez papíru</h1>
+    <p class="lead">Na vrcholu je zima, pípá to ze všech stran a telefon máš v jedné ruce. kQSO chce jen značku, report si domyslí.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap split">
+    <div class="text">
+      <h2>Spojení za pár kláves</h2>
+      <div class="example">
+        <div class="typed">DD2TC 55</div>
+        <p>Značka a přijatý report. Odeslaný zůstane 59 (v CW 599).</p>
+      </div>
+      <div class="example">
+        <div class="typed">DD2TC 55 T57</div>
+        <p>Jiný odeslaný report se píše s T na začátku.</p>
+      </div>
+      <div class="example">
+        <div class="typed">20m</div>
+        <p>Změna pásma. Mód stejně: <code>cw</code>, <code>ssb</code>, <code>fm</code>.</p>
+      </div>
+      <div class="example">
+        <div class="typed">1832 OK1ABC</div>
+        <p>Čas ručně, třeba při přepisu z papíru. Jinak se bere UTC při první klávese.</p>
+      </div>
+      <p>Prázdný Enter uloží. Po dvou znacích nabídne kQSO značky stanic, které aktivace často loví, a tvoje dřívější spojení.</p>
+    </div>
+    <figure class="shot phone">
+      <video src="/media/demo-sota.mp4" poster="/media/demo-sota-poster.webp" width="390" height="781" autoplay muted loop playsinline aria-label="Aktivace OE/SB-257 na telefonu: čtyři QSO, změna pásma, návrh značky, seznam QSO"></video>
+      <figcaption>Aktivace OE/SB-257 na telefonu: QSO na jeden řádek, <code>20m</code> pro změnu pásma, značka z nabídky.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="band band-grey">
+  <div class="wrap split flip">
+    <div class="text">
+      <h2>Summit-to-summit a park-to-park</h2>
+      <p>Referenci protistanice napiš za její značku. Klávesnice nemá pomlčku, tak se píše lomítkem a poslední lomítko se změní na pomlčku. Druh reference pozná kQSO podle tvaru:</p>
+      <table class="refs">
+        <tr><th>SOTA</th><td>OK/ZC/001</td></tr>
+        <tr><th>GMA</th><td>OL/LI/001</td></tr>
+        <tr><th>POTA</th><td>CZ/0123</td></tr>
+        <tr><th>WWFF</th><td>OKFF/0001</td></tr>
+        <tr><th>TOTA</th><td>OKR/1001</td></tr>
+        <tr><th>BOTA</th><td>B/OK/0123</td></tr>
+      </table>
+      <p>V ADIF jde každá reference do pole, které její program čte, takže se S2S po nahrání na sotadata.org.uk započítá.</p>
+    </div>
+    <figure class="shot"><img src="/img/cs/logging-s2s.webp" alt="Řádek OK1ABC/P 55 T57 OK/ZC/001 a čipy CALL, RST, TX-RST, REF" width="780" height="340" loading="lazy"><figcaption>Přijato 55, dáno 57, protistanice na OK/ZC-001.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap split">
+    <div class="text">
+      <h2>Reference v okolí, i bez signálu</h2>
+      <p>Při zakládání logu nabídne tlačítko zaměření reference do 25 km. Seznamy SOTA, POTA, WWFF, GMA, TOTA a BOTA má kQSO v zařízení. Okolí se stáhne samo, když jsi online; před výletem si stáhni oblast podle lokátoru (třeba <code>JN69</code>).</p>
+      <p>Vlastních referencí může být víc, třeba vrchol a park najednou: <code>OK/ZC-001 CZ-0123</code>.</p>
+      <h2>Export</h2>
+      <ul class="ticks">
+        <li>ADIF celé aktivace a k tomu jeden soubor na každou vlastní referenci, protože každý program chce svůj upload.</li>
+        <li>V aplikaci se soubor sdílí nebo uloží, na webu se stáhne.</li>
+        <li>BOTA podle pravidel wwbota.net, WWFF, GMA a TOTA v SIG / SIG_INFO.</li>
+      </ul>
+    </div>
+    <figure class="shot phone"><img src="/img/cs/newlog-activation.webp" alt="Nový log aktivace: vlastní reference a tlačítko zaměření" width="780" height="1688" loading="lazy"><figcaption>Nový log: vlastní reference a nabídka z okolí.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band band-grey">
+  <div class="wrap text">
+    <h2>A co obecný provoz?</h2>
+    <p>Profil Obecný je pro portable bez diplomového programu, výlet nebo Polní den mimo závod. Předává se report, lokátor a jméno: <code>OK1ABC 57 JN79US PETR</code>. Obecný log jde odeslat do <a href="https://www.wavelog.org/">Wavelogu</a>.</p>
+    <p><a href="{{app}}manual/start-cs.html#activation">SOTA aktivace krok za krokem</a> je v Prvních krocích.</p>
+  </div>
+</section>

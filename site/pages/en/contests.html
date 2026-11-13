@@ -1,0 +1,116 @@
+<!--
+title: VHF contests
+description: kQSO in a VHF contest: a full multi-band log up to the microwaves, serials and locators on one line, IARU R1 points, dupes per band, the contest panel, statistics, a map, the ON4KST chat and EDI per band.
+-->
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">VHF contest profile</p>
+    <h1>A VHF contest from the first QSO to the EDI</h1>
+    <p class="lead">A full contest log: all bands in one log, from 6 m up to the microwave bands to 76 GHz, points per kilometre, dupes per band, a fully integrated ON4KST chat and the files for the contest manager at the end. On a phone on a hill or a tablet with a keyboard.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <figure class="shot">
+      <video src="/media/demo-vhf.mp4" poster="/media/demo-vhf-poster.webp" width="960" height="494" autoplay muted loop playsinline aria-label="A tablet in the IARU R1 VHF contest: a QSO with QRB, a locator from the database, CW macros, a QSO piece by piece, a dupe, the QSO list and the map"></video>
+      <figcaption>IARU R1 as OL0M on a tablet: a QSO with QRB and points, a locator from the database, <code>cw</code> with the keyer's macros, a QSO piece by piece, a dupe, the list and the map.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="band band-grey">
+  <div class="wrap split">
+    <div class="text">
+      <h2>Type it as you hear it</h2>
+      <div class="example">
+        <div class="typed">OK2KZR 59123 JN99AF</div>
+        <p>The whole QSO at once: call, report with serial, locator. QRB and points at once.</p>
+      </div>
+      <div class="example">
+        <div class="typed">OK2KZR 123</div>
+        <p>No report needed: a bare number after the call is the received serial, the report stays 59.</p>
+      </div>
+      <div class="example">
+        <div class="typed">OK2KZR ⏎ 123 ⏎ JN99AF ⏎ ⏎</div>
+        <p>Piece by piece, the way the other station gives it. The chips show what's still missing.</p>
+      </div>
+      <div class="example">
+        <div class="typed">70cm OK1EM</div>
+        <p>A band change, even in the middle of a QSO. Serials carry on; dupes and points are per band.</p>
+      </div>
+      <p>kQSO offers the locator from your log, the ON4KST chat or a database of about 3,000 stations built from public EDI logs. The database also knows the bands a station works, so you see at once where to move it next.</p>
+    </div>
+    <figure class="shot"><img src="/img/en/logging-qrv.webp" alt="The QRV chip with the station's bands, worked bands struck out" width="780" height="392" loading="lazy"><figcaption>OK1EM on 2 m: QRV from 70 cm up to 122 GHz, 23 cm and 3 cm already in the log.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap split flip">
+    <div class="text">
+      <h2>Contest panel and statistics</h2>
+      <p>On a tablet or computer in landscape, the contest panel shows the serial to give in big digits, the UTC clock, the QSO count, a live rate, points, the average and the ODX.</p>
+      <ul class="ticks">
+        <li>QSOs and points per hour, so you see when it went well and when it stalled.</li>
+        <li>Large squares with distance and bearing, the top 10 longest QSOs.</li>
+        <li>A map of worked locators, optionally with a rain radar for rain scatter on 3 cm.</li>
+        <li>The 6-hour entry: the window is kept per band, breaks included.</li>
+      </ul>
+      <p>IARU R1, VKV PA and FM pohár contests. A QSO is never deleted: a wrong one is struck out as ERROR, so the sent serials stay in sequence.</p>
+    </div>
+    <figure class="shot"><img src="/img/en/panel-tablet.webp" alt="A tablet: recent QSOs on the left, the contest panel on the right" width="1280" height="800" loading="lazy"><figcaption>A tablet with a hardware keyboard: recent QSOs with km and bearing, the contest panel on the right.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band band-grey" id="kst">
+  <div class="wrap">
+    <div class="text">
+      <p class="eyebrow">ON4KST chat</p>
+      <h2>Skeds without switching windows</h2>
+      <p>In a VHF contest skeds are arranged in the ON4KST chat. In kQSO the chat is part of the contest log (6 m and up): it picks the 50/70 MHz, 144/432 MHz or Microwaves room by the band you're on. No second program, no second window.</p>
+    </div>
+    <div class="split" style="margin-top:1.5rem">
+      <ul class="ticks">
+        <li><b>Stations</b> with locator, distance and bearing from you. Sort by call, km or bearing, hide the worked and away ones, limit the distance (900 km by default).</li>
+        <li><b>QRV bands</b> for each station: kQSO reads them from the name (<code>Bert 2/70/23</code>), from the messages (<code>qrv 1296.150</code>) and adds those from the database. Bands where you already have the station are struck out.</li>
+        <li><b>Sked</b> in one tap from your template (<code>pse sked {QRG} {MODE}?</code>). The sked QRG is set per band: <code>G 144.290</code>.</li>
+        <li><b>Log</b> takes you back to the log with the station's call and locator already on the line.</li>
+      </ul>
+      <ul class="ticks">
+        <li><b>Messages to you</b> are bold, and the last one also shows under the log's header. Tap it to answer.</li>
+        <li><b>Writing straight from the log line</b>: <code>@OL0M pse sked 144.290</code> goes to that station; no QSO is logged.</li>
+        <li><b>The locator from the chat</b>, the one the station set today, is offered while logging before the database's.</li>
+        <li><b>On a tablet</b> the chat's active stations are under the contest panel too. Portable with another locator, kQSO offers <code>/SETLOC</code>.</li>
+      </ul>
+    </div>
+    <div class="shot-row">
+      <figure class="shot"><img src="/img/en/chat-stations.webp" alt="The station list in the ON4KST chat with distance, bearing and QRV bands" width="780" height="1688" loading="lazy"><figcaption>Stations by distance, with bearing and QRV bands.</figcaption></figure>
+      <figure class="shot"><img src="/img/en/chat-messages.webp" alt="Messages in the ON4KST chat, the last one to me highlighted" width="780" height="1688" loading="lazy"><figcaption>Messages: the one to me is bold with a bar on the left.</figcaption></figure>
+      <div>
+        <figure class="shot"><img src="/img/en/chat-logging.webp" alt="A message to me under the log's header" width="780" height="220" loading="lazy"><figcaption>A message to me under the log's header.</figcaption></figure>
+        <figure class="shot" style="margin-top:1.25rem"><img src="/img/en/chat-line.webp" alt="The log line with @OL0M pse sked 144.290 and the chip → OL0M KST" width="780" height="340" loading="lazy"><figcaption>Answering straight from the log line.</figcaption></figure>
+      </div>
+    </div>
+    <figure class="shot" style="margin-top:2rem"><img src="/img/en/chat-tablet.webp" alt="A tablet: a message under the header and the chat's active stations under the contest panel" width="1280" height="800" loading="lazy"><figcaption>A tablet in a contest: a message to me under the header, the chat's active stations under the contest panel.</figcaption></figure>
+    <div class="text" style="margin-top:2rem">
+      <p>You need your own ON4KST account (licensed radio amateurs only). Without one, try the chat with the call <code>DEMO</code>: kQSO connects nowhere and runs a practice chat with stations and answers. The Android and iOS apps connect to ON4KST directly; the web goes through the kQSO relay, which only passes the data on and stores nothing. A station can be muted or reported.</p>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap split flip">
+    <div class="text">
+      <h2>EDI for the contest manager</h2>
+      <p>One REG1TEST file per band. SO, MO and CHECK categories, power, antenna and equipment per band; kQSO remembers them for the next contest. Up to 100 W on 145 and 435 MHz it's LP.</p>
+      <p>VKV PA offers sending to the robot, FM pohár a summary for its web form. The ADIF with all bands then goes to <a href="https://www.wavelog.org/">Wavelog</a>.</p>
+    </div>
+    <figure class="shot phone"><img src="/img/en/edi-band.webp" alt="EDI export: power, antenna and equipment for 435 MHz" width="780" height="992" loading="lazy"><figcaption>The 435 MHz band: power, antenna, transmitter, export.</figcaption></figure>
+  </div>
+</section>
+
+<section class="band band-grey">
+  <div class="wrap text">
+    <p>A <a href="{{app}}manual/start-en.html#contest">VHF contest step by step</a> is in the First steps; the details are in the <a href="{{app}}manual/en.html#contest">manual</a>.</p>
+  </div>
+</section>
