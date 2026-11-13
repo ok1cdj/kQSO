@@ -33,7 +33,7 @@
 }
 html {
   -webkit-text-size-adjust: 100%;
-  font-size: 15px;
+  font-size: 14px;
 }
 body {
   margin: 0;
@@ -88,13 +88,13 @@ h3 {
   text-wrap: balance;
 }
 h1 {
-  font-size: clamp(1.9rem, 4.6vw, 3rem);
+  font-size: clamp(1.75rem, 4.2vw, 2.6rem);
   font-weight: 800;
   margin: 0 0 1rem;
   letter-spacing: -0.035em;
 }
 h2 {
-  font-size: clamp(1.35rem, 2.6vw, 1.75rem);
+  font-size: clamp(1.3rem, 2.4vw, 1.6rem);
   font-weight: 750;
   margin: 0 0 0.75rem;
 }
@@ -137,6 +137,7 @@ p {
   gap: 1rem;
 }
 .brand {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -230,13 +231,35 @@ p {
     border-bottom-color: var(--line);
   }
 }
+/* On a phone the switch moves into the menu, so the top row fits. */
+.nav-langs {
+  display: none;
+}
 @media (max-width: 36rem) {
+  .top-in > .langs {
+    display: none;
+  }
+  .nav-langs {
+    display: block;
+    padding: 0.75rem 0 0.25rem;
+  }
+  .nav-langs .langs > * {
+    padding: 0.45rem 0.9rem;
+    font-size: 0.85rem;
+    border-bottom: 0;
+  }
   .top-in {
     gap: 0.5rem;
   }
   .top-open {
     padding: 0.4rem 0.7rem;
     font-size: 0.9rem;
+  }
+}
+/* The narrowest phones: the icon alone is the brand. */
+@media (max-width: 21.5rem) {
+  .brand span {
+    display: none;
   }
 }
 
@@ -307,7 +330,7 @@ p {
   background: var(--surface);
 }
 .lead {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: var(--muted);
   max-width: 38rem;
 }
@@ -369,7 +392,7 @@ p {
 }
 .logline-input {
   font-family: var(--mono);
-  font-size: clamp(1.2rem, 3.4vw, 1.75rem);
+  font-size: clamp(1.15rem, 3.2vw, 1.6rem);
   font-weight: 600;
   letter-spacing: 0.02em;
   border: 2px solid var(--ink);
