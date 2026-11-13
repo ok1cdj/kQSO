@@ -167,7 +167,8 @@
   const frame = (now) => {
     const dt = last ? Math.min(now - last, 100) : 0
     last = now
-    const half = track.scrollWidth / 2
+    // One copy's width (with its gap), not scrollWidth / 2, which counts the padding.
+    const half = track.children[originals.length].offsetLeft - originals[0].offsetLeft
     if (hovering || now < heldUntil || document.hidden) {
       pos = track.scrollLeft // follow a manual scroll
     } else {

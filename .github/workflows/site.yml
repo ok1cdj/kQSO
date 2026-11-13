@@ -12,6 +12,9 @@ on:
     paths:
       - site/**
       - web/src/core/whatsnew.ts
+      - web/src/core/version.ts
+      - web/public/kqso-icon.svg
+      - web/public/kqso-apple-touch-icon-180.png
       - web/public/manual/img/**
       - web/package.json
       - .github/workflows/site.yml
