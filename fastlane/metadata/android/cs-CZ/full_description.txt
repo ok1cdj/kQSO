@@ -2,10 +2,21 @@ kQSO je radioamatérský deník s jedním chytrým řádkem. Celé QSO napíše�
 
 <b>Profily logu</b>
 <ul>
-<li><b>Aktivace</b> — SOTA, GMA, POTA, WWFF, rozhledny TOTA, bunkry BOTA; vlastní reference se zadá s logem, reference protistanice se zapíše pro S2S.</li>
+<li><b>Aktivace</b> — SOTA, GMA, POTA, WWFF, rozhledny TOTA, bunkry BOTA. Lokátor z polohy zařízení a nejbližší reference offline; víc referencí v jedné aktivaci (vrchol + park + oblast WWFF), export jako ADIF pro každý program zvlášť; reference protistanice se zapíše pro S2S.</li>
 <li><b>Obecný</b> — navíc jméno.</li>
-<li><b>VKV závod</b> — pořadová čísla, 6místný lokátor, bodování IARU R1 (body za km), skóre po pásmech, export EDI (REG1TEST) po pásmech a ON4KST chat pro skedy (stanice se vzdáleností, azimutem a pásmy QRV).</li>
+<li><b>VKV závod</b> — pořadová čísla, 6místný lokátor, bodování IARU R1 (body za km), VKV PA a FM pohár, 6hodinová kategorie.</li>
 <li><b>Satelit</b> — co přelet, to log; družice nastaví pásma a kmitočty uplinku a downlinku.</li>
+</ul>
+
+<b>VKV závody</b>
+<ul>
+<li>Export EDI (REG1TEST) po pásmech s kategoriemi (SO / MO, LP, 6H, CHECK).</li>
+<li>Chybné QSO se škrtne jako ERROR, nikdy nesmaže: pořadová čísla zůstanou v řadě. DUPE se zapíše, až když ho potvrdíš.</li>
+<li>Závodní panel na šířku: příští pořadové číslo velkými číslicemi, UTC, průběžný rate, body a ODX.</li>
+<li>Statistika po hodinách a po velkých čtvercích, skóre po pásmech, filtr pásma v seznamu QSO a na mapě.</li>
+<li>Pásma QRV u každé stanice z databáze značek sestavené ze závodních deníků.</li>
+<li>ON4KST chat pro skedy: stanice se vzdáleností, azimutem a pásmy QRV, filtr podle vzdálenosti, sked jedním klepnutím, zprávy přímo z řádku logu. Bez účtu se dá vyzkoušet se značkou DEMO.</li>
+<li>Srážkový radar na mapě pro rain scatter (volitelný, výchozí vypnuto).</li>
 </ul>
 
 <b>Logování</b>
@@ -13,19 +24,26 @@ kQSO je radioamatérský deník s jedním chytrým řádkem. Celé QSO napíše�
 <li>Pásma 160 m až 76 GHz, mikrovlny se píšou v GHz (24G, 10G …).</li>
 <li>Návrhy značek a předvyplnění lokátoru z přibalené databáze a tvých spojení.</li>
 <li>Upozornění na DUPE (značka + pásmo + mód; v závodě po pásmech; u satelitu po družicích).</li>
+<li>Reporty pro scatter a auroru (59S, 59A).</li>
+<li>Hledání v seznamu QSO podle značky, lokátoru nebo pořadového čísla.</li>
 <li>Mapa udělaných lokátorů nad čtverci Maidenhead, offline.</li>
-<li>Srážkový radar na mapě VKV závodu (volitelný, výchozí vypnuto).</li>
 <li>Export ADIF, odeslání do vlastního Wavelogu (API v2).</li>
 <li>Bezpečné ukládání: každé QSO se zapíše hned, rozpracované se po restartu nabídne zpět.</li>
+</ul>
+
+<b>CW</b>
+<ul>
+<li>CW dekodér: neuronová síť DeepCW poslouchá mikrofonem u reproduktoru rádia nebo přes USB zvukovku a dekóduje přímo v zařízení; klepnutím se dekódovaná značka, report nebo lokátor vloží do řádku.</li>
+<li>Makra na F5–F12, RUN / S&amp;P, ESM jako v N1MM, opakované CQ, zkrácená čísla (5NN, T18), CW klávesnice.</li>
 </ul>
 
 <b>Rádia a klíčovače (beta)</b>
 <ul>
 <li><b>Icom IC-705 přes Bluetooth</b>: pásmo, mód a přesný kmitočet z rádia, napsané pásmo nebo F28300 rádio přeladí, CW makra přes klíčovač rádia, hlasové paměti T1–T4 v SSB / FM, transvertory pro jednotlivá pásma.</li>
-<li><b>CW klíčovač</b> M5-ESP32-keyer přes Bluetooth: makra pro každý profil, RUN / S&amp;P, ESM jako v N1MM, CW klávesnice.</li>
+<li><b>CW klíčovač</b> M5-ESP32-keyer přes Bluetooth a přes jeho CI-V port i další Icomy (IC-7300, 9700, 7610, 7100, 706, 910).</li>
 </ul>
 
-Vlastní abecední klávesnice (funguje i hardwarová), standardní a e-ink zobrazení, světlý i tmavý vzhled, čeština a angličtina.
+Vlastní abecední klávesnice, systémová klávesnice nebo hardwarová se zkratkami (makra na F-klávesách, Alt+…), standardní a e-ink zobrazení, světlý i tmavý vzhled, čeština a angličtina, vestavěný manuál s Prvními kroky.
 
 Bez reklam, bez sledování, bez účtu. Svobodný software pod licencí GPL-3.0.
 

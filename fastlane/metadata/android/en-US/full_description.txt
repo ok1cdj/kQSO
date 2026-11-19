@@ -2,10 +2,21 @@ kQSO is a ham radio logger with a single, smart input line. Type a whole QSO on 
 
 <b>Log profiles</b>
 <ul>
-<li><b>Activation</b> — SOTA, GMA, POTA, WWFF, TOTA lookout towers, BOTA bunkers; your reference is set with the log, the other station's reference is logged for S2S.</li>
+<li><b>Activation</b> — SOTA, GMA, POTA, WWFF, TOTA lookout towers, BOTA bunkers. Your locator from the device position and the nearest references offline; several references in one activation (summit + park + WWFF area), exported as one ADIF per program; the other station's reference is logged for S2S.</li>
 <li><b>General</b> — adds the name.</li>
-<li><b>VHF contest</b> — serials, 6-character locator, IARU R1 scoring (points per km), score per band, EDI (REG1TEST) export per band, and the ON4KST chat for skeds (stations with distance, bearing and QRV bands).</li>
+<li><b>VHF contest</b> — serials, 6-character locator, IARU R1 scoring (points per km), VKV PA and FM pohár, 6-hour entries.</li>
 <li><b>Satellite</b> — one log per pass; the satellite sets uplink / downlink band and frequency.</li>
+</ul>
+
+<b>VHF contests</b>
+<ul>
+<li>EDI (REG1TEST) export per band with categories (SO / MO, LP, 6H, CHECK).</li>
+<li>A wrong QSO is struck out as ERROR, never deleted: the serials stay in sequence. A dupe is logged only when you confirm it.</li>
+<li>Contest panel in landscape: the next serial in big digits, UTC, live rate, points and ODX.</li>
+<li>Statistics per hour and per large square, score per band, a band filter in the QSO list and the map.</li>
+<li>The bands each station is QRV on, from a callsign database built from contest logs.</li>
+<li>ON4KST chat for skeds: stations with distance, bearing and QRV bands, filtered by distance, a sked in one tap, messages from the log line. Try it without an account with the call DEMO.</li>
+<li>Rain radar on the map for rain scatter (optional, off by default).</li>
 </ul>
 
 <b>Logging</b>
@@ -13,19 +24,26 @@ kQSO is a ham radio logger with a single, smart input line. Type a whole QSO on 
 <li>Bands 160 m to 76 GHz, microwaves typed in GHz (24G, 10G …).</li>
 <li>Callsign suggestions and locator prefill from a bundled database and your own worked stations.</li>
 <li>Dupe warning (call + band + mode; contest per band; satellite per bird).</li>
+<li>Scatter and aurora reports (59S, 59A).</li>
+<li>Search in the QSO list by call, locator or serial.</li>
 <li>QSO map of worked locators over the Maidenhead grid, offline.</li>
-<li>Rain radar on the VHF contest map (optional, off by default).</li>
 <li>ADIF export, push to your own Wavelog (API v2).</li>
 <li>Crash-safe: every QSO is written at once, an unfinished one is offered back after a restart.</li>
+</ul>
+
+<b>CW</b>
+<ul>
+<li>CW decoder: the DeepCW neural network listens through the microphone next to the radio's speaker or a USB audio input and decodes on the device; a tap puts a decoded call, report or locator into the line.</li>
+<li>Macros on F5–F12, RUN / S&amp;P, N1MM-style ESM, CQ repeat, cut numbers (5NN, T18), CW keyboard.</li>
 </ul>
 
 <b>Radios and keyers (beta)</b>
 <ul>
 <li><b>Icom IC-705 over Bluetooth</b>: band, mode and exact frequency from the radio, a typed band or F28300 tunes it, CW macros through the radio's keyer, voice memories T1–T4 in SSB / FM, transverters per band.</li>
-<li><b>CW keyer</b> M5-ESP32-keyer over Bluetooth: macros per profile, RUN / S&amp;P, N1MM-style ESM, CW keyboard.</li>
+<li><b>CW keyer</b> M5-ESP32-keyer over Bluetooth, and through its CI-V port other Icom radios (IC-7300, 9700, 7610, 7100, 706, 910).</li>
 </ul>
 
-Own alphabetical keyboard (a hardware keyboard works too), standard and e-ink display modes, light and dark theme, English and Czech.
+Own alphabetical keyboard, the system keyboard or a hardware keyboard with shortcuts (F-key macros, Alt+…), standard and e-ink display modes, light and dark theme, English and Czech, a built-in manual with First steps.
 
 No ads, no tracking, no account. Free software under GPL-3.0.
 
