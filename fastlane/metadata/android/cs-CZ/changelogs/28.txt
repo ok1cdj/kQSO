@@ -1,0 +1,1 @@
+ON4KST chat: pod závodním panelem všechny stanice z chatu v seznamu, kterým jde posouvat; řazení podle lokátoru (LOC). Delší historie: zprávy pro tebe, zmínky o tvé značce a tvoje zprávy zůstanou celou relaci (Jen pro mě, detail stanice), ostatní přes půl hodiny rušného závodu. Nový web kqso.eu.

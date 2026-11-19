@@ -12,8 +12,12 @@ export const KST_PORT = 23001
 /** 1 = 50/70 MHz, 2 = 144/432 MHz, 3 = microwaves. */
 export type KstRoom = 1 | 2 | 3
 
-/** Messages kept per state (oldest dropped). */
-export const KST_MESSAGES_MAX = 500
+/** Messages between the others kept per state, oldest dropped (a busy contest has ~80 a
+ *  minute: over half an hour). */
+export const KST_MESSAGES_MAX = 3000
+/** Mine, to me and mentioning me: kept apart from the others, so a sked request from an hour
+ *  ago is still there however busy the room. */
+export const KST_PERSONAL_MAX = 1000
 
 /** The room for a band: 6 m / 4 m → 1, 2 m / 70 cm → 2, 23 cm and up → 3; HF → undefined. */
 export function roomForBand(band: string): KstRoom | undefined {
@@ -236,6 +240,8 @@ export class KstState {
   readonly users = new Map<string, KstUser>()
   /** Oldest first. */
   readonly messages: KstEntry[] = []
+  /** How many of `messages` are personal (isPersonal). */
+  private personal = 0
   /** Newest message time, for LOGINC on reconnect (ask from lastTs - 1). */
   lastTs = 0
   /** The station list after login is complete (UE received). */
@@ -302,12 +308,24 @@ export class KstState {
     let i = this.messages.length
     while (i > 0 && this.messages[i - 1]!.ts > msg.ts) i--
     this.messages.splice(i, 0, entry)
-    if (this.messages.length > KST_MESSAGES_MAX) {
-      const old = this.messages.shift()!
-      this.seen.delete(`${old.ts}|${old.call}|${old.text}`)
-    }
+    if (this.isPersonal(entry)) this.personal++
+    if (this.personal > KST_PERSONAL_MAX) this.dropOldest(true)
+    if (this.messages.length - this.personal > KST_MESSAGES_MAX) this.dropOldest(false)
     this.lastTs = Math.max(this.lastTs, msg.ts)
     return entry
+  }
+
+  /** Mine, to me or mentioning me. */
+  isPersonal(m: KstEntry): boolean {
+    return m.forMe || m.mentionsMe || this.isMe(m.call)
+  }
+
+  private dropOldest(personal: boolean): void {
+    const i = this.messages.findIndex((m) => this.isPersonal(m) === personal)
+    if (i < 0) return
+    const [old] = this.messages.splice(i, 1)
+    if (personal) this.personal--
+    this.seen.delete(`${old!.ts}|${old!.call}|${old!.text}`)
   }
 }
 
@@ -442,12 +460,12 @@ export interface KstStation extends KstUser {
   readonly lastTs: number | undefined
 }
 
-export type KstSort = 'call' | 'km' | 'az'
+export type KstSort = 'call' | 'loc' | 'km' | 'az'
 
 /** How the station lists are shown; shared by the chat screen and the logging screen. */
 export interface KstView {
   readonly sort: KstSort
-  /** Descending: Z–A, farthest, 360° first. */
+  /** Descending: Z–A (call or locator), farthest, 360° first. */
   readonly desc: boolean
   readonly hideWorked: boolean
   readonly hideAway: boolean
@@ -479,11 +497,12 @@ export function isActive(s: KstStation, nowS: number, windowS = KST_ACTIVE_S): b
   return s.lastTs !== undefined && nowS - s.lastTs <= windowS
 }
 
-/** Sorted copy; unknown km / az last in both directions. */
+/** Sorted copy; no locator / unknown km / az last in both directions. */
 export function sortStations(list: readonly KstStation[], by: KstSort, desc = false): KstStation[] {
   const dir = desc ? -1 : 1
   return [...list].sort((a, b) => {
     if (by === 'call') return dir * a.call.localeCompare(b.call)
+    if (by === 'loc') return (a.loc ? 0 : 1) - (b.loc ? 0 : 1) || dir * a.loc.localeCompare(b.loc) || a.call.localeCompare(b.call)
     const x = a[by]
     const y = b[by]
     if (x === undefined || y === undefined) return (x === undefined ? 1 : 0) - (y === undefined ? 1 : 0) || a.call.localeCompare(b.call)

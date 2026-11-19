@@ -1,0 +1,1 @@
+ON4KST chat: all the chat's stations under the contest panel, in a list that scrolls; sort by locator (LOC). A longer history: messages to you, mentioning your call and your own stay for the whole session (Only to me, a station's details), the others over half an hour of a busy contest. New website kqso.eu.

@@ -32,6 +32,8 @@ export interface ChatContext {
 
 // Kept while the app runs: coming back shows the same tab (sort and filters are in the controller).
 let tab: 'messages' | 'stations' = 'messages'
+/** Messages drawn in the list (the newest). */
+const SHOWN_MAX = 500
 let onlyMe = false
 
 const ROOMS: readonly KstRoom[] = [1, 2, 3]
@@ -204,7 +206,9 @@ export class ChatScreen implements Screen {
     this.toolsEl.replaceChildren(this.toggle(t('kst.onlyMe'), onlyMe, () => (onlyMe = !onlyMe)))
     const stick = this.bodyEl.scrollHeight - this.bodyEl.scrollTop - this.bodyEl.clientHeight < 40
     const k = this.kst
-    const msgs = k.chat.messages.filter((m) => !k.isMuted(m.call) && (!onlyMe || m.forMe || k.chat.isMe(m.call)))
+    // The chat keeps more than is worth drawing on every message: all of "only to me", the
+    // newest SHOWN_MAX of the rest.
+    const msgs = k.chat.messages.filter((m) => !k.isMuted(m.call) && (!onlyMe || k.chat.isPersonal(m))).slice(onlyMe ? 0 : -SHOWN_MAX)
     if (msgs.length === 0) {
       this.bodyEl.replaceChildren(el('div', 'about', t('kst.empty')))
       return
@@ -242,6 +246,7 @@ export class ChatScreen implements Screen {
       )
     const tools = [
       sortBtn('call', 'CALL'),
+      sortBtn('loc', 'LOC'),
       sortBtn('km', 'km'),
       sortBtn('az', 'az°'),
       this.toggle(t('kst.hideWorked'), v.hideWorked, () => k.setView({ hideWorked: !v.hideWorked })),

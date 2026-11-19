@@ -14,6 +14,19 @@ export interface WhatsNewEntry {
 /** Newest first. */
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    version: '1.19',
+    cs: [
+      'ON4KST chat: stanice pod závodním panelem jsou všechny podle filtrů a řazení chatu a seznamem jde posouvat. Stanice jdou řadit i podle lokátoru (LOC).',
+      'Chat drží delší historii: zprávy pro tebe, zmínky o tvé značce a tvoje zprávy po celou relaci (Jen pro mě, detail stanice), ostatní přes půl hodiny rušného závodu.',
+      'Nový web kqso.eu: co kQSO umí, v češtině i angličtině.',
+    ],
+    en: [
+      'ON4KST chat: the stations under the contest panel are all of them in the chat\'s filters and order, in a list that scrolls. Stations also sort by locator (LOC).',
+      'The chat keeps a longer history: messages to you, mentioning your call and your own for the whole session (Only to me, a station\'s details), the others over half an hour of a busy contest.',
+      'A new website, kqso.eu: what kQSO does, in English and Czech.',
+    ],
+  },
+  {
     version: '1.18',
     cs: [
       'VKV závod spojení nikdy nemaže: D a Zneplatnit v úpravě QSO ho přeškrtnou jako ERROR. Zůstane v logu se svým číslem a 0 body a v EDI je jako ERROR, aby odeslaná čísla šla po sobě. Duplicitu kQSO zaloguje až po potvrzení a předchozí QSO na pásmu se pak stane ERROR.',

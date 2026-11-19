@@ -55,7 +55,6 @@ import {
   kstStations,
   locatorToSet,
   matchSkedQrg,
-  isActive,
   viewStations,
   SKED_DEFAULT,
 } from '../../core/index'
@@ -123,7 +122,6 @@ const MACRO_BUTTONS: ReadonlyArray<readonly [MacroSlot, string | undefined]> = [
 const F_SLOTS: readonly MacroSlot[] = ['CQ', 'EXCH', 'TU', '?', 'MYCALL', 'INFO']
 // ON4KST chat: a line bubble for the header button; rows of the station list under the board.
 const CHAT_ICON = 'M4 5h16v11H10l-4 4v-4H4z'
-const CHAT_ROWS = 30 // rendered; CSS clips whatever doesn't fit under the board
 
 export class LoggingScreen implements Screen {
   private meta!: LogMeta
@@ -149,6 +147,8 @@ export class LoggingScreen implements Screen {
   // Right column in the wide contest layout: the board, under it the chat's active stations.
   private readonly sideEl = el('div', 'side')
   private readonly stationsEl = el('div', 'kst-side')
+  private readonly stationsHeadEl = el('div', 'kst-side-head')
+  private readonly stationsListEl = el('ol', 'kst-side-list') // scrolls; kept across re-renders
   private stationsKey = '' // what the station list shows (re-render on change only: e-ink)
   private skedTemplate = SKED_DEFAULT
   private readonly inputEl = el('div', 'inputline')
@@ -327,10 +327,7 @@ export class LoggingScreen implements Screen {
     this.updateBoard()
     // First tick on the next whole period (e-ink: the minute), so the clock doesn't lag up to a minute.
     const ms = this.board.tickMs
-    const tick = (): void => {
-      this.board.tick(new Date())
-      this.renderStations() // "active" ages out with time
-    }
+    const tick = (): void => this.board.tick(new Date())
     this.boardTimer = setTimeout(() => {
       tick()
       this.boardTimer = setInterval(tick, ms)
@@ -1733,8 +1730,9 @@ export class LoggingScreen implements Screen {
     this.renderAll()
   }
 
-  /** Under the board: the chat's active stations, filtered and sorted as in the chat
-   *  (KstController.view); a tap addresses one, S fills in the sked request. Rewritten only on change. */
+  /** Under the board: the chat's stations, filtered and sorted as in the chat
+   *  (KstController.view), in a list that scrolls; a tap addresses one, S fills in the sked
+   *  request. Rewritten only on change, keeping the scroll position. */
   private renderStations(): void {
     if (this.sideEl.hidden || !this.chatOn() || (!this.kst.wanted && this.kst.link !== 'on')) {
       if (this.stationsKey !== '') this.stationsEl.replaceChildren()
@@ -1742,25 +1740,24 @@ export class LoggingScreen implements Screen {
       return
     }
     const band = this.state.sticky.band
-    const now = Date.now() / 1000
     const rows = viewStations(
-      kstStations(this.kst.chat, this.meta.myGrid, (c) => isDupe(this.qsos, c, band)).filter((s) => isActive(s, now) && !this.kst.isMuted(s.call)),
+      kstStations(this.kst.chat, this.meta.myGrid, (c) => isDupe(this.qsos, c, band)).filter((s) => !this.kst.isMuted(s.call)),
       this.kst.view,
-    ).slice(0, CHAT_ROWS)
-    const head = this.kst.link === 'on' ? t('kst.active', { n: rows.length }) : this.kst.link === 'off' || this.kst.link === 'failed' ? t('kst.off') : t('kst.connecting')
+    )
+    const head = this.kst.link === 'on' ? t('kst.shown', { n: rows.length }) : this.kst.link === 'off' || this.kst.link === 'failed' ? t('kst.off') : t('kst.connecting')
     const loc = this.kst.link === 'on' ? locatorToSet(this.kst.locator, this.meta.myGrid) : undefined
     const key = [this.kst.room, head, loc, ...rows.map((s) => `${s.call}|${s.loc}|${s.km}|${s.az}|${s.isNew}|${s.worked}|${s.away}|${this.kst.qrvOf(s.call) ?? ''}`)].join(';')
     if (key === this.stationsKey) return
     this.stationsKey = key
-    const title = el('div', 'kst-side-head', `KST · ${head}`)
-    const list = el('ol', 'kst-side-list')
+    this.stationsHeadEl.textContent = `KST · ${head}`
+    const items: HTMLElement[] = []
     if (loc) {
       // ON4KST has me elsewhere: the others' QRB is wrong — a tap sends /SETLOC.
       const li = el('li')
       const set = this.suggestButton(`${t('kst.setLoc', { loc })} (ON4KST ${this.kst.locator ?? ''})`, () => this.setKstLocator(loc), 'kst-side-row kst-side-row--new')
       set.title = t('kst.locDiffers', { kst: this.kst.locator ?? '', log: loc })
       li.append(set)
-      list.append(li)
+      items.push(li)
     }
     for (const s of rows) {
       const li = el('li')
@@ -1770,10 +1767,13 @@ export class LoggingScreen implements Screen {
       const qrv = this.qrvLabelsEl(baseCall(s.call), band)
       if (qrv) row.append(' ', qrv)
       li.append(row, sked)
-      list.append(li)
+      items.push(li)
     }
-    if (rows.length === 0 && this.kst.link === 'on') list.append(el('li', 'about', t('kst.noActive')))
-    this.stationsEl.replaceChildren(title, list)
+    if (rows.length === 0 && this.kst.link === 'on') items.push(el('li', 'about', t('kst.noStations')))
+    const top = this.stationsListEl.scrollTop
+    this.stationsListEl.replaceChildren(...items)
+    this.stationsListEl.scrollTop = top
+    if (this.stationsEl.firstChild !== this.stationsHeadEl) this.stationsEl.replaceChildren(this.stationsHeadEl, this.stationsListEl)
   }
 
   private skedText(): string {

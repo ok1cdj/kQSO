@@ -2,10 +2,16 @@
 
 What changed in each kQSO release: the web app (kqso.ok1cdj.com), the Android app and the iOS app share one version. Newest first.
 
-## [Unreleased]
+## [1.19] – 2026-11-19
 
 ### Added
 - **Website [kqso.eu](https://kqso.eu/)** (English and Czech): what kQSO does for activations, VHF contests, satellites and radios, news, FAQ. Settings → About and the manual link it; the app stays at kqso.ok1cdj.com.
+- **ON4KST chat: sort by locator** (`LOC`, A–Z or Z–A again; stations without a locator last), in the chat's station list and under the contest panel.
+
+### Changed
+- **ON4KST stations under the contest panel**: all the chat's stations in the chat's filters and order (not only those that wrote in the last 30 minutes, cut at 30 rows), in a list that scrolls and keeps its place when a new message comes.
+- **ON4KST chat keeps a longer history**: messages to me, mentioning me and my own are kept for the whole session (up to 1000), apart from the others (3000 instead of 500, over half an hour of a busy contest, where 500 lasted 6–7 minutes); a sked request from an hour ago is still in "Only to me" and the station's details. The message list draws the newest 500.
+- **"Only to me"** also shows the messages mentioning my call (not addressed to me), as the messages kept apart.
 
 ## [1.18] – 2026-11-09
 

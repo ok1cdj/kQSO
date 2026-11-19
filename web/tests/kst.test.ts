@@ -18,6 +18,7 @@ import {
   KstState,
   KstSession,
   KST_MESSAGES_MAX,
+  KST_PERSONAL_MAX,
   kstStations,
   isActive,
   sortStations,
@@ -192,8 +193,19 @@ describe('KstState', () => {
     expect(s.apply(ch(10, 'OK1KPA', 'pse sked', 'OK1CDJ'))).toBeUndefined() // repeated history
     expect(s.lastTs).toBe(13)
     for (let i = 0; i < KST_MESSAGES_MAX + 5; i++) s.apply(ch(100 + i, 'X', `m${i}`))
-    expect(s.messages.length).toBe(KST_MESSAGES_MAX)
-    expect(s.messages[0]!.text).toBe('m5')
+    // The others drop oldest first; mine, to me and mentioning me stay.
+    expect(s.messages.length).toBe(KST_MESSAGES_MAX + 3)
+    expect(s.messages.slice(0, 5).map((m) => m.text)).toEqual(['pse sked', 'ok1cdj is qrv 432.2', 'cq OK1CDJ', 'm5', 'm6'])
+    expect(s.apply(ch(100, 'X', 'm0'))).toBeDefined() // dropped, so new again
+  })
+
+  it('keeps the personal messages apart, up to their own limit', () => {
+    const s = new KstState('OK1CDJ')
+    for (let i = 0; i < KST_PERSONAL_MAX + 3; i++) s.apply(ch(10 + i, 'OK1KPA', `p${i}`, 'OK1CDJ'))
+    s.apply(ch(5000, 'X', 'other'))
+    expect(s.messages.length).toBe(KST_PERSONAL_MAX + 1)
+    expect(s.messages[0]!.text).toBe('p3')
+    expect(s.messages.at(-1)!.text).toBe('other')
   })
 
   it('keeps messages oldest first although the history comes newest first', () => {
@@ -342,6 +354,10 @@ describe('station list', () => {
     expect(km.map((s) => s.km).slice(0, 3)).toEqual([...km.map((s) => s.km).slice(0, 3)].sort((a, b) => b! - a!))
     const az = sortStations(list, 'az', true)
     expect(az.at(-1)!.call).toBe('XX1XX')
+  })
+  it('sorts by locator A–Z or Z–A; no locator last', () => {
+    expect(sortStations(list, 'loc').map((s) => s.loc)).toEqual(['JO60LJ', 'JO62AA', 'JO82EH', ''])
+    expect(sortStations(list, 'loc', true).map((s) => s.loc)).toEqual(['JO82EH', 'JO62AA', 'JO60LJ', ''])
   })
   it('the view filters worked and away, then sorts', () => {
     const v = { sort: 'call', desc: false, hideWorked: true, hideAway: true, maxKm: null } as const
