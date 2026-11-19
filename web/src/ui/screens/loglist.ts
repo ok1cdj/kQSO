@@ -21,7 +21,7 @@ import type { PushStatus, WavelogStation } from '../../core/index'
 import type { KQSOPlatform, LogSummary } from '../../platform/index'
 import type { Screen } from '../app'
 import { el, button } from '../dom'
-import { t } from '../i18n'
+import { lang, t } from '../i18n'
 import { trackEvent } from '../stats'
 import { pushAdif } from '../wavelog'
 import { pushStatusText, wavelogErrorText } from '../wavelog-text'
@@ -73,6 +73,14 @@ export class LogListScreen implements Screen {
       // First start: how to log, right where it's needed.
       const empty = el('li', 'empty', `${t('loglist.empty')} `)
       empty.append(button(t('loglist.howTo'), () => this.nav.openHelp(), 'btn btn--small'))
+      // Web visitors who landed here straight away: what kQSO is, on its website.
+      const site = el('div', 'empty-site', `${t('loglist.whatIs')} `)
+      const a = el('a', undefined, 'kqso.eu')
+      a.href = `https://kqso.eu/${lang}/`
+      a.target = '_blank'
+      a.rel = 'noopener'
+      site.append(a)
+      empty.append(site)
       list.append(empty)
     } else {
       for (const log of logs) list.append(this.row(log, wl, readPushStatus(await this.platform.getSetting(pushStatusKey(log.id)))))

@@ -555,6 +555,9 @@ body {
   color: var(--muted);
   padding: 1rem 0.5rem;
 }
+.empty-site {
+  margin-top: 0.75rem;
+}
 
 .field {
   display: flex;
